@@ -52,6 +52,8 @@ class GLTFLoader {
 
     std::vector<glm::vec3> readVec3Buffer(uint32_t accessor);
 
+    std::vector<glm::vec4> readVec4Buffer(uint32_t accessor);
+
     std::vector<MeshAsset*> extractAllMeshes();
 
     Json::Value& json();

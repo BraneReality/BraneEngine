@@ -146,25 +146,25 @@ void RenderWindow::displayContent()
 {
     const bool hovered = ImGui::IsWindowHovered();
     ImGui::BeginDisabled(_gizmoOperation == ImGuizmo::OPERATION::TRANSLATE);
-    if(ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT) || (hovered && ImGui::IsKeyPressed(ImGuiKey_W, false)))
+    if(ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT) || (hovered && !_panning && ImGui::IsKeyPressed(ImGuiKey_W, false)))
         _gizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
     ImGui::EndDisabled();
 
     ImGui::SameLine(0, 0);
     ImGui::BeginDisabled(_gizmoOperation == ImGuizmo::OPERATION::ROTATE);
-    if(ImGui::Button(ICON_FA_ROTATE) || (hovered && ImGui::IsKeyPressed(ImGuiKey_E, false)))
+    if(ImGui::Button(ICON_FA_ROTATE) || (hovered && !_panning && ImGui::IsKeyPressed(ImGuiKey_E, false)))
         _gizmoOperation = ImGuizmo::OPERATION::ROTATE;
     ImGui::EndDisabled();
 
     ImGui::SameLine(0, 0);
     ImGui::BeginDisabled(_gizmoOperation == ImGuizmo::OPERATION::SCALE);
-    if(ImGui::Button(ICON_FA_ARROWS_TO_DOT) || (hovered && ImGui::IsKeyPressed(ImGuiKey_R, false)))
+    if(ImGui::Button(ICON_FA_ARROWS_TO_DOT) || (hovered && !_panning && ImGui::IsKeyPressed(ImGuiKey_R, false)))
         _gizmoOperation = ImGuizmo::OPERATION::SCALE;
     ImGui::EndDisabled();
 
     ImGui::SameLine(0, 13);
     if(ImGui::Button(_gizmoMode == ImGuizmo::MODE::WORLD ? ICON_FA_GLOBE : ICON_FA_OBJECT_GROUP) ||
-       (hovered && ImGui::IsKeyPressed(ImGuiKey_Q, false)))
+       (hovered && !_panning && ImGui::IsKeyPressed(ImGuiKey_Q, false)))
         _gizmoMode = _gizmoMode == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD;
 
     ImGui::SameLine(0, 13);
@@ -201,7 +201,7 @@ void RenderWindow::displayContent()
 
         if(_texture) {
 
-            ImGui::Image(_imGuiBindings[_swapChain->currentFrame()], window);
+            ImGui::Image((void*)_imGuiBindings[_swapChain->currentFrame()], window);
             auto imgPos = ImGui::GetItemRectMin();
             auto imgSize = ImGui::GetItemRectSize();
             ImGuizmo::SetRect(imgPos.x, imgPos.y, imgSize.x, imgSize.y);

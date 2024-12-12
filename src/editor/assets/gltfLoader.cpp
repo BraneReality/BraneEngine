@@ -239,6 +239,32 @@ std::vector<glm::vec3> GLTFLoader::readVec3Buffer(uint32_t accessorIndex)
     return buffer;
 }
 
+
+std::vector<glm::vec4> GLTFLoader::readVec4Buffer(uint32_t accessorIndex)
+{
+    Json::Value& accessor = _json["accessors"][accessorIndex];
+    std::string type = accessor["type"].asString();
+    // We can read vec4 values as vec 3 as the stride will account for the unread value.
+    if(accessor["componentType"].asUInt() != 5126 || !(type == "VEC4"))
+        throw std::runtime_error("Mismatched accessor values for reading Vec3");
+
+    Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+    uint32_t count = accessor["count"].asUInt();
+    uint32_t stride = bufferView.get("byteStride", sizeof(float) * 4).asUInt();
+    uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
+
+    std::vector<glm::vec4> buffer(count);
+    for(uint32_t i = 0; i < count; ++i) {
+        float* ittr = (float*)&_bin[offset + stride * i];
+        buffer[i].x = ittr[0];
+        buffer[i].y = ittr[1];
+        buffer[i].z = ittr[2];
+        buffer[i].w = ittr[3];
+    }
+
+    return buffer;
+}
+
 std::vector<MeshAsset*> GLTFLoader::extractAllMeshes()
 {
     std::vector<MeshAsset*> meshAssets;
@@ -264,8 +290,7 @@ std::vector<MeshAsset*> GLTFLoader::extractAllMeshes()
             }
 
             if(primitive["attributes"].isMember("TANGENT")) {
-                // TODO account for tangents with bitangent sign stored as Vec4
-                auto v = readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
+                auto v = readVec4Buffer(primitive["attributes"]["TANGENT"].asUInt());
                 mesh->addAttribute(pIndex, "TANGENT", v);
             }
 

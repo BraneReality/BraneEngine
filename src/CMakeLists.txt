@@ -14,7 +14,8 @@ add_subdirectory(common)
 # create executables
 add_subdirectory(client)
 add_subdirectory(editor)
-add_subdirectory(runtimeServer)
+# Not Implemented, buggly half placeholder for now
+#add_subdirectory(runtimeServer)
 add_subdirectory(assetServer)
 
 if(BUILD_TESTS)

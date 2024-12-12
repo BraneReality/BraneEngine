@@ -61,7 +61,7 @@ void BraneProject::create(const std::string& projectName, const std::filesystem:
     _filepath = directory;
     _filepath = _filepath / projectName / (projectName + ".brane");
 
-    std::filesystem::create_directory(projectDirectory());
+    std::filesystem::create_directories(projectDirectory());
     std::filesystem::create_directory(projectDirectory() / "assets");
     std::filesystem::create_directory(projectDirectory() / "cache");
     initLoaded();

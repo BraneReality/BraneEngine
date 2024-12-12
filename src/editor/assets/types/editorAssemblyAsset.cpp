@@ -265,7 +265,7 @@ Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
 
         if(primitive["attributes"].isMember("TANGENT")) {
             // TODO account for tangents with bitangent sign stored as Vec4
-            auto v = gltf.readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
+            auto v = gltf.readVec4Buffer(primitive["attributes"]["TANGENT"].asUInt());
             mesh->addAttribute(pIndex, "TANGENT", v);
         }
 

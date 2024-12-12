@@ -588,19 +588,21 @@ void DataWindow::displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset
 
 void DataWindow::displayImageData()
 {
-    const char* imageTypes[2] = {"color", "normal map"};
+    const char* imageTypes[3] = {"color", "normal map", "linear"};
     auto imageType = _focusedAsset->json()["imageType"].asUInt();
     if(ImGui::BeginCombo("ImageType", imageTypes[imageType])) {
         if(ImGui::Selectable("color"))
             _focusedAsset->json().changeValue("imageType", 0);
         if(ImGui::Selectable("normal map"))
             _focusedAsset->json().changeValue("imageType", 1);
+        if(ImGui::Selectable("linear"))
+            _focusedAsset->json().changeValue("imageType", 2);
         ImGui::EndCombo();
     }
     if(_imagePreview) {
         float width = ImGui::GetWindowContentRegionWidth();
         float height = width / (float)_previewImageAsset->size.x * _previewImageAsset->size.y;
-        ImGui::Image(_imagePreview, {width, height});
+        ImGui::Image((void*)_imagePreview, {width, height});
     }
     else if(_previewImageAsset) {
         ImGui::TextDisabled("Loading image preview...");

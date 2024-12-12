@@ -111,7 +111,20 @@ namespace graphics {
         imageInfo.mipLevels = 1;
         imageInfo.arrayLayers = 1;
 
-        _format = (asset->imageType == ImageAsset::color) ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+        switch(asset->imageType)
+        {
+            case ImageAsset::color:
+                _format = VK_FORMAT_R8G8B8A8_SRGB;
+                break;
+            case ImageAsset::normal:
+                _format = VK_FORMAT_R8G8B8A8_UNORM;
+                break;
+            case ImageAsset::linear:
+                _format = VK_FORMAT_R8G8B8A8_SSCALED;
+                break;
+            default:
+                assert(false && "Unhandled switch case!");
+        }
         imageInfo.format = _format;
         imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;

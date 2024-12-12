@@ -11,7 +11,7 @@
 
 glm::mat4 TRS::toMat() const
 {
-    return glm::translate(glm::mat4(1), translation) * glm::mat4_cast(rotation) * glm::scale(glm::mat4(1), scale);
+    return glm::translate(glm::mat4(1), translation) * glm::scale(glm::mat4(1), scale) * glm::mat4_cast(rotation);
 }
 
 void TRS::fromMat(const glm::mat4& t)

@@ -13,7 +13,7 @@ class ImageAsset : public IncrementalAsset {
     std::vector<uint8_t> data;
     glm::uvec2 size;
 
-    enum ImageType : uint8_t { color = 0, normal = 1 } imageType;
+    enum ImageType : uint8_t { color = 0, normal = 1, linear = 2 } imageType;
 
     ImageAsset();
 

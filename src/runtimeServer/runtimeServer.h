@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ecs/ecs.h>
+#include <ecs/entity.h>
 #include <vector>
 
 class RuntimeServer {

@@ -18,8 +18,9 @@ int main()
     Runtime::addModule<NetworkManager>();
     Runtime::addModule<AssetManager>();
     Runtime::addModule<EntityManager>();
-    Runtime::addModule<ChunkManager>();
-    Runtime::addModule<RuntimeServer>();
+    // Placeholders until fully implemented
+    //Runtime::addModule<ChunkManager>();
+    //Runtime::addModule<RuntimeServer>();
 
     Runtime::cleanup();
     return 0;
