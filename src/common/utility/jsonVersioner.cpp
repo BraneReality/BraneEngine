@@ -5,6 +5,7 @@
 #include "jsonVersioner.h"
 #include <cassert>
 #include <iostream>
+#include <algorithm>
 
 Json::Value& Json::resolvePath(const std::string& path, Json::Value& root)
 {
