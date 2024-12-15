@@ -385,3 +385,10 @@ FodyWeavers.xsd
 .idea/
 /vsproj/
 /libraries/external/repos/gtest/googletest/generated/
+
+CMakeFiles/
+CMakeCache.txt
+**/Makefile
+**/cmake_install.cmake
+src/client/*.png
+src/editor/*.png

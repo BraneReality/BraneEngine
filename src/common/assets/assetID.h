@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <cstdint>
 
 class AssetID {
     std::string _string = "null";
