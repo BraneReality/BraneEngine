@@ -46,7 +46,10 @@ namespace graphics {
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceFeatures deviceFeatures{};
+        VkPhysicalDeviceFeatures deviceFeatures{
+            .vertexPipelineStoresAndAtomics = VK_TRUE,
+            .fragmentStoresAndAtomics = VK_TRUE,
+        };
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
         VkDeviceCreateInfo createInfo{};
