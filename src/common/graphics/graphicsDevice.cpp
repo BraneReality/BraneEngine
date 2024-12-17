@@ -49,6 +49,7 @@ namespace graphics {
         VkPhysicalDeviceFeatures deviceFeatures{
             .vertexPipelineStoresAndAtomics = VK_TRUE,
             .fragmentStoresAndAtomics = VK_TRUE,
+            .samplerAnisotropy = VK_TRUE,
         };
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
