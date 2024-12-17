@@ -144,7 +144,12 @@ void SyncWindow::syncAssets()
 
             _syncServer->sendRequest("getAssetDiff", std::move(assetHashes), [this](auto code, InputSerializer res) {
                 if(code != net::ResponseCode::success) {
-                    Runtime::error("Could not retrieve asset differences!");
+                    if(code == net::ResponseCode::denied) {
+                        Runtime::error("Could not retrieve asset differences! (Invalid Permissions)");
+                    }
+                    else {
+                        Runtime::error("Could not retrieve asset differences!");
+                    }
                     return;
                 }
                 uint32_t diffs;
@@ -210,10 +215,17 @@ void SyncWindow::serverSettings()
     if(_serverSettings.empty()) {
         _serverSettings["loading"] = true;
         _syncServer->sendRequest("getServerSettings", {}, [this](auto ec, InputSerializer res) {
-            if(ec != net::ResponseCode::success)
-                Runtime::error("Could not load server settings");
-            else
+            if(ec != net::ResponseCode::success) {
+                if(ec == net::ResponseCode::denied) {
+                    Runtime::error("Could not load server settings! (Invalid Permissions)");
+                }
+                else {
+                    Runtime::error("Could not load server settings!");
+                }
+            }
+            else {
                 res >> _serverSettings;
+            }
         });
     }
 
