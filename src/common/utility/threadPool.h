@@ -34,17 +34,19 @@ class JobHandle {
     JobHandle();
 };
 
-struct Job {
+struct BraneJob {
     std::function<void()> f;
     std::shared_ptr<JobHandle> handle;
 
-    Job(const Job&) = delete;
+    BraneJob(const BraneJob&) = delete;
 
-    Job(Job&&) = default;
+    BraneJob(BraneJob&&) = default;
 
-    Job& operator=(Job&&) = default;
+    BraneJob& operator=(BraneJob&&) = default;
 
-    Job() = default;
+    BraneJob() = default;
+
+    BraneJob(std::function<void()> f, std::shared_ptr<JobHandle> handle);
 };
 
 struct ConditionJob {
@@ -62,9 +64,9 @@ class ThreadPool {
 
     static std::mutex _queueMutex;
     static std::condition_variable _workAvailable;
-    static std::queue<Job> _jobs;
+    static std::queue<BraneJob> _jobs;
     static std::mutex _mainQueueMutex;
-    static std::queue<Job> _mainThreadJobs;
+    static std::queue<BraneJob> _mainThreadJobs;
     static std::atomic_bool _running;
 
     static int threadRuntime();

@@ -1,4 +1,4 @@
-//
+////
 // Created by eli on 8/31/2022.
 //
 
@@ -7,8 +7,6 @@
 
 #include "assets/types/shaderAsset.h"
 #include "libshaderc_util/file_finder.h"
-#include "robin_hood.h"
-#include <mutex>
 #include <shaderc/shaderc.hpp>
 
 class ShaderAsset;

@@ -5,8 +5,8 @@
 #include "shaderCompiler.h"
 #include "assets/types/shaderAsset.h"
 #include "runtime/runtime.h"
-#include "shaderc/glslc/src/file_includer.h"
-#include "spirv-cross/spirv_cross.hpp"
+#include "file_includer.h"
+#include "spirv_cross/spirv_cross.hpp"
 #include <filesystem>
 
 ShaderCompiler::ShaderCompiler() {}

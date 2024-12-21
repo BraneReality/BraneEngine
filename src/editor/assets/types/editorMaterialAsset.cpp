@@ -100,7 +100,7 @@ void EditorMaterialAsset::initializeProperties(EditorShaderAsset* shaderAsset)
         props.clear();
         return;
     }
-    robin_hood::unordered_map<std::string, Json::Value> oldValues;
+    std::unordered_map<std::string, Json::Value> oldValues;
     for(auto& prop : props)
         oldValues.insert({prop["name"].asString(), prop["value"]});
     props.clear();

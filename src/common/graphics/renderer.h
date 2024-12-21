@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "glm/mat4x4.hpp"
 #include "vulkan/vulkan.hpp"
 

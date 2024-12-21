@@ -168,7 +168,7 @@ void SyncWindow::syncAssets()
     }
 
     ImGui::Text("Changed Assets: ");
-    ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 68);
+    ImGui::SameLine(ImGui::GetContentRegionMax().x - 68);
     if(ImGui::Button("Upload All " ICON_FA_CLOUD_ARROW_UP)) {
         for(auto& asset : _assetDiffs)
             updateAsset(asset.id);
@@ -177,7 +177,7 @@ void SyncWindow::syncAssets()
     for(auto& asset : _assetDiffs) {
         ImGui::PushID(asset.id.id());
         ImGui::Text("%s: %s", _editor.project().getAssetName(asset.id).c_str(), asset.id.string().c_str());
-        ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 20);
+        ImGui::SameLine(ImGui::GetContentRegionMax().x - 20);
         if(ImGui::Button(ICON_FA_CLOUD_ARROW_UP)) {
             updateAsset(asset.id);
             _assetDiffSynced = -1;
@@ -285,7 +285,7 @@ class DeleteUserPopup : public GUIPopup {
 
   public:
     DeleteUserPopup(std::string username, uint32_t userID, SyncWindow& window)
-        : _username(std::move(username)), _userID(userID), _window(window), GUIPopup("Delete User"){};
+        : _username(std::move(username)), _userID(userID), _window(window), GUIPopup("Delete User") {};
 };
 
 class EditPasswordPopup : public GUIPopup {
@@ -336,7 +336,7 @@ class EditPasswordPopup : public GUIPopup {
 
   public:
     EditPasswordPopup(uint32_t userID, net::Connection* server)
-        : _userID(userID), _server(server), GUIPopup("Edit Password"){};
+        : _userID(userID), _server(server), GUIPopup("Edit Password") {};
 };
 
 void SyncWindow::drawUsers()

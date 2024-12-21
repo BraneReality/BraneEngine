@@ -392,3 +392,5 @@ CMakeCache.txt
 **/cmake_install.cmake
 src/client/*.png
 src/editor/*.png
+
+/vcpkg_installed/

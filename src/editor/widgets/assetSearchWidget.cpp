@@ -6,7 +6,7 @@
 #include "assets/assetManager.h"
 #include "editor/editor.h"
 #include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui_stdlib.h"
 #include "runtime/runtime.h"
 
 AssetSearchWidget::AssetSearchWidget(AssetType type, size_t searchIncrement)

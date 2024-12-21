@@ -1,20 +1,21 @@
 ﻿# Main CMakeListsfor BraneEngine
 
-cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 3.23)
 
 project ("BraneEngine")
 
-enable_testing()
-
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_EXTENSIONS OFF)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BUILD_TESTS "Include testing build targets" OFF)
 
-
+if(BUILD_TESTS)
+    enable_testing()
+endif()
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)

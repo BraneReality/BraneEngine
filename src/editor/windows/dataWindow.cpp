@@ -20,13 +20,13 @@
 #include <assets/assetID.h>
 #include <ui/gui.h>
 
-#include "backends/imgui_impl_vulkan.h"
+#include "imgui_impl_vulkan.h"
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "editor/assets/assemblyReloadManager.h"
 #include "graphics/graphics.h"
 #include "graphics/pointLightComponent.h"
 #include "graphics/texture.h"
-#include "imgui/misc/cpp/imgui_stdlib.h"
+#include "imgui_stdlib.h"
 #include "ui/guiPopup.h"
 
 #include "assets/types/imageAsset.h"
@@ -184,7 +184,7 @@ void DataWindow::displayChunkData()
         }
         if(lods.size() > 1) {
             ImGui::SameLine();
-            ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - 13);
+            ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - 13);
             if(ImGui::Button("-", {15, 0}))
                 removedLOD = lodIndex;
         }
@@ -202,7 +202,7 @@ void DataWindow::displayChunkData()
     }
 
     ImGui::Unindent();
-    ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - 13);
+    ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - 13);
     if(ImGui::Button("+", {15, 0})) {
         Json::Value newLODList = _focusedAsset->json()["LODs"];
         Json::Value newLod;
@@ -281,7 +281,7 @@ class AddAssetComponentPopup : public GUIPopup {
   public:
     AddAssetComponentPopup(std::shared_ptr<EditorAssemblyAsset> focusedAsset, Json::ArrayIndex focusedEntity)
         : _focusedAsset(std::move(focusedAsset)), _focusedEntity(focusedEntity), _search(AssetType::component),
-          GUIPopup("add component"){};
+          GUIPopup("add component") {};
 };
 
 void DataWindow::displayEntityAssetData()
@@ -600,7 +600,7 @@ void DataWindow::displayImageData()
         ImGui::EndCombo();
     }
     if(_imagePreview) {
-        float width = ImGui::GetWindowContentRegionWidth();
+        float width = ImGui::GetContentRegionMax().x;
         float height = width / (float)_previewImageAsset->size.x * _previewImageAsset->size.y;
         ImGui::Image((void*)_imagePreview, {width, height});
     }

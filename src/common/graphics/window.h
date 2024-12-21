@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 #include <vulkan/vulkan.hpp>
+#include <functional>
 
 namespace graphics {
     class Window {

@@ -6,7 +6,7 @@
 #include "assets/assetID.h"
 #include "editor/editor.h"
 #include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui_stdlib.h"
 #include "runtime/runtime.h"
 
 std::unique_ptr<AssetSearchWidget> AssetSelectWidget::_searchWidget;
