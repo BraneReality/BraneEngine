@@ -34,7 +34,7 @@ jobs:
         key: ${{ runner.os }}-build-release-${{ github.event.repository.name }}-${{ env.cache-name }}
 
     - name: Install dependencies
-      run: sudo apt-get install vulkan-dev xinerama xcursor xorg libglu1-mesa pkg-config
+      run: sudo apt-get install libvulkan-dev libxcb-xinerama0-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
 
     - name: Run vcpkg
       run: |
