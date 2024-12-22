@@ -1,8 +1,15 @@
 {
     "dependencies": [
+        "openssl",
+        "asio",
+        "cpp-httplib",
+        "gtest",
+        "jsoncpp",
+        "sqlite3",
         "shaderc",
         "spirv-cross",
         "glslang",
+        "glm",
         "vulkan",
         "glfw3",
         {
@@ -13,6 +20,8 @@
                 "vulkan-binding"
             ]
         },
-        "imguizmo"
+        "imguizmo",
+        "tinyfiledialogs",
+        "stb"
     ]
 }

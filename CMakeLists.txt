@@ -22,7 +22,9 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 # Library Complie Definitions
-add_compile_definitions(GLM_FORCE_RADIANS
+add_compile_definitions(
+                GLM_ENABLE_EXPERIMENTAL
+                GLM_FORCE_RADIANS
                 GLM_FORCE_DEPTH_ZERO_TO_ONE
                 ASIO_STANDALONE
                 STATIC_CONCPP)
@@ -48,7 +50,6 @@ set(CLIENT_DEFS CLIENT)
 set(RUNTIME_SERVER_DEFS RUNTIME_SERVER)
 set(ASSET_SERVER_DEFS ASSET_SERVER)
 
-add_subdirectory(libraries)
 add_subdirectory(src)
 
 

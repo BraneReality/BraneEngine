@@ -6,9 +6,10 @@
 #define BRANEENGINE_PREPPEDSQLCALL_H
 
 #include "runtime/runtime.h"
+#include "sqlite3.h"
+
 #include <cassert>
 #include <functional>
-#include <sqlite/sqlite3.h>
 #include <stdexcept>
 #include <string>
 #include <tuple>

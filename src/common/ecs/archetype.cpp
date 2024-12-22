@@ -97,9 +97,9 @@ const ComponentSet& Archetype::components() const { return _components; }
 
 const std::vector<const ComponentDescription*>& Archetype::componentDescriptions() { return _componentDescriptions; }
 
-robin_hood::unordered_flat_map<ComponentID, Archetype*>& Archetype::addEdges() { return _addEdges; }
+std::unordered_map<ComponentID, Archetype*>& Archetype::addEdges() { return _addEdges; }
 
-robin_hood::unordered_flat_map<ComponentID, Archetype*>& Archetype::removeEdges() { return _removeEdges; }
+std::unordered_map<ComponentID, Archetype*>& Archetype::removeEdges() { return _removeEdges; }
 
 size_t Archetype::size() const { return _size; }
 

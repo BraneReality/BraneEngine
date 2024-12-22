@@ -1,4 +1,6 @@
 #src/tests
+find_package(GTest CONFIG REQUIRED)
+
 set(CMAKE_FOLDER ${CMAKE_FOLDER}/Tests)
 add_executable(tests
         "ecs/ecsTest.cpp"
@@ -10,7 +12,7 @@ add_executable(tests
         utility/hex.cpp utility/versionedJson.cpp ecs/ecsProfiling.cpp)
 include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(tests PUBLIC runtime gtest_main ecs_test assets_server networking utility include_dir jsoncpp_static config)
+target_link_libraries(tests PUBLIC runtime GTest::gtest_main ecs_test assets_server networking utility config)
 target_compile_definitions(tests PUBLIC TEST_BUILD)
 
 include(GoogleTest)

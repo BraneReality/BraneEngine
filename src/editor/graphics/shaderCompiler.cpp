@@ -5,17 +5,77 @@
 #include "shaderCompiler.h"
 #include "assets/types/shaderAsset.h"
 #include "runtime/runtime.h"
-#include "file_includer.h"
 #include "spirv_cross/spirv_cross.hpp"
+#include "fileManager/fileManager.h"
 #include <filesystem>
+#include <memory>
 
 ShaderCompiler::ShaderCompiler() {}
+
+ShaderIncluder::ShaderIncluder()
+{
+    _search_dirs.push_back(std::filesystem::current_path() / "defaultAssets" / "shaders");
+}
+
+shaderc_include_result* ShaderIncluder::GetInclude(
+    const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth)
+{
+
+    std::cout << "Shader wants: '" << requested_source << "' and is asking from: '" << requesting_source << "'"
+              << std::endl;
+
+    auto reqPath = std::filesystem::path(requesting_source).parent_path();
+
+    std::vector<char> file;
+
+    std::cout << "Searching " << _search_dirs.size() << " dirs" << std::endl;
+    for(auto dir : _search_dirs) {
+        std::cout << "searching " << dir << std::endl;
+        auto path = dir / requested_source;
+        if(FileManager::readFile(path, file)) {
+            std::cout << "Found: " << path << std::endl;
+            shaderc_include_result* result = new shaderc_include_result{};
+            auto pathStr = path.u8string();
+            result->source_name = new char[pathStr.size()];
+            std::memcpy((void*)result->source_name, pathStr.data(), pathStr.size());
+            result->source_name_length = pathStr.size();
+
+            result->content = new char[file.size()];
+            std::memcpy((void*)result->content, file.data(), file.size());
+            result->content_length = file.size();
+            std::cout << "returning result source_name="
+                      << std::string_view(result->source_name, result->source_name_length) << std::endl;
+            return result;
+        }
+    }
+
+    auto errorRes = new shaderc_include_result{};
+    errorRes->source_name = "";
+    errorRes->source_name_length = 0;
+    std::string errMessage = std::format(
+        "'{}' requested by '{}' was not found", std::string(requested_source), std::string(requesting_source));
+    errorRes->content = new char[errMessage.size()];
+    errorRes->content_length = errMessage.size();
+
+    return errorRes;
+}
+
+// Handles shaderc_include_result_release_fn callbacks.
+void ShaderIncluder::ReleaseInclude(shaderc_include_result* data)
+{
+    if(data->source_name_length > 0)
+        delete data->source_name;
+    delete data->content;
+    delete data;
+}
+
+void ShaderIncluder::addSearchDir(std::filesystem::path dir) { _search_dirs.push_back(dir); }
 
 bool ShaderCompiler::compileShader(
     const std::string& glsl,
     ShaderType type,
     std::vector<uint32_t>& spirv,
-    shaderc_util::FileFinder& fileFinder,
+    std::unique_ptr<ShaderIncluder> includer,
     bool optimize)
 {
     shaderc_shader_kind kind;
@@ -45,7 +105,8 @@ bool ShaderCompiler::compileShader(
     options.SetSourceLanguage(shaderc_source_language_glsl);
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
     options.SetTargetSpirv(shaderc_spirv_version_1_5);
-    options.SetIncluder(std::make_unique<glslc::FileIncluder>(&fileFinder));
+    options.SetIncluder(std::unique_ptr<shaderc::CompileOptions::IncluderInterface>(
+        (shaderc::CompileOptions::IncluderInterface*)includer.release()));
 
     auto result = compiler.CompileGlslToSpv(glsl, kind, "shader line", options);
 
@@ -98,11 +159,14 @@ ShaderVariableData::Type typeFromSpirvType(spirv_cross::SPIRType::BaseType type)
 }
 
 bool ShaderCompiler::extractAttributes(
-    const std::string& glsl, ShaderType shaderType, shaderc_util::FileFinder& fileFinder, ShaderAttributes& attributes)
+    const std::string& glsl,
+    ShaderType shaderType,
+    std::unique_ptr<ShaderIncluder> includer,
+    ShaderAttributes& attributes)
 {
     // We need to compile without optimization to be able to extract variable names
     std::vector<uint32_t> spirv;
-    if(!compileShader(glsl, shaderType, spirv, fileFinder, false))
+    if(!compileShader(glsl, shaderType, spirv, std::move(includer), false))
         return false;
 
     spirv_cross::Compiler compiler(std::move(spirv));
@@ -111,6 +175,8 @@ bool ShaderCompiler::extractAttributes(
     for(auto& uniformBuffer : resources.uniform_buffers) {
         UniformBufferData ub{};
         ub.name = uniformBuffer.name;
+
+        std::cout << "Found UB " << ub.name << std::endl;
         ub.binding = compiler.get_decoration(uniformBuffer.id, spv::DecorationBinding);
         auto& type = compiler.get_type(uniformBuffer.base_type_id);
         assert(type.basetype == spirv_cross::SPIRType::Struct);
@@ -157,9 +223,12 @@ bool ShaderCompiler::extractAttributes(
         attributes.samplers.push_back(samp);
     }
     for(auto& stageInput : resources.stage_inputs) {
+
         ShaderVariableData var;
         var.location = compiler.get_decoration(stageInput.id, spv::DecorationLocation);
         var.name = stageInput.name;
+
+        std::cout << "Found stage input " << var.name << std::endl;
         auto& type = compiler.get_type(stageInput.base_type_id);
         var.type = typeFromSpirvType(type.basetype);
         var.size = type.width;
@@ -180,11 +249,4 @@ bool ShaderCompiler::extractAttributes(
     }
 
     return true;
-}
-
-shaderc_util::FileFinder ShaderCompiler::defaultFinder()
-{
-    shaderc_util::FileFinder finder;
-    finder.search_path().push_back((std::filesystem::current_path() / "defaultAssets" / "shaders").string());
-    return std::move(finder);
 }

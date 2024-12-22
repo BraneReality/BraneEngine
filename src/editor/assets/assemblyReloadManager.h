@@ -7,7 +7,6 @@
 
 #include "ecs/component.h"
 #include "ecs/entityID.h"
-#include "robin_hood.h"
 #include "runtime/runtime.h"
 
 class Assembly;
@@ -19,7 +18,7 @@ class AssemblyReloadManager : public Module {
         EntityID root;
         std::vector<EntityID> entities;
     };
-    robin_hood::unordered_map<Assembly*, std::vector<AssemblyInstance>> _instances;
+    std::unordered_map<Assembly*, std::vector<AssemblyInstance>> _instances;
     std::mutex m;
     EntityManager* _em;
 

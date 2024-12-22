@@ -246,6 +246,7 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
         if(r != VK_SUCCESS)
             Runtime::error("ImGui vulkan returned " + std::to_string(r));
     };
+    init_info.RenderPass = _renderer->renderPass();
     ImGui_ImplVulkan_Init(&init_info);
 
     // Upload Fonts

@@ -62,10 +62,7 @@ void SelectProjectWindow::displayContent()
     ImGui::PopFont();
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, {0.1f, 0.1f, 0.1f, 1.0f});
-    ImGui::BeginChild(
-        "Recent",
-        {ImGui::GetContentRegionMax().x, ImGui::GetWindowHeight() * 0.45f},
-        ImGuiWindowFlags_AlwaysVerticalScrollbar);
+    ImGui::BeginChild("Recent", {ImGui::GetContentRegionMax().x, ImGui::GetWindowHeight() * 0.45f}, 0);
     for(uint8_t i = 0; i < _recentProjects.size(); ++i) {
         auto& p = _recentProjects[i];
         if(ImGui::Selectable(p.name.c_str(), _selectedProject == i)) {

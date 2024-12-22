@@ -7,8 +7,9 @@
 
 #include "config/config.h"
 #include "message.h"
-#include "robin_hood.h"
 #include <cstdint>
+#include <functional>
+#include <unordered_map>
 #include <memory>
 #include <shared_mutex>
 #include <utility/asyncData.h>
@@ -41,12 +42,11 @@ namespace net {
         AsyncQueue<OMessage> _obuffer;
         AsyncQueue<IMessage> _ibuffer;
         std::shared_mutex _streamLock;
-        robin_hood::unordered_map<uint32_t, std::pair<std::function<void(InputSerializer s)>, std::function<void()>>>
+        std::unordered_map<uint32_t, std::pair<std::function<void(InputSerializer s)>, std::function<void()>>>
             _streamListeners;
         uint32_t _reqIDCounter = 1000;
         std::shared_mutex _responseLock;
-        robin_hood::unordered_map<uint32_t, std::function<void(ResponseCode code, InputSerializer s)>>
-            _responseListeners;
+        std::unordered_map<uint32_t, std::function<void(ResponseCode code, InputSerializer s)>> _responseListeners;
         IMessage _tempIn;
         std::function<void(Connection* connection, IMessage&& message)> _requestHandler;
 

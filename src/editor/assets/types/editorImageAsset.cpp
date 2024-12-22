@@ -6,7 +6,7 @@
 #include "assets/types/imageAsset.h"
 #include "runtime/runtime.h"
 
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 EditorImageAsset::EditorImageAsset(const std::filesystem::path& file, BraneProject& project)
     : EditorAsset(file, project)

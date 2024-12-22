@@ -1,6 +1,6 @@
 #include "window.h"
 #include <iostream>
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 namespace graphics {
     std::function<void()> Window::_onRefocus;
