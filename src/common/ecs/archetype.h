@@ -3,7 +3,6 @@
 #include "common/utility/sharedRecursiveMutex.h"
 #include "common/utility/stackAllocate.h"
 #include "common/utility/threadPool.h"
-#include "robin_hood.h"
 #include <cstdint>
 #include <functional>
 #include <list>
@@ -32,8 +31,8 @@ class Archetype {
     size_t _size = 0;
     size_t _entitySize;
 
-    robin_hood::unordered_flat_map<ComponentID, Archetype*> _addEdges;
-    robin_hood::unordered_flat_map<ComponentID, Archetype*> _removeEdges;
+    std::unordered_map<ComponentID, Archetype*> _addEdges;
+    std::unordered_map<ComponentID, Archetype*> _removeEdges;
 
     ComponentSet _components;
     std::vector<const ComponentDescription*> _componentDescriptions;
@@ -69,9 +68,9 @@ class Archetype {
 
     const std::vector<const ComponentDescription*>& componentDescriptions();
 
-    robin_hood::unordered_flat_map<ComponentID, Archetype*>& addEdges();
+    std::unordered_map<ComponentID, Archetype*>& addEdges();
 
-    robin_hood::unordered_flat_map<ComponentID, Archetype*>& removeEdges();
+    std::unordered_map<ComponentID, Archetype*>& removeEdges();
 
     const std::vector<std::unique_ptr<Chunk>>& chunks() const;
 

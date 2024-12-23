@@ -20,16 +20,35 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Load cache
+      id: build-cache
+      uses: actions/cache@v3
+      env:
+        cache-name: cache dependencies & build
+      with:
+        path: |
+          ${{ github.workspace }}/build-release
+          ~/.cache/vcpkg/archives
+          ${{ github.workspace }}/vcpkg_installed
+          ${{ github.workspace }}/vcpkg
+        key: ${{ runner.os }}-build-release-${{ github.event.repository.name }}-${{ env.cache-name }}
+
     - name: Install dependencies
-      run: sudo apt-get install libopengl-dev libglfw3-dev libxi-dev libxxf86vm-dev libvulkan-dev libxrandr-dev
-    
-    - name: Download Submodules
-      run: git submodule update --init
+      run: sudo apt-get install libvulkan-dev libxcb-xinerama0-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
+
+    - name: Run vcpkg
+      run: |
+        if [ ! -d "vcpkg/.git" ]; then
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+        fi
+        ./vcpkg/vcpkg install
+
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTS=ON
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}  -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON
 
     - name: Build Tests
       # Build your program with the given configuration

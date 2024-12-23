@@ -1,7 +1,8 @@
 #pragma once
 
 #include "assets/types/componentAsset.h"
-#include "robin_hood.h"
+#include <unordered_map>
+#include <unordered_set>
 #include <cassert>
 #include <cstddef>
 #include <set>
@@ -10,7 +11,7 @@
 // Class that always has components sorted
 class ComponentSet {
   private:
-    robin_hood::unordered_flat_set<ComponentID> _components;
+    std::unordered_set<ComponentID> _components;
 
   public:
     ComponentSet() = default;
@@ -29,7 +30,7 @@ class ComponentSet {
 
     bool operator==(const ComponentSet&) const;
 
-    robin_hood::unordered_flat_set<ComponentID>::const_iterator begin() const;
+    std::unordered_set<ComponentID>::const_iterator begin() const;
 
-    robin_hood::unordered_flat_set<ComponentID>::const_iterator end() const;
+    std::unordered_set<ComponentID>::const_iterator end() const;
 };

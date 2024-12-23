@@ -4,6 +4,7 @@
 
 #include "archetypeManager.h"
 #include "componentManager.h"
+#include <unordered_set>
 
 ArchetypeManager::ArchetypeManager(ComponentManager& componentManager) : _componentManager(componentManager)
 {
@@ -17,7 +18,7 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
     assert(numComps > 0);
     if(numComps > _archetypes.size())
         return makeArchetype(components);
-    std::vector<robin_hood::unordered_flat_set<Archetype*>*> archesWithComponent;
+    std::vector<std::unordered_set<Archetype*>*> archesWithComponent;
     for(ComponentID c : components) {
         if(_compToArch.count(c))
             archesWithComponent.push_back(&_compToArch[c]);
@@ -145,9 +146,9 @@ std::vector<Archetype*> ArchetypeManager::getArchetypes(const ComponentFilter& f
     std::vector<Archetype*> archetypes;
     archetypes.reserve(64);
 
-    std::vector<robin_hood::unordered_flat_set<Archetype*>*> archesWithDesiredComponents;
+    std::vector<std::unordered_set<Archetype*>*> archesWithDesiredComponents;
     archesWithDesiredComponents.reserve(filter.components().size());
-    std::vector<robin_hood::unordered_flat_set<Archetype*>*> archesWithExcludedComponents;
+    std::vector<std::unordered_set<Archetype*>*> archesWithExcludedComponents;
     for(auto c : filter.components()) {
         if(c.flags & ComponentFilterFlags_Exclude)
             archesWithExcludedComponents.push_back(&_compToArch[c.id]);

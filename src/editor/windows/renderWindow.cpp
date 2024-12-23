@@ -16,7 +16,7 @@
 
 #include "assets/assetManager.h"
 #include "assets/types/meshAsset.h"
-#include "backends/imgui_impl_vulkan.h"
+#include "imgui_impl_vulkan.h"
 #include "ecs/nativeComponent.h"
 #include "ecs/nativeTypes/assetComponents.h"
 #include "editor/assets/assemblyReloadManager.h"
@@ -27,7 +27,7 @@ class RenderWindowAssetReady : public GUIEvent {
     AssetID _id;
 
   public:
-    RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready"){};
+    RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready") {};
 
     const AssetID& id() const { return _id; }
 };
@@ -201,7 +201,7 @@ void RenderWindow::displayContent()
 
         if(_texture) {
 
-            ImGui::Image((void*)_imGuiBindings[_swapChain->currentFrame()], window);
+            ImGui::Image((ImTextureID)_imGuiBindings[_swapChain->currentFrame()], window);
             auto imgPos = ImGui::GetItemRectMin();
             auto imgSize = ImGui::GetItemRectSize();
             ImGuizmo::SetRect(imgPos.x, imgPos.y, imgSize.x, imgSize.y);

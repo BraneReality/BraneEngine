@@ -34,10 +34,10 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
         ShaderCompiler::ShaderAttributes attributes;
         std::string glsl;
         std::filesystem::path dir = std::filesystem::path{source}.remove_filename();
-        auto finder = ShaderCompiler::defaultFinder();
-        finder.search_path().push_back(dir.string());
+        auto includer = std::make_unique<ShaderIncluder>();
+        includer->addSearchDir(dir);
         if(FileManager::readFile(source, glsl) &&
-           _project.editor().shaderCompiler().extractAttributes(glsl, shaderType(), finder, attributes)) {
+           _project.editor().shaderCompiler().extractAttributes(glsl, shaderType(), std::move(includer), attributes)) {
             Json::Value atr;
             for(auto& ub : attributes.uniforms) {
                 Json::Value uniform;
@@ -118,15 +118,20 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
         return nullptr;
     }
     auto& compiler = _project.editor().shaderCompiler();
-    auto finder = ShaderCompiler::defaultFinder();
-    finder.search_path().push_back(source.remove_filename().string());
-    if(!compiler.compileShader(shaderCode, shader->shaderType, shader->spirv, finder)) {
+
+    auto includer = std::make_unique<ShaderIncluder>();
+    std::filesystem::path dir = std::filesystem::path{source}.remove_filename();
+    includer->addSearchDir(dir);
+    if(!compiler.compileShader(shaderCode, shader->shaderType, shader->spirv, std::move(includer))) {
         delete shader;
         return nullptr;
     }
 
+    includer = std::make_unique<ShaderIncluder>();
+    includer->addSearchDir(dir);
+
     ShaderCompiler::ShaderAttributes attributes;
-    compiler.extractAttributes(shaderCode, shader->shaderType, finder, attributes);
+    compiler.extractAttributes(shaderCode, shader->shaderType, std::move(includer), attributes);
     for(auto& u : attributes.uniforms)
         shader->uniforms.insert({u.name, u});
 

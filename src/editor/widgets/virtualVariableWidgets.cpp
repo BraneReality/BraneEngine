@@ -6,7 +6,7 @@
 #include "../assets/jsonVirtualType.h"
 #include "common/ecs/entity.h"
 #include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui_stdlib.h"
 #include "systems/transforms.h"
 #include "utility/stackAllocate.h"
 

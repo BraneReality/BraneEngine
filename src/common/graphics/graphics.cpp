@@ -9,7 +9,7 @@
 // Compile stb in this object
 #define STB_IMAGE_IMPLEMENTATION
 
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #include "assets/types/materialAsset.h"
 #include "assets/types/shaderAsset.h"
@@ -343,6 +343,7 @@ namespace graphics {
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData)
     {
+
         if(messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
             if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
                 Runtime::warn("Vulkan: " + std::string(pCallbackData->pMessage));
@@ -351,8 +352,8 @@ namespace graphics {
             else
                 Runtime::log("Vulkan: " + std::string(pCallbackData->pMessage));
 #ifndef NDEBUG
-            if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-                throw std::runtime_error("Vulkan debug error");
+            /*if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+                throw std::runtime_error("Vulkan debug error");*/
 #endif
         }
         return VK_FALSE;

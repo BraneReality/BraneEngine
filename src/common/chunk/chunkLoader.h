@@ -7,7 +7,6 @@
 
 #include "assets/assetID.h"
 #include "assets/chunk.h"
-#include "robin_hood.h"
 #include <shared_mutex>
 
 using ChunkCallbackID = uint32_t;
@@ -20,7 +19,7 @@ class ChunkLoader : public Module {
         uint32_t lod = NullLOD;
     };
     std::shared_mutex _chunkLock;
-    robin_hood::unordered_map<HashedAssetID, ChunkContext> _chunks;
+    std::unordered_map<HashedAssetID, ChunkContext> _chunks;
 
     staticIndexVector<ChunkLODCallback> _onLODChange;
 

@@ -13,6 +13,7 @@
 #include "editor/editorEvents.h"
 #include "systems/transforms.h"
 #include "ui/gui.h"
+#include <imgui.h>
 
 EntitiesWindow::EntitiesWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -46,7 +47,7 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
     const bool isRoot = _asset->json()["rootEntity"].asUInt() == index;
     const float reorderHeight = 4;
     const float indentSpacing = ImGui::GetStyle().IndentSpacing;
-    const float reorderWidth = ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX() - indentSpacing - 5;
+    const float reorderWidth = ImGui::GetContentRegionMax().x - ImGui::GetCursorPosX() - indentSpacing - 5;
 
     ImGui::PushID(index);
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;

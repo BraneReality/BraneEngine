@@ -1,0 +1,27 @@
+{
+    "dependencies": [
+        "openssl",
+        "asio",
+        "cpp-httplib",
+        "gtest",
+        "jsoncpp",
+        "sqlite3",
+        "shaderc",
+        "spirv-cross",
+        "glslang",
+        "glm",
+        "vulkan",
+        "glfw3",
+        {
+            "name": "imgui",
+            "features": [
+                "docking-experimental",
+                "glfw-binding",
+                "vulkan-binding"
+            ]
+        },
+        "imguizmo",
+        "tinyfiledialogs",
+        "stb"
+    ]
+}

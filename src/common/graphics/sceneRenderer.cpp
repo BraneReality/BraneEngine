@@ -65,8 +65,7 @@ namespace graphics {
         updateLights(_swapChain.currentFrame(), pointLights);
 
         // Fetch mesh transforms, I beg of you to ignore this monstrosity of a data structure...
-        robin_hood::unordered_node_map<uint32_t, robin_hood::unordered_node_map<RenderObject, std::vector<glm::mat4>>>
-            meshTransforms;
+        std::unordered_map<uint32_t, std::unordered_map<RenderObject, std::vector<glm::mat4>>> meshTransforms;
         _em.systems().runUnmanagedSystem("fetchMRD", [&](SystemContext* ctx) {
             ComponentFilter filter(ctx);
             filter.addComponent(Transform::def()->id, ComponentFilterFlags_Const);

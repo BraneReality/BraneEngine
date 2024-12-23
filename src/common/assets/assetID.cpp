@@ -1,5 +1,4 @@
 #include "assetID.h"
-#include "robin_hood.h"
 #include <cassert>
 #include <sstream>
 #include <utility/hex.h>
@@ -138,7 +137,7 @@ std::size_t std::hash<HashedAssetID>::operator()(const HashedAssetID& k) const {
 
 HashedAssetID::HashedAssetID(const AssetID& id)
 {
-    _hash = robin_hood::hash<std::string>()(id.string());
+    _hash = std::hash<std::string>()(id.string());
     _id = id.id();
     _address = id.address();
 }

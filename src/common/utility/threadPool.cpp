@@ -3,6 +3,11 @@
 
 #include <memory>
 
+BraneJob::BraneJob(std::function<void()> f, std::shared_ptr<JobHandle> handle)
+    : f(std::move(f)), handle(std::move(handle))
+{
+}
+
 std::thread::id ThreadPool::main_thread_id;
 size_t ThreadPool::_instances;
 std::vector<std::thread> ThreadPool::_threads;
@@ -10,18 +15,18 @@ size_t ThreadPool::_staticThreads;
 size_t ThreadPool::_minThreads;
 
 std::atomic<bool> ThreadPool::_running = true;
-std::queue<Job> ThreadPool::_jobs;
+std::queue<BraneJob> ThreadPool::_jobs;
 std::mutex ThreadPool::_queueMutex;
 std::condition_variable ThreadPool::_workAvailable;
 
 std::mutex ThreadPool::_mainQueueMutex;
-std::queue<Job> ThreadPool::_mainThreadJobs;
+std::queue<BraneJob> ThreadPool::_mainThreadJobs;
 
 int ThreadPool::threadRuntime()
 {
     while(_running) {
 
-        Job job;
+        BraneJob job;
         {
             std::unique_lock<std::mutex> lock(_queueMutex);
             if(_workAvailable.wait_until(lock, std::chrono::system_clock::now() + std::chrono::milliseconds(200), [] {
@@ -89,7 +94,7 @@ std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)
     std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
     handle->_instances = 1;
     _queueMutex.lock();
-    _jobs.push({std::move(function), handle});
+    _jobs.emplace(std::move(function), handle);
     _queueMutex.unlock();
     _workAvailable.notify_one();
     return handle;
@@ -98,7 +103,7 @@ std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)
 void ThreadPool::enqueueMain(std::function<void()> function)
 {
     _mainQueueMutex.lock();
-    _mainThreadJobs.push({std::move(function), nullptr});
+    _mainThreadJobs.emplace(std::move(function), nullptr);
     _mainQueueMutex.unlock();
 }
 
@@ -106,7 +111,7 @@ void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHand
 {
     sharedHandle->_instances += 1;
     _queueMutex.lock();
-    _jobs.push({std::move(function), sharedHandle});
+    _jobs.emplace(std::move(function), sharedHandle);
     _queueMutex.unlock();
     _workAvailable.notify_one();
 }
@@ -118,7 +123,7 @@ std::shared_ptr<JobHandle> ThreadPool::enqueueBatch(std::vector<std::function<vo
     _queueMutex.lock();
     for(auto& function : functions) {
         handle->_instances += 1;
-        _jobs.push({std::move(function), handle});
+        _jobs.emplace(std::move(function), handle);
     }
     _queueMutex.unlock();
 

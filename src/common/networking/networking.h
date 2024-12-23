@@ -10,10 +10,10 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 #include "config/config.h"
 #include "connection.h"
-#include "robin_hood.h"
 #include <shared_mutex>
 #include <utility/asyncData.h>
 #include <utility/serializedData.h>
@@ -51,7 +51,7 @@ class NetworkManager : public Module {
     asio::ip::tcp::resolver _tcpResolver;
 
     std::shared_mutex _serverLock;
-    robin_hood::unordered_map<std::string, std::unique_ptr<net::Connection>> _servers;
+    std::unordered_map<std::string, std::unique_ptr<net::Connection>> _servers;
 
     std::shared_mutex _clientLock;
     std::vector<std::unique_ptr<net::Connection>> _clients;
@@ -62,7 +62,7 @@ class NetworkManager : public Module {
     std::atomic_bool _running;
 
     std::mutex _requestLock;
-    robin_hood::unordered_map<std::string, std::function<void(RequestCTX& ctx)>> _requestListeners;
+    std::unordered_map<std::string, std::function<void(RequestCTX& ctx)>> _requestListeners;
 
     uint32_t _streamIDCounter = 1000;
 

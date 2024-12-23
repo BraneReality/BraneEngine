@@ -16,9 +16,9 @@
 #include "common/runtime/runtime.h"
 
 #include "IconsFontAwesome6.h"
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_vulkan.h>
-#include <imgui.h>
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+#include "imgui.h"
 
 GUI::GUI()
 {
@@ -246,12 +246,13 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
         if(r != VK_SUCCESS)
             Runtime::error("ImGui vulkan returned " + std::to_string(r));
     };
-    ImGui_ImplVulkan_Init(&init_info, _renderer->renderPass());
+    init_info.RenderPass = _renderer->renderPass();
+    ImGui_ImplVulkan_Init(&init_info);
 
     // Upload Fonts
-    graphics::SingleUseCommandBuffer commandBuffer(graphics::device->graphicsPool());
-    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer.get());
-    commandBuffer.submit(graphics::device->graphicsQueue());
+    // graphics::SingleUseCommandBuffer commandBuffer(graphics::device->graphicsPool());
+    // ImGui_ImplVulkan_CreateFontsTexture(commandBuffer.get());
+    // commandBuffer.submit(graphics::device->graphicsQueue());
 }
 
 void GUI::cleanupImGui()

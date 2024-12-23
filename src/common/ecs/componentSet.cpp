@@ -24,15 +24,9 @@ bool ComponentSet::contains(const ComponentSet& subset) const
 
 size_t ComponentSet::size() const { return _components.size(); }
 
-typename robin_hood::unordered_flat_set<ComponentID>::const_iterator ComponentSet::begin() const
-{
-    return _components.begin();
-}
+typename std::unordered_set<ComponentID>::const_iterator ComponentSet::begin() const { return _components.begin(); }
 
-typename robin_hood::unordered_flat_set<ComponentID>::const_iterator ComponentSet::end() const
-{
-    return _components.end();
-}
+typename std::unordered_set<ComponentID>::const_iterator ComponentSet::end() const { return _components.end(); }
 
 ComponentSet::ComponentSet(const std::vector<ComponentID>& components)
 {

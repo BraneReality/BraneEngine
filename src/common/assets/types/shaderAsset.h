@@ -52,8 +52,8 @@ class ShaderAsset : public Asset {
   public:
     ShaderType shaderType;
     std::vector<uint32_t> spirv;
-    robin_hood::unordered_flat_map<std::string, UniformBufferData> uniforms;
-    robin_hood::unordered_flat_map<std::string, UniformBufferData> buffers;
+    std::unordered_map<std::string, UniformBufferData> uniforms;
+    std::unordered_map<std::string, UniformBufferData> buffers;
     std::vector<ShaderVariableData> inputs;
     std::vector<ShaderVariableData> outputs;
 

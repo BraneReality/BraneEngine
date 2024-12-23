@@ -6,7 +6,7 @@
 #include "assets/assetManager.h"
 #include "fileManager/fileManager.h"
 #include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui_stdlib.h"
 #include "ui/IconsFontAwesome6.h"
 #include "utility/strCaseCompare.h"
 // #include "editor/windows/createAssetWindow.h"
@@ -185,8 +185,8 @@ void AssetBrowserWidget::displayFiles()
                             _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
                     }
                     if(type == FileType::directory) {
-                        // Since directories are sorted to the top of files and in the same manner as directory
-                        // children, they have the same index
+                        // Since directories are sorted to the top of files and in the same manner as
+                        // directory children, they have the same index
                         newDirectory = _currentDir->children[i].get();
                     }
                 }
@@ -292,15 +292,16 @@ void AssetBrowserWidget::displayFullBrowser()
     ImGui::TextDisabled("/%s", _currentDir->path().string().c_str());
 
     if(_allowEdits) {
-        /* When an asset is selected, we create an AssetEditorContext object, and that creates/destroys entities. This
-         * should really only be done on the main thread, as otherwise we might get race conditions. As we sometimes
-         * need to request an asset, the responses may come in on another thread and we need to switch back to main*/
+        /* When an asset is selected, we create an AssetEditorContext object, and that creates/destroys
+         * entities. This should really only be done on the main thread, as otherwise we might get race
+         * conditions. As we sometimes need to request an asset, the responses may come in on another thread
+         * and we need to switch back to main*/
         while(!_mainThreadActions.empty())
             _mainThreadActions.pop_front()();
     }
 
     if(_currentDir != _root.get()) {
-        ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 10);
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 10);
         if(ImGui::Selectable(ICON_FA_ARROW_LEFT))
             setDirectory(_currentDir->parent);
     };

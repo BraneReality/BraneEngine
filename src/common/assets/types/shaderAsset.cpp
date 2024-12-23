@@ -34,8 +34,7 @@ InputSerializer operator>>(InputSerializer s, std::vector<ShaderVariableData>& a
     return s;
 }
 
-OutputSerializer
-operator<<(OutputSerializer s, const robin_hood::unordered_flat_map<std::string, UniformBufferData>& buffers)
+OutputSerializer operator<<(OutputSerializer s, const std::unordered_map<std::string, UniformBufferData>& buffers)
 {
     s << static_cast<uint16_t>(buffers.size());
     for(auto& buffer : buffers) {
@@ -47,7 +46,7 @@ operator<<(OutputSerializer s, const robin_hood::unordered_flat_map<std::string,
     return s;
 }
 
-InputSerializer operator>>(InputSerializer s, robin_hood::unordered_flat_map<std::string, UniformBufferData>& buffers)
+InputSerializer operator>>(InputSerializer s, std::unordered_map<std::string, UniformBufferData>& buffers)
 {
     uint16_t size;
     s >> size;

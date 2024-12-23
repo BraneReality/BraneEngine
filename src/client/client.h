@@ -13,7 +13,7 @@ namespace graphics {
 }
 
 class Client : public Module {
-    robin_hood::unordered_map<HashedAssetID, EntityID> _chunkRoots;
+    std::unordered_map<HashedAssetID, EntityID> _chunkRoots;
     graphics::SceneRenderer* _renderer;
     EntityID _mainCamera;
 

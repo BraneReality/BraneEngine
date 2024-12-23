@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "component.h"
-#include "robin_hood.h"
 #include "utility/sharedRecursiveMutex.h"
 
 class ChunkComponentView {
@@ -67,7 +66,7 @@ template <size_t N> class ChunkBase {
     size_t _size;
     size_t _maxCapacity;
     std::array<byte, N> _data;
-    robin_hood::unordered_flat_map<ComponentID, ChunkComponentView> _components;
+    std::unordered_map<ComponentID, ChunkComponentView> _components;
 
   public:
     ChunkBase() { _size = 0; }
@@ -92,7 +91,7 @@ template <size_t N> class ChunkBase {
         }
     }
 
-    const robin_hood::unordered_flat_map<ComponentID, ChunkComponentView>& components() { return _components; }
+    const std::unordered_map<ComponentID, ChunkComponentView>& components() { return _components; }
 
     bool hasComponent(uint32_t id) { return _components.contains(id); }
 

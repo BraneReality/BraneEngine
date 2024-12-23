@@ -6,9 +6,7 @@ TEST(Threading, ThreadPoolTest)
     ThreadPool::init(4);
     std::atomic_bool testBool = false;
     std::shared_ptr<JobHandle> jh = ThreadPool::enqueue([&]() { testBool = true; });
-    jh->
-
-        finish();
+    jh->finish();
 
     ThreadPool::cleanup();
 

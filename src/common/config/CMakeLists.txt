@@ -1,4 +1,5 @@
 #src/common/config
+ find_package(jsoncpp CONFIG REQUIRED)
 
 add_library(config STATIC config.cpp)
-target_link_libraries(config PUBLIC jsoncpp_static include_dir)
+target_link_libraries(config PUBLIC JsonCpp::JsonCpp)

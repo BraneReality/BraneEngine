@@ -5,11 +5,13 @@
 #ifndef BRANEENGINE_ENUMNAMEMAP_H
 #define BRANEENGINE_ENUMNAMEMAP_H
 
-#include "robin_hood.h"
+#include <unordered_map>
+#include <string>
+#include <vector>
 
 template <typename Enum> class EnumNameMap {
-    robin_hood::unordered_map<Enum, std::string> _enumToString;
-    robin_hood::unordered_map<std::string, Enum> _stringToEnum;
+    std::unordered_map<Enum, std::string> _enumToString;
+    std::unordered_map<std::string, Enum> _stringToEnum;
 
   public:
     EnumNameMap(std::vector<std::pair<Enum, std::string>>&& map)
