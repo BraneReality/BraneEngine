@@ -7,6 +7,7 @@
 
 #include <unordered_map>
 #include <string>
+#include <vector>
 
 template <typename Enum> class EnumNameMap {
     std::unordered_map<Enum, std::string> _enumToString;

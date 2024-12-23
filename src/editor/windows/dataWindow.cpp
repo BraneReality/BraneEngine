@@ -602,7 +602,7 @@ void DataWindow::displayImageData()
     if(_imagePreview) {
         float width = ImGui::GetContentRegionMax().x;
         float height = width / (float)_previewImageAsset->size.x * _previewImageAsset->size.y;
-        ImGui::Image((void*)_imagePreview, {width, height});
+        ImGui::Image((ImTextureID)_imagePreview, {width, height});
     }
     else if(_previewImageAsset) {
         ImGui::TextDisabled("Loading image preview...");

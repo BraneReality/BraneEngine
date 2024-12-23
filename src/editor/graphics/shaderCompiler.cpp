@@ -52,8 +52,8 @@ shaderc_include_result* ShaderIncluder::GetInclude(
     auto errorRes = new shaderc_include_result{};
     errorRes->source_name = "";
     errorRes->source_name_length = 0;
-    std::string errMessage = std::format(
-        "'{}' requested by '{}' was not found", std::string(requested_source), std::string(requesting_source));
+    std::string errMessage =
+        "'" + std::string(requested_source) + "' requested by '" + requesting_source + "' was not found";
     errorRes->content = new char[errMessage.size()];
     errorRes->content_length = errMessage.size();
 

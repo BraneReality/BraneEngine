@@ -201,7 +201,7 @@ void RenderWindow::displayContent()
 
         if(_texture) {
 
-            ImGui::Image((void*)_imGuiBindings[_swapChain->currentFrame()], window);
+            ImGui::Image((ImTextureID)_imGuiBindings[_swapChain->currentFrame()], window);
             auto imgPos = ImGui::GetItemRectMin();
             auto imgSize = ImGui::GetItemRectSize();
             ImGuizmo::SetRect(imgPos.x, imgPos.y, imgSize.x, imgSize.y);

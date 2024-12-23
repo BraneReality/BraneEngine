@@ -9,6 +9,7 @@
 #include <utility/asyncQueue.h>
 #include <utility/staticIndexVector.h>
 #include <vulkan/vulkan.hpp>
+#include <memory>
 
 class EntityManager;
 
