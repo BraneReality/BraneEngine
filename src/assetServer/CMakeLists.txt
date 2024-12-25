@@ -28,5 +28,13 @@ endif()
 install(FILES config.json
         DESTINATION .
         COMPONENT AssetServer)
-install(SCRIPT InstallDB.cmake 
+install(CODE "   
+    set(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/database/data.db)
+    SET(DEST \${CMAKE_INSTALL_PREFIX}/database)
+
+    if(\${SOURCE} IS_NEWER_THAN \${DEST}/data.db)
+        message(\"resetting database\")
+        file(MAKE_DIRECTORY \${DEST})
+        file(COPY \${SOURCE} DESTINATION \${DEST})
+    endif()" 
     COMPONENT AssetServer)

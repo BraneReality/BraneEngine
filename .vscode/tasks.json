@@ -1,0 +1,147 @@
+{
+    "version": "2.0.0",
+    "showOutput": "always",
+    "tasks": [
+        {
+            "taskName": "cmake-configure-debug",
+            "label": "cmake-configure-debug",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "command": "cmake -S. -B./build/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=\"${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON  -DBUILD_TESTS=ON  ",
+            "presentation": "always"
+        },
+        {
+            "taskName": "build-db-debug",
+            "label": "build-db-debug",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-configure-debug"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "command": "mv ./build/Debug/compile_commands.json ./build/"
+        },
+        {
+            "taskName": "cmake-configure-release",
+            "label": "cmake-configure-release",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "command": "cmake -S. -B./build/Release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=\"${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON  -DBUILD_TESTS=ON",
+            "presentation": "always"
+        },
+        {
+            "taskName": "build-db-release",
+            "label": "build-db-release",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-configure-release"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "command": "mv ./build/Release/compile_commands.json ./build/"
+        },
+        {
+            "taskName": "cmake-build-debug",
+            "label": "cmake-build-debug",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-configure-debug"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "command": "cmake --build ./build/Debug",
+            "presentation": "always"
+        },
+        {
+            "taskName": "cmake-build-release",
+            "label": "cmake-build-release",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-configure-release"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "command": "cmake --build ./build/Release"
+        },
+        {
+            "taskName": "cmake-install-editor-debug",
+            "label": "cmake-install-editor-debug",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-build-debug"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}/build/Debug"
+            },
+            "command": "cmake --install . --component Editor --prefix ./editor"
+        },
+        {
+            "taskName": "cmake-install-editor-release",
+            "label": "cmake-install-editor-release",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-build-release"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}/build/Release"
+            },
+            "command": "cmake --install . --component Editor --prefix ./editor"
+        },
+        {
+            "taskName": "cmake-install-client-debug",
+            "label": "cmake-install-client-debug",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-build-debug"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}/build/Debug"
+            },
+            "command": "cmake --install . --component Client --prefix ./client"
+        },
+        {
+            "taskName": "cmake-install-client-release",
+            "label": "cmake-install-client-release",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-build-release"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}/build/Release"
+            },
+            "command": "cmake --install . --component Client --prefix ./client"
+        },
+        {
+            "taskName": "cmake-install-asset-server-debug",
+            "label": "cmake-install-asset-server-debug",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-build-debug"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}/build/Debug"
+            },
+            "command": "cmake --install . --component AssetServer --prefix ./assetServer"
+        },
+        {
+            "taskName": "cmake-install-asset-server-release",
+            "label": "cmake-install-asset-server-release",
+            "type": "shell",
+            "dependsOn": [
+                "cmake-build-release"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}/build/Release"
+            },
+            "command": "cmake --install . --component AssetServer --prefix ./assetServer"
+        }
+    ]
+}

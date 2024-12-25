@@ -1,0 +1,65 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Editor-Debug",
+            "preLaunchTask": "cmake-install-editor-debug",
+            "expressions": "native",
+            "program": "./build/Debug/editor/BraneEditor.exe",
+            "cwd": "./build/Debug/editor",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Editor-Release",
+            "preLaunchTask": "cmake-install-editor-release",
+            "expressions": "native",
+            "program": "./build/Release/editor/BraneEditor.exe",
+            "cwd": "./build/Release/editor",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Client-Debug",
+            "preLaunchTask": "cmake-install-client-debug",
+            "expressions": "native",
+            "program": "./build/Debug/client/BraneSurfer.exe",
+            "cwd": "./build/Debug/client",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Client-Release",
+            "preLaunchTask": "cmake-install-client-release",
+            "expressions": "native",
+            "program": "./build/Release/client/BraneSurfer.exe",
+            "cwd": "./build/Release/client",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "AssetServer-Debug",
+            "preLaunchTask": "cmake-install-asset-server-debug",
+            "expressions": "native",
+            "program": "./build/Debug/assetServer/AssetServer.exe",
+            "cwd": "./build/Debug/assetServer",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "AssetServer-Release",
+            "preLaunchTask": "cmake-install-asset-server-release",
+            "expressions": "native",
+            "program": "./build/Release/assetServer/BraneSurfer.exe",
+            "cwd": "./build/Release/assetServer",
+            "console": "integratedTerminal"
+        }
+    ]
+}
