@@ -34,6 +34,10 @@ install(TARGETS BraneEditor
             "^/usr/lib64/.*"
         DESTINATION .
         COMPONENT Editor)
+
+if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:BraneEditor> DESTINATION . OPTIONAL COMPONENT Editor)
+endif()
 install(FILES config.json ${PROJECT_SOURCE_DIR}/media/branelogo.png
         DESTINATION .
         COMPONENT Editor)

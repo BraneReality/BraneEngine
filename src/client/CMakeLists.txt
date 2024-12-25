@@ -29,7 +29,9 @@ install(TARGETS BraneSurfer
         DESTINATION . 
 		COMPONENT Client
 )
-install(FILES $<TARGET_PDB_FILE:BraneSurfer> DESTINATION . OPTIONAL COMPONENT Client)
+if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:BraneSurfer> DESTINATION . OPTIONAL COMPONENT Client)
+endif()
 install(FILES 
         config.json 
         ${CMAKE_SOURCE_DIR}/media/branelogo.png

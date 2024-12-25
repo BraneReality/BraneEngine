@@ -21,7 +21,10 @@ install(TARGETS AssetServer
             "^/usr/lib64/.*"
         DESTINATION .
         COMPONENT AssetServer)
+
+if(MSVC)
     install(FILES $<TARGET_PDB_FILE:AssetServer> DESTINATION . OPTIONAL COMPONENT AssetServer)
+endif()
 install(FILES config.json
         DESTINATION .
         COMPONENT AssetServer)
