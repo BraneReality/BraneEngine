@@ -10,9 +10,18 @@ target_link_libraries(AssetServer PRIVATE runtime config networking ecs utility 
 target_compile_definitions(AssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEFS} ASIO_STANDALONE)
 
 install(TARGETS AssetServer
-        RUNTIME
+        RUNTIME_DEPENDENCIES
+        PRE_EXCLUDE_REGEXES 
+            "api-ms-.*" "ext-ms-.*"  # Windows system DLLs
+            "^/lib.*"                # Linux system libraries
+            "^/usr/lib.*"
+        POST_EXCLUDE_REGEXES 
+            ".*system32/.*\\.dll"    # Windows system directory
+            "^/lib64/.*"            # Linux system directories
+            "^/usr/lib64/.*"
         DESTINATION .
         COMPONENT AssetServer)
+    install(FILES $<TARGET_PDB_FILE:AssetServer> DESTINATION . OPTIONAL COMPONENT AssetServer)
 install(FILES config.json
         DESTINATION .
         COMPONENT AssetServer)

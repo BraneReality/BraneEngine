@@ -26,9 +26,10 @@ install(TARGETS BraneSurfer
             ".*system32/.*\\.dll"    # Windows system directory
             "^/lib64/.*"            # Linux system directories
             "^/usr/lib64/.*"
+        DESTINATION . 
 		COMPONENT Client
 )
-install(FILES $<TARGET_PDB_FILE:BraneSurfer> DESTINATION bin OPTIONAL COMPONENT Client)
+install(FILES $<TARGET_PDB_FILE:BraneSurfer> DESTINATION . OPTIONAL COMPONENT Client)
 install(FILES 
         config.json 
         ${CMAKE_SOURCE_DIR}/media/branelogo.png

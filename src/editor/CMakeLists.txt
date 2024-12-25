@@ -23,10 +23,17 @@ target_compile_definitions(BraneEditor PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
 target_link_libraries(BraneEditor PUBLIC ecs networking config graphics assets_client runtime editorWindows systems fileManager editorAssets shaderCompiler)
 
 install(TARGETS BraneEditor
-        RUNTIME
+        RUNTIME_DEPENDENCIES
+        PRE_EXCLUDE_REGEXES 
+            "api-ms-.*" "ext-ms-.*"  # Windows system DLLs
+            "^/lib.*"                # Linux system libraries
+            "^/usr/lib.*"
+        POST_EXCLUDE_REGEXES 
+            ".*system32/.*\\.dll"    # Windows system directory
+            "^/lib64/.*"            # Linux system directories
+            "^/usr/lib64/.*"
         DESTINATION .
         COMPONENT Editor)
-
 install(FILES config.json ${PROJECT_SOURCE_DIR}/media/branelogo.png
         DESTINATION .
         COMPONENT Editor)
