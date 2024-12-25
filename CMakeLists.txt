@@ -9,16 +9,15 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# This is on for VIM lsp support  
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(BUILD_TESTS "Include testing build targets" OFF)
+# Include util scripts
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+option(BUILD_TESTS "Include testing build targets" OFF)
 if(BUILD_TESTS)
     enable_testing()
-endif()
-
-if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 endif()
 
 # Library Complie Definitions
@@ -30,13 +29,13 @@ add_compile_definitions(
                 STATIC_CONCPP)
 
 
+# These are (potentially not) used in the ECS target for struct padding
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     # 64 bits
     add_compile_definitions(_64BIT)
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     # 32 bits
     add_compile_definitions(_32BIT)
-
 endif()
 
 
@@ -44,8 +43,10 @@ if(win32)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 endif(win32)
 
+# Sets an icon for the generated executables that will show up in file browsers
 set(ICON_FILE ${CMAKE_CURRENT_SOURCE_DIR}/media/brane.res)
 
+# Some libraries have variants for different targets, and are compiled multiple times with different options
 set(CLIENT_DEFS CLIENT)
 set(RUNTIME_SERVER_DEFS RUNTIME_SERVER)
 set(ASSET_SERVER_DEFS ASSET_SERVER)

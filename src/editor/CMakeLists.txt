@@ -22,20 +22,28 @@ target_include_directories(BraneEditor PRIVATE
 target_compile_definitions(BraneEditor PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
 target_link_libraries(BraneEditor PUBLIC ecs networking config graphics assets_client runtime editorWindows systems fileManager editorAssets shaderCompiler)
 
-configure_file(config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json COPYONLY)
-file(COPY ${PROJECT_SOURCE_DIR}/media/branelogo.png DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY defaultAssets fonts DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/braneEditor)
-
 install(TARGETS BraneEditor
-        RUNTIME
-        DESTINATION ${INSTALL_DIR}
+        RUNTIME_DEPENDENCIES
+        PRE_EXCLUDE_REGEXES 
+            "api-ms-.*" "ext-ms-.*"  # Windows system DLLs
+            "^/lib.*"                # Linux system libraries
+            "^/usr/lib.*"
+        POST_EXCLUDE_REGEXES 
+            ".*system32/.*\\.dll"    # Windows system directory
+            "^/lib64/.*"            # Linux system directories
+            "^/usr/lib64/.*"
+        DESTINATION .
         COMPONENT Editor)
+
+if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:BraneEditor> DESTINATION . OPTIONAL COMPONENT Editor)
+endif()
 install(FILES config.json ${PROJECT_SOURCE_DIR}/media/branelogo.png
-        DESTINATION ${INSTALL_DIR}
+        DESTINATION .
         COMPONENT Editor)
-install(DIRECTORY defaultAssets DESTINATION ${INSTALL_DIR}
+install(DIRECTORY defaultAssets
+        DESTINATION .
         COMPONENT Editor)
-install(DIRECTORY fonts DESTINATION ${INSTALL_DIR}
+install(DIRECTORY fonts
+        DESTINATION .
         COMPONENT Editor)

@@ -9,20 +9,24 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(AssetServer PRIVATE runtime config networking ecs utility fileManager database assets_server)
 target_compile_definitions(AssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEFS} ASIO_STANDALONE)
 
-set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/assetServer)
-configure_file(config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json COPYONLY)
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/database/data.db)
-    message("resetting database")
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/database/data.db DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/database)
-endif()
-
 install(TARGETS AssetServer
-        RUNTIME
-        DESTINATION ${INSTALL_DIR}
+        RUNTIME_DEPENDENCIES
+        PRE_EXCLUDE_REGEXES 
+            "api-ms-.*" "ext-ms-.*"  # Windows system DLLs
+            "^/lib.*"                # Linux system libraries
+            "^/usr/lib.*"
+        POST_EXCLUDE_REGEXES 
+            ".*system32/.*\\.dll"    # Windows system directory
+            "^/lib64/.*"            # Linux system directories
+            "^/usr/lib64/.*"
+        DESTINATION .
         COMPONENT AssetServer)
+
+if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:AssetServer> DESTINATION . OPTIONAL COMPONENT AssetServer)
+endif()
 install(FILES config.json
-        DESTINATION ${INSTALL_DIR}
+        DESTINATION .
         COMPONENT AssetServer)
-install(FILES database/data.db
-        DESTINATION ${INSTALL_DIR}/database
-        COMPONENT AssetServer)
+install(SCRIPT InstallDB.cmake 
+    COMPONENT AssetServer)
