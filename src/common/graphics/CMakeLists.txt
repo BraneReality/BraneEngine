@@ -3,6 +3,9 @@
 find_package(Vulkan REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 
+get_target_property(LIB_PATH Vulkan::Vulkan IMPORTED_LOCATION)
+message("VKLIBS: " ${LIB_PATH})
+
 add_library(graphics STATIC
 		graphics.cpp
 		graphicsDevice.cpp

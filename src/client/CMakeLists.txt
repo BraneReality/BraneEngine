@@ -15,16 +15,23 @@ target_include_directories(BraneSurfer PRIVATE
 target_compile_definitions(BraneSurfer PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
 target_link_libraries(BraneSurfer PRIVATE runtime ecs networking config graphics assets_client chunks)
 
-file(COPY ${PROJECT_SOURCE_DIR}/media/branelogo.png DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-configure_file(config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json COPYONLY)
-set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/braneSurfer)
 
 install(TARGETS BraneSurfer
-		RUNTIME
-		DESTINATION ${INSTALL_DIR}
+        RUNTIME_DEPENDENCIES
+        PRE_EXCLUDE_REGEXES 
+            "api-ms-.*" "ext-ms-.*"  # Windows system DLLs
+            "^/lib.*"                # Linux system libraries
+            "^/usr/lib.*"
+        POST_EXCLUDE_REGEXES 
+            ".*system32/.*\\.dll"    # Windows system directory
+            "^/lib64/.*"            # Linux system directories
+            "^/usr/lib64/.*"
+		COMPONENT Client
+)
+install(FILES $<TARGET_PDB_FILE:BraneSurfer> DESTINATION bin OPTIONAL COMPONENT Client)
+install(FILES 
+        config.json 
+        ${CMAKE_SOURCE_DIR}/media/branelogo.png
+        DESTINATION .
 		COMPONENT Client)
-install(FILES config.json
-		DESTINATION ${INSTALL_DIR}
-		COMPONENT Client)
-install(DIRECTORY shaders DESTINATION ${INSTALL_DIR}
-		COMPONENT Client)
+
