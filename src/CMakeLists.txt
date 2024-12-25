@@ -19,5 +19,5 @@ add_subdirectory(editor)
 add_subdirectory(assetServer)
 
 if(BUILD_TESTS)
-	add_subdirectory(tests)
+    add_subdirectory(tests)
 endif()
