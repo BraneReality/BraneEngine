@@ -31,12 +31,13 @@ void ConsoleWindow::displayContent()
     int messageID = 0;
 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0, 1});
-    for(auto& m : _messages) {
+    for(auto& m : _messages)
+    {
         ImGui::PushID(messageID++);
-        ImVec2 size = {
-            ImGui::GetContentRegionAvail().x,
-            (ImGui::GetStyle().FramePadding.y * 2 + ImGui::GetFontSize()) * m.lineCount};
-        if(ImGui::IsRectVisible(size)) {
+        ImVec2 size = {ImGui::GetContentRegionAvail().x,
+                       (ImGui::GetStyle().FramePadding.y * 2 + ImGui::GetFontSize()) * m.lineCount};
+        if(ImGui::IsRectVisible(size))
+        {
             ImGui::PushStyleColor(ImGuiCol_Text, textColors[static_cast<size_t>(m.level)]);
             ImGui::InputTextMultiline("##m", &m.text, size, ImGuiInputTextFlags_ReadOnly);
             ImGui::PopStyleColor();

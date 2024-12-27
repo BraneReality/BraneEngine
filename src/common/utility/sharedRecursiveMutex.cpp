@@ -5,7 +5,8 @@ SharedRecursiveMutex::SharedRecursiveMutex() {}
 
 void SharedRecursiveMutex::lock()
 {
-    while(true) {
+    while(true)
+    {
         _m.lock();
         if(_sharedOwners == 0 && (_ownerLockCount == 0 || _owner == std::this_thread::get_id()))
             break;
@@ -27,7 +28,8 @@ void SharedRecursiveMutex::unlock()
 
 void SharedRecursiveMutex::lock_shared()
 {
-    while(true) {
+    while(true)
+    {
         _m.lock();
         if(_ownerLockCount == 0 || _owner == std::this_thread::get_id())
             break;

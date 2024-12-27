@@ -1,11 +1,11 @@
 #pragma once
 
-#include "assets/assetID.h"
-#include <assets/assetType.h>
 #include <atomic>
 #include <byte.h>
 #include <memory>
 #include <vector>
+#include "assets/assetID.h"
+#include <assets/assetType.h>
 
 class AssetManager;
 
@@ -13,12 +13,14 @@ class InputSerializer;
 
 class OutputSerializer;
 
-struct AssetDependency {
+struct AssetDependency
+{
     const AssetID& id;
     bool streamable = false;
 };
 
-class Asset {
+class Asset
+{
     static Asset* assetFromType(AssetType type);
 
   public:
@@ -45,9 +47,12 @@ class Asset {
     virtual void onDependenciesLoaded();
 };
 
-class IncrementalAsset : public Asset {
+class IncrementalAsset : public Asset
+{
   public:
-    struct SerializationContext {};
+    struct SerializationContext
+    {
+    };
 
     static IncrementalAsset* deserializeUnknownHeader(InputSerializer& s);
 

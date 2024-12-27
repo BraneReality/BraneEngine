@@ -9,7 +9,9 @@
 #include <cstdint>
 #include <vector>
 
-template <typename T, size_t Count> class InlineArray {
+template<typename T, size_t Count>
+class InlineArray
+{
     T _localData[Count];
     std::vector<T>* _externalData = nullptr;
     size_t _size = 0;
@@ -19,12 +21,14 @@ template <typename T, size_t Count> class InlineArray {
 
     InlineArray(const InlineArray& o) noexcept
     {
-        for(size_t i = 0; i < Count; ++i) {
+        for(size_t i = 0; i < Count; ++i)
+        {
             _localData[i] = o._localData[i];
         }
         _size = o._size;
         _externalData = nullptr;
-        if(o._externalData) {
+        if(o._externalData)
+        {
             _externalData = new std::vector<T>(o._externalData->size());
             std::copy(o._externalData->begin(), o._externalData->end(), _externalData->begin());
         }
@@ -32,12 +36,14 @@ template <typename T, size_t Count> class InlineArray {
 
     void operator=(const InlineArray& o) noexcept
     {
-        for(size_t i = 0; i < Count; ++i) {
+        for(size_t i = 0; i < Count; ++i)
+        {
             _localData[i] = o._localData[i];
         }
         _size = o._size;
         _externalData = nullptr;
-        if(o._externalData) {
+        if(o._externalData)
+        {
             _externalData = new std::vector<T>(o._externalData->size());
             std::copy(o._externalData->begin(), o._externalData->end(), _externalData->begin());
         }
@@ -45,7 +51,8 @@ template <typename T, size_t Count> class InlineArray {
 
     InlineArray(InlineArray&& o) noexcept
     {
-        for(size_t i = 0; i < Count; ++i) {
+        for(size_t i = 0; i < Count; ++i)
+        {
             _localData[i] = std::move(o._localData[i]);
         }
         _externalData = o._externalData;
@@ -56,7 +63,8 @@ template <typename T, size_t Count> class InlineArray {
 
     void operator=(InlineArray&& o) noexcept
     {
-        for(size_t i = 0; i < Count; ++i) {
+        for(size_t i = 0; i < Count; ++i)
+        {
             _localData[i] = std::move(o._localData[i]);
         }
         _externalData = o._externalData;
@@ -94,7 +102,8 @@ template <typename T, size_t Count> class InlineArray {
 
     void push_back(const T& item)
     {
-        if(_size < Count) {
+        if(_size < Count)
+        {
             _localData[_size++] = item;
             return;
         }
@@ -107,7 +116,8 @@ template <typename T, size_t Count> class InlineArray {
 
     void push_back(T&& item)
     {
-        if(_size < Count) {
+        if(_size < Count)
+        {
             _localData[_size++] = item;
             return;
         }
@@ -121,7 +131,8 @@ template <typename T, size_t Count> class InlineArray {
     void erase(size_t index)
     {
         assert(index < _size);
-        for(size_t i = index; i < _size - 1; i++) {
+        for(size_t i = index; i < _size - 1; i++)
+        {
             (*this)[i] = (*this)[i + 1];
         }
         if(index >= Count)
@@ -131,7 +142,8 @@ template <typename T, size_t Count> class InlineArray {
 
     size_t size() const { return _size; }
 
-    class iterator {
+    class iterator
+    {
         InlineArray<T, Count>& _ref;
         size_t _index;
 
@@ -153,7 +165,8 @@ template <typename T, size_t Count> class InlineArray {
         using pointer = T*;
     };
 
-    class const_iterator {
+    class const_iterator
+    {
         const InlineArray<T, Count>& _ref;
         size_t _index;
 

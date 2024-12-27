@@ -5,9 +5,9 @@
 #ifndef BRANEENGINE_ENTITIESWINDOW_H
 #define BRANEENGINE_ENTITIESWINDOW_H
 
-#include "editorWindow.h"
 #include <memory>
 #include <vector>
+#include "editorWindow.h"
 
 class EditorAsset;
 
@@ -15,7 +15,8 @@ class EntityManager;
 
 class Assembly;
 
-class EntitiesWindow : public EditorWindow {
+class EntitiesWindow : public EditorWindow
+{
     std::shared_ptr<EditorAsset> _asset;
     EntityManager* _em;
     size_t _selected = -1;

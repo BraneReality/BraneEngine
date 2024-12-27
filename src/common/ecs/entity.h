@@ -7,40 +7,45 @@
 #include "systemManager.h"
 #include "utility/sharedRecursiveMutex.h"
 
-#include "common/runtime/runtime.h"
-#include "common/utility/staticIndexVector.h"
 #include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <queue>
 #include <stdexcept>
+#include <vector>
+#include "common/runtime/runtime.h"
+#include "common/utility/staticIndexVector.h"
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
-class EntityIDComponent : public NativeComponent<EntityIDComponent> {
+class EntityIDComponent : public NativeComponent<EntityIDComponent>
+{
     REGISTER_MEMBERS_1("EntityID", id, "id")
 
   public:
     EntityID id;
 };
 
-class EntityName : public NativeComponent<EntityName> {
+class EntityName : public NativeComponent<EntityName>
+{
     REGISTER_MEMBERS_1("Name", name, "name")
 
   public:
     std::string name;
 };
 
-struct EntityIndex {
+struct EntityIndex
+{
     Archetype* archetype;
     size_t index;
     uint32_t version;
 };
 
-class EntityManager : public Module {
-    struct SystemContext {
+class EntityManager : public Module
+{
+    struct SystemContext
+    {
         uint32_t version;
         uint32_t lastVersion;
     };
@@ -83,15 +88,24 @@ class EntityManager : public Module {
 
     bool hasComponent(EntityID entity, ComponentID component) const;
 
-    template <class T> bool hasComponent(EntityID entity) const { return hasComponent(entity, T::def()->id); }
+    template<class T>
+    bool hasComponent(EntityID entity) const
+    {
+        return hasComponent(entity, T::def()->id);
+    }
 
     void addComponent(EntityID entity, ComponentID component);
 
-    template <class T> void addComponent(EntityID entity) { addComponent(entity, T::def()->id); };
+    template<class T>
+    void addComponent(EntityID entity)
+    {
+        addComponent(entity, T::def()->id);
+    };
 
     VirtualComponentView getComponent(EntityID entity, ComponentID component) const;
 
-    template <class T> T* getComponent(EntityID entity) const
+    template<class T>
+    T* getComponent(EntityID entity) const
     {
         return T::fromVirtual(getComponent(entity, T::def()->id));
     }
@@ -102,7 +116,11 @@ class EntityManager : public Module {
 
     void markComponentChanged(EntityID entity, ComponentID component);
 
-    template <class T> void removeComponent(EntityID entity) { removeComponent(entity, T::def()->id); }
+    template<class T>
+    void removeComponent(EntityID entity)
+    {
+        removeComponent(entity, T::def()->id);
+    }
 
     void removeComponent(EntityID entity, ComponentID component);
 

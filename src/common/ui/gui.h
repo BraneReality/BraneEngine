@@ -5,17 +5,18 @@
 #ifndef BRANEENGINE_GUI_H
 #define BRANEENGINE_GUI_H
 
-#include "common/runtime/module.h"
-#include "guiEvent.h"
-#include "vulkan/vulkan_core.h"
 #include <atomic>
 #include <deque>
 #include <memory>
 #include <mutex>
-#include <unordered_map>
 #include <vector>
+#include "common/runtime/module.h"
+#include "guiEvent.h"
+#include "vulkan/vulkan_core.h"
+#include <unordered_map>
 
-namespace graphics {
+namespace graphics
+{
     class VulkanRuntime;
 }
 
@@ -27,7 +28,8 @@ class GUIPopup;
 
 struct ImFont;
 
-class GUI : public Module {
+class GUI : public Module
+{
     GUIRenderer* _renderer;
 
     friend class GUIRenderer;
@@ -60,7 +62,8 @@ class GUI : public Module {
 
     void stop() override;
 
-    template <typename WindowT, typename... Args> WindowT* addWindow(Args&... args)
+    template<typename WindowT, typename... Args>
+    WindowT* addWindow(Args&... args)
     {
         size_t index = _windows.size();
         _windows.push_back(std::make_unique<WindowT>(*this, args...));
@@ -77,13 +80,14 @@ class GUI : public Module {
 
     void sendEvent(std::unique_ptr<GUIEvent>&& name);
 
-    template <typename T, typename... Args> void sendEvent(const Args&... args)
+    template<typename T, typename... Args>
+    void sendEvent(const Args&... args)
     {
         static_assert(std::is_base_of<GUIEvent, T>());
         sendEvent(std::make_unique<T>(args...));
     }
 
-    template <typename T>
+    template<typename T>
     void addEventListener(const std::string& name, GUIWindow* window, std::function<void(const T*)> callback)
     {
         static_assert(std::is_base_of<GUIEvent, T>());

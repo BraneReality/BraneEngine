@@ -4,17 +4,18 @@
 
 #include "logging.h"
 
-#include <config/config.h>
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <config/config.h>
 #include <utility/asyncQueue.h>
 
 #if _WIN32
 #include <windows.h>
 #endif
 
-namespace Logging {
+namespace Logging
+{
     bool printToConsole = true;
     std::ofstream _logFile;
     std::vector<std::function<void(const Log&)>> _logListeners;
@@ -68,24 +69,27 @@ namespace Logging {
     {
         Log newLog{std::move(message), level, time(0)};
         std::string fStr = newLog.toString();
-        if(_logFile.is_open()) {
+        if(_logFile.is_open())
+        {
             _logFile << fStr << std::endl;
         }
-        if(printToConsole) {
-            switch(level) {
-            case LogLevel::verbose:
-            case LogLevel::log:
-                std::cout << fStr << std::endl;
-                break;
-            case LogLevel::warning:
-                setColor(LogColor::yellow);
-                std::cout << fStr << std::endl;
-                setColor(LogColor::reset);
-                break;
-            case LogLevel::error:
-                setColor(LogColor::red);
-                std::cerr << fStr << std::endl;
-                setColor(LogColor::reset);
+        if(printToConsole)
+        {
+            switch(level)
+            {
+                case LogLevel::verbose:
+                case LogLevel::log:
+                    std::cout << fStr << std::endl;
+                    break;
+                case LogLevel::warning:
+                    setColor(LogColor::yellow);
+                    std::cout << fStr << std::endl;
+                    setColor(LogColor::reset);
+                    break;
+                case LogLevel::error:
+                    setColor(LogColor::red);
+                    std::cerr << fStr << std::endl;
+                    setColor(LogColor::reset);
             }
         }
         _logEvents.push_back(newLog);
@@ -102,13 +106,17 @@ namespace Logging {
 
     void callListeners()
     {
-        while(!_logEvents.empty()) {
+        while(!_logEvents.empty())
+        {
             auto event = _logEvents.pop_front();
-            for(auto& f : _logListeners) {
-                try {
+            for(auto& f : _logListeners)
+            {
+                try
+                {
                     f(event);
                 }
-                catch(const std::exception& e) {
+                catch(const std::exception& e)
+                {
                     std::cerr << "Log callback threw error!" << std::endl;
                 }
             }
@@ -122,38 +130,40 @@ namespace Logging {
             std::to_string(ltm.tm_hour) + ":" + std::to_string(ltm.tm_min) + ":" + std::to_string(ltm.tm_sec);
 
         std::string levelStr;
-        switch(level) {
-        case LogLevel::error:
-            levelStr = "ERROR";
-            break;
-        case LogLevel::warning:
-            levelStr = "WARNING";
-            break;
-        case LogLevel::log:
-            levelStr = "LOG";
-            break;
-        case LogLevel::verbose:
-            levelStr = "VERBOSE";
-            break;
+        switch(level)
+        {
+            case LogLevel::error:
+                levelStr = "ERROR";
+                break;
+            case LogLevel::warning:
+                levelStr = "WARNING";
+                break;
+            case LogLevel::log:
+                levelStr = "LOG";
+                break;
+            case LogLevel::verbose:
+                levelStr = "VERBOSE";
+                break;
         }
         return "[" + timeStr + "][" + levelStr + "]: " + message;
     }
 
     void setColor(LogColor color)
     {
-        switch(color) {
-        case LogColor::reset:
-            std::cout << "\033[0m";
-            break;
-        case LogColor::white:
-            std::cout << "\033[37m";
-            break;
-        case LogColor::red:
-            std::cout << "\033[31m";
-            break;
-        case LogColor::yellow:
-            std::cout << "\033[33m";
-            break;
+        switch(color)
+        {
+            case LogColor::reset:
+                std::cout << "\033[0m";
+                break;
+            case LogColor::white:
+                std::cout << "\033[37m";
+                break;
+            case LogColor::red:
+                std::cout << "\033[31m";
+                break;
+            case LogColor::yellow:
+                std::cout << "\033[33m";
+                break;
         }
     }
 } // namespace Logging

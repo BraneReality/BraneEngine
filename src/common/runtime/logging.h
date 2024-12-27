@@ -10,12 +10,26 @@
 #include <string>
 #include <vector>
 
-namespace Logging {
-    enum class LogLevel { error = 0, warning = 1, log = 2, verbose = 3 };
+namespace Logging
+{
+    enum class LogLevel
+    {
+        error = 0,
+        warning = 1,
+        log = 2,
+        verbose = 3
+    };
 
-    enum class LogColor { reset, white, red, yellow };
+    enum class LogColor
+    {
+        reset,
+        white,
+        red,
+        yellow
+    };
 
-    struct Log {
+    struct Log
+    {
         std::string message;
         LogLevel level;
         time_t time;

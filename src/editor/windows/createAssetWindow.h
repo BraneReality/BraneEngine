@@ -10,8 +10,10 @@
 #include "editorWindow.h"
 #include "utility/asyncData.h"
 
-class CreateAssetWindow : public GUIWindow {
-    struct AssetUploadContext {
+class CreateAssetWindow : public GUIWindow
+{
+    struct AssetUploadContext
+    {
         bool done = false;
         ServerDirectory* directory;
         std::string status;
@@ -21,7 +23,8 @@ class CreateAssetWindow : public GUIWindow {
         virtual ~AssetUploadContext() = default;
     };
 
-    struct AssemblyUploadContext : public AssetUploadContext {
+    struct AssemblyUploadContext : public AssetUploadContext
+    {
         std::unique_ptr<Assembly> assembly;
         std::atomic<size_t> meshesUploaded = 0;
         AsyncData<AssetID> assemblyID;

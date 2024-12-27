@@ -4,7 +4,8 @@
 #include "utility/serializedData.h"
 #include <assets/types/meshAsset.h>
 
-namespace graphics {
+namespace graphics
+{
     Mesh::Mesh(MeshAsset* meshAsset)
     {
         _meshAsset = meshAsset;
@@ -13,10 +14,10 @@ namespace graphics {
 
         _stagingBuffer->setData(_meshAsset->packedData(), 0);
 
-        _dataBuffer = new GraphicsBuffer(
-            size(),
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        _dataBuffer = new GraphicsBuffer(size(),
+                                         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         SingleUseCommandBuffer cmdBuffer(device->transferPool());
         _dataBuffer->copy(_stagingBuffer, cmdBuffer.get(), size());
         cmdBuffer.submit(device->transferQueue());
@@ -33,7 +34,8 @@ namespace graphics {
 
     void Mesh::lock()
     {
-        if(!_locked) {
+        if(!_locked)
+        {
             delete _stagingBuffer;
             _locked = false;
         }
@@ -41,11 +43,12 @@ namespace graphics {
 
     void Mesh::unlock()
     {
-        if(_locked) {
-            _stagingBuffer = new GraphicsBuffer(
-                size(),
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        if(_locked)
+        {
+            _stagingBuffer =
+                new GraphicsBuffer(size(),
+                                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             _locked = false;
         }
     }

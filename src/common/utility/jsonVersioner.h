@@ -11,7 +11,8 @@
 
 class VersionedJson;
 
-namespace Json {
+namespace Json
+{
     Value& resolvePath(const std::string& path, Json::Value& root);
 
     std::string getPathComponent(const std::string& path, uint32_t index);
@@ -21,7 +22,8 @@ namespace Json {
     void eraseArrayValue(ArrayIndex index, Value& array);
 } // namespace Json
 
-class JsonChangeBase {
+class JsonChangeBase
+{
     friend class JsonVersionTracker;
 
   protected:
@@ -37,7 +39,8 @@ class JsonChangeBase {
     virtual void redo() = 0;
 };
 
-class JsonChange : public JsonChangeBase {
+class JsonChange : public JsonChangeBase
+{
   protected:
     std::string _path;
     Json::Value _before;
@@ -57,7 +60,8 @@ class JsonChange : public JsonChangeBase {
     void redo() override;
 };
 
-class MultiJsonChange : public JsonChangeBase {
+class MultiJsonChange : public JsonChangeBase
+{
   public:
     bool dontReverse = false;
     std::vector<std::unique_ptr<JsonChangeBase>> changes;
@@ -69,7 +73,8 @@ class MultiJsonChange : public JsonChangeBase {
     void redo() override;
 };
 
-class JsonArrayChange : public JsonChangeBase {
+class JsonArrayChange : public JsonChangeBase
+{
   protected:
     std::string _path;
     Json::ArrayIndex _index;
@@ -94,7 +99,8 @@ class JsonArrayChange : public JsonChangeBase {
     void redo() override;
 };
 
-class JsonVersionTracker {
+class JsonVersionTracker
+{
     std::deque<std::unique_ptr<JsonChangeBase>> _changes;
     std::deque<std::unique_ptr<JsonChangeBase>>::iterator _currentChange;
 
@@ -113,16 +119,19 @@ class JsonVersionTracker {
     void redo();
 };
 
-class VersionedJson {
+class VersionedJson
+{
     JsonVersionTracker& _tkr;
     Json::Value _root;
     uint32_t _version = 0;
     uint32_t _lastCleanedVersion = 0;
 
-    struct UncompletedChange {
+    struct UncompletedChange
+    {
         std::string path;
         Json::Value before;
     };
+
     std::unique_ptr<UncompletedChange> _uncompletedChange;
     std::stack<std::unique_ptr<MultiJsonChange>> _multiChanges;
 

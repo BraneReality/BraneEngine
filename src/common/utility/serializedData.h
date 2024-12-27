@@ -1,27 +1,28 @@
 #pragma once
 
-#include <assets/assetID.h>
 #include <byte.h>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
-#include <json/json.h>
 #include <regex>
 #include <sstream>
 #include <typeinfo>
-#include <utility/inlineArray.h>
 #include <vector>
+#include <assets/assetID.h>
+#include <json/json.h>
+#include <utility/inlineArray.h>
 
-class SerializationError : virtual public std::runtime_error {
+class SerializationError : virtual public std::runtime_error
+{
   public:
     explicit SerializationError(const std::type_info& t)
         : std::runtime_error(std::string("type: ") + t.name() + " could not be serialized")
-    {
-    }
+    {}
 };
 
-class SerializedData {
+class SerializedData
+{
     std::vector<byte> _data;
 
   public:
@@ -48,12 +49,15 @@ class SerializedData {
     inline std::vector<byte>& vector() { return _data; }
 };
 
-class InputSerializer {
-    struct Context {
+class InputSerializer
+{
+    struct Context
+    {
         size_t index = 0;
         const SerializedData& data;
         size_t count = 0;
     };
+
     Context* _ctx = nullptr;
 
   public:
@@ -77,7 +81,8 @@ class InputSerializer {
     friend std::ostream& operator<<(std::ostream& os, const InputSerializer& s)
     {
         os << " Serialized Data: ";
-        for(int i = 0; i < s._ctx->data.size(); ++i) {
+        for(int i = 0; i < s._ctx->data.size(); ++i)
+        {
             if(i % 80 == 0)
                 std::cout << "\n";
             std::cout << s._ctx->data[i];
@@ -86,7 +91,8 @@ class InputSerializer {
         return os;
     }
 
-    template <typename T> friend InputSerializer& operator>>(InputSerializer& s, T& object)
+    template<typename T>
+    friend InputSerializer& operator>>(InputSerializer& s, T& object)
     {
         static_assert(std::is_trivially_copyable<T>());
         if(s._ctx->index + sizeof(T) > s._ctx->data.size())
@@ -99,7 +105,7 @@ class InputSerializer {
         return s;
     }
 
-    template <typename T>
+    template<typename T>
     void readSafeArraySize(T& index) // Call this instead of directly reading sizes to prevent buffer overruns
     {
         *this >> index;
@@ -112,13 +118,15 @@ class InputSerializer {
         uint32_t numStrings;
         s >> numStrings;
         strings.resize(numStrings);
-        for(uint32_t i = 0; i < numStrings; ++i) {
+        for(uint32_t i = 0; i < numStrings; ++i)
+        {
             s >> strings[i];
         }
         return s;
     }
 
-    template <typename T> friend InputSerializer& operator>>(InputSerializer& s, std::vector<T>& data)
+    template<typename T>
+    friend InputSerializer& operator>>(InputSerializer& s, std::vector<T>& data)
     {
         static_assert(std::is_trivially_copyable<T>());
         uint32_t size;
@@ -133,7 +141,7 @@ class InputSerializer {
         return s;
     }
 
-    template <typename T, size_t Count>
+    template<typename T, size_t Count>
     friend InputSerializer& operator>>(InputSerializer& s, InlineArray<T, Count>& data)
     {
         static_assert(std::is_trivially_copyable<T>());
@@ -141,7 +149,8 @@ class InputSerializer {
         uint32_t arrLength;
         s.readSafeArraySize(arrLength);
         // TODO make InlineArray have SerializedData as a friend class and make this more efficient
-        for(uint32_t i = 0; i < arrLength; ++i) {
+        for(uint32_t i = 0; i < arrLength; ++i)
+        {
             T d;
             s >> d;
             data.push_back(d);
@@ -188,7 +197,8 @@ class InputSerializer {
         uint32_t size;
         s.readSafeArraySize(size);
         ids.resize(size);
-        for(uint32_t i = 0; i < size; ++i) {
+        for(uint32_t i = 0; i < size; ++i)
+        {
             std::string idString;
             s >> idString;
             ids[i] = std::move(idString);
@@ -223,7 +233,8 @@ class InputSerializer {
         _ctx->index += size;
     }
 
-    template <typename T> T peek()
+    template<typename T>
+    T peek()
     {
         static_assert(std::is_trivially_copyable<T>());
         if(_ctx->index + sizeof(T) > _ctx->data.size())
@@ -246,7 +257,8 @@ class InputSerializer {
     bool isDone() const { return _ctx->index == _ctx->data.size(); }
 };
 
-class OutputSerializer {
+class OutputSerializer
+{
     SerializedData& _data;
 
   public:
@@ -254,7 +266,8 @@ class OutputSerializer {
 
     const SerializedData& data() const { return _data; }
 
-    template <typename T> friend OutputSerializer operator<<(OutputSerializer s, const T& data)
+    template<typename T>
+    friend OutputSerializer operator<<(OutputSerializer s, const T& data)
     {
         static_assert(std::is_trivially_copyable<T>());
 
@@ -265,7 +278,8 @@ class OutputSerializer {
         return s;
     }
 
-    template <typename T> friend OutputSerializer operator<<(OutputSerializer s, const std::vector<T>& data)
+    template<typename T>
+    friend OutputSerializer operator<<(OutputSerializer s, const std::vector<T>& data)
     {
         static_assert(std::is_trivially_copyable<T>());
 
@@ -279,7 +293,7 @@ class OutputSerializer {
         return s;
     }
 
-    template <typename T, size_t Count>
+    template<typename T, size_t Count>
     friend OutputSerializer operator<<(OutputSerializer s, const InlineArray<T, Count>& data)
     {
         static_assert(std::is_trivially_copyable<T>());
@@ -287,7 +301,8 @@ class OutputSerializer {
         auto arrLength = static_cast<uint32_t>(data.size());
         s << arrLength;
         // TODO make InlineArray have SerializedData as a friend class and make this more efficient
-        for(uint32_t i = 0; i < arrLength; ++i) {
+        for(uint32_t i = 0; i < arrLength; ++i)
+        {
             s << data[i];
         }
 
@@ -316,7 +331,8 @@ class OutputSerializer {
     friend OutputSerializer operator<<(OutputSerializer s, const std::vector<std::string>& strings)
     {
         s << (uint32_t)strings.size();
-        for(uint32_t i = 0; i < strings.size(); ++i) {
+        for(uint32_t i = 0; i < strings.size(); ++i)
+        {
             s << strings[i];
         }
         return s;
@@ -325,7 +341,8 @@ class OutputSerializer {
     friend OutputSerializer operator<<(OutputSerializer s, const std::vector<AssetID>& ids)
     {
         s << (uint32_t)ids.size();
-        for(uint32_t i = 0; i < ids.size(); ++i) {
+        for(uint32_t i = 0; i < ids.size(); ++i)
+        {
             s << ids[i].string();
         }
 

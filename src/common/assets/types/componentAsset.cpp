@@ -4,8 +4,9 @@
 
 ComponentAsset::ComponentAsset() { type.set(AssetType::Type::component); }
 
-ComponentAsset::ComponentAsset(
-    const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID&& id)
+ComponentAsset::ComponentAsset(const std::vector<VirtualType::Type>& members,
+                               const std::vector<std::string>& memberNames,
+                               AssetID&& id)
 {
     this->id = std::move(id);
     type.set(AssetType::Type::component);

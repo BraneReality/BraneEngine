@@ -5,7 +5,8 @@
 #include "glm/mat4x4.hpp"
 #include "vulkan/vulkan.hpp"
 
-namespace graphics {
+namespace graphics
+{
     using RendererID = uint32_t;
 
     class Mesh;
@@ -16,14 +17,16 @@ namespace graphics {
 
     class SwapChain;
 
-    struct RenderObject {
+    struct RenderObject
+    {
         Mesh* mesh;
         size_t primitive;
 
         bool operator==(const RenderObject&) const;
     };
 
-    class Renderer {
+    class Renderer
+    {
       protected:
         VkRenderPass _renderPass = VK_NULL_HANDLE;
         std::vector<VkFramebuffer> _frameBuffers;
@@ -38,8 +41,9 @@ namespace graphics {
 
         void createRenderPass(VkFormat imageFormat, VkFormat depthImageFormat = VkFormat::VK_FORMAT_UNDEFINED);
 
-        void createFrameBuffers(
-            VkExtent2D size, const std::vector<VkImageView>& images, VkImageView depthTexture = VK_NULL_HANDLE);
+        void createFrameBuffers(VkExtent2D size,
+                                const std::vector<VkImageView>& images,
+                                VkImageView depthTexture = VK_NULL_HANDLE);
 
         void startRenderPass(VkCommandBuffer cmdBuffer);
 
@@ -77,7 +81,8 @@ namespace graphics {
         void clearTarget();
     };
 
-    class CustomRenderer : public Renderer {
+    class CustomRenderer : public Renderer
+    {
         std::function<void(VkCommandBuffer cmdBuffer)> _renderCallback;
 
       public:
@@ -88,8 +93,12 @@ namespace graphics {
         void render(VkCommandBuffer cmdBuffer) override;
     };
 } // namespace graphics
-namespace std {
-    template <> struct hash<graphics::RenderObject> {
+
+namespace std
+{
+    template<>
+    struct hash<graphics::RenderObject>
+    {
         size_t operator()(const graphics::RenderObject&) const;
     };
 } // namespace std

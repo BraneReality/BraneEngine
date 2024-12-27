@@ -4,7 +4,8 @@
 
 #include <utility/serializedData.h>
 
-struct MeshSerializationContext : IncrementalAsset::SerializationContext {
+struct MeshSerializationContext : IncrementalAsset::SerializationContext
+{
     size_t primitive;
     uint32_t pos;
     std::vector<bool> vertexSent;
@@ -32,13 +33,15 @@ void MeshAsset::serializeHeader(OutputSerializer& s) const
 {
     IncrementalAsset::serializeHeader(s);
     s << (uint16_t)_primitives.size();
-    for(auto& primitive : _primitives) {
+    for(auto& primitive : _primitives)
+    {
         s << primitive.indexOffset;
         s << primitive.indexType;
         s << primitive.indexCount;
         s << primitive.vertexCount;
         s << (uint16_t)primitive.attributes.size();
-        for(auto& attribute : primitive.attributes) {
+        for(auto& attribute : primitive.attributes)
+        {
             s << attribute.first;
             s << attribute.second.offset;
             s << attribute.second.step;
@@ -53,14 +56,16 @@ void MeshAsset::deserializeHeader(InputSerializer& s)
     uint16_t primitiveCount;
     s >> primitiveCount;
     _primitives.resize(primitiveCount);
-    for(auto& primitive : _primitives) {
+    for(auto& primitive : _primitives)
+    {
         s >> primitive.indexOffset;
         s >> primitive.indexType;
         s >> primitive.indexCount;
         s >> primitive.vertexCount;
         uint16_t attributeCount;
         s >> attributeCount;
-        for(uint16_t i = 0; i < attributeCount; ++i) {
+        for(uint16_t i = 0; i < attributeCount; ++i)
+        {
             std::pair<std::string, Primitive::Attribute> attribute;
             s >> attribute.first;
             s >> attribute.second.offset;
@@ -86,14 +91,17 @@ bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* it
 
     bool shortIndexType = primitive.indexType == Primitive::UInt16;
 
-    for(size_t i = start; i < end; ++i) {
+    for(size_t i = start; i < end; ++i)
+    {
         uint32_t index;
-        if(shortIndexType) {
+        if(shortIndexType)
+        {
             uint16_t shortIndex = *((uint16_t*)&_data[primitive.indexOffset + i * sizeof(uint16_t)]);
             s << shortIndex;
             index = shortIndex;
         }
-        else {
+        else
+        {
             index = *((uint32_t*)&_data[primitive.indexOffset + i * sizeof(uint32_t)]);
             s << index;
         }
@@ -102,8 +110,10 @@ bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* it
                   ->vertexSent[index]; // We have to cast these because vector returns a custom wrapper for references
         // that's not "trivially copyable"
         // If we haven't sent this vertex, send it.
-        if(!itr->vertexSent[index]) {
-            for(auto& a : primitive.attributes) {
+        if(!itr->vertexSent[index])
+        {
+            for(auto& a : primitive.attributes)
+            {
                 uint32_t attributeOffset = a.second.offset + a.second.step * index;
                 s << a.second.step << attributeOffset;
                 for(uint32_t j = 0; j < a.second.step; ++j)
@@ -114,7 +124,8 @@ bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* it
     }
     itr->pos = end;
 
-    if(itr->pos == primitive.indexCount) {
+    if(itr->pos == primitive.indexCount)
+    {
         itr->primitive++;
         itr->pos = 0;
 
@@ -138,15 +149,18 @@ void MeshAsset::deserializeIncrement(InputSerializer& s)
     uint32_t start, end;
     s >> start >> end;
 
-    for(size_t i = start; i < end; ++i) {
+    for(size_t i = start; i < end; ++i)
+    {
         size_t index;
-        if(shortIndexType) {
+        if(shortIndexType)
+        {
             uint16_t sIndex;
             s >> sIndex;
             *((uint16_t*)&_data[primitive.indexOffset + sizeof(uint16_t) * i]) = sIndex;
             index = sIndex;
         }
-        else {
+        else
+        {
             uint32_t uIndex;
             s >> uIndex;
             *((uint32_t*)&_data[primitive.indexOffset + sizeof(uint32_t) * i]) = uIndex;
@@ -156,8 +170,10 @@ void MeshAsset::deserializeIncrement(InputSerializer& s)
         bool vertexSent;
         s >> vertexSent;
         // If we haven't received this vertex, save it.
-        if(vertexSent) {
-            for(int j = 0; j < primitive.attributes.size(); ++j) {
+        if(vertexSent)
+        {
+            for(int j = 0; j < primitive.attributes.size(); ++j)
+            {
                 uint32_t step, attributeOffset;
                 s >> step >> attributeOffset;
                 if(attributeOffset + step >= _data.size())

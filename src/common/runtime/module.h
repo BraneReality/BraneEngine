@@ -7,7 +7,8 @@
 
 // Modules will contain all behaviour for the entire engine. Additionally, they may end up being the way that external
 // scripts will be stored
-class Module {
+class Module
+{
   public:
     virtual ~Module() = default;
 

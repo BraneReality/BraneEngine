@@ -24,31 +24,32 @@ void Asset::deserialize(InputSerializer& s)
 
 Asset* Asset::assetFromType(AssetType type)
 {
-    switch(type.type()) {
-    case AssetType::none:
-        throw std::runtime_error("Can't deserialize none type");
-        break;
-    case AssetType::component:
-        return new ComponentAsset();
-    case AssetType::system:
-        assert("Not implemented" && false);
-        break;
-    case AssetType::mesh:
-        return new MeshAsset();
-    case AssetType::image:
-        return new ImageAsset();
-        break;
-    case AssetType::shader:
-        return new ShaderAsset();
-    case AssetType::material:
-        return new MaterialAsset();
-    case AssetType::assembly:
-        return new Assembly();
-    case AssetType::chunk:
-        return new WorldChunk();
-    case AssetType::player:
-        assert("Not implemented" && false);
-        break;
+    switch(type.type())
+    {
+        case AssetType::none:
+            throw std::runtime_error("Can't deserialize none type");
+            break;
+        case AssetType::component:
+            return new ComponentAsset();
+        case AssetType::system:
+            assert("Not implemented" && false);
+            break;
+        case AssetType::mesh:
+            return new MeshAsset();
+        case AssetType::image:
+            return new ImageAsset();
+            break;
+        case AssetType::shader:
+            return new ShaderAsset();
+        case AssetType::material:
+            return new MaterialAsset();
+        case AssetType::assembly:
+            return new Assembly();
+        case AssetType::chunk:
+            return new WorldChunk();
+        case AssetType::player:
+            assert("Not implemented" && false);
+            break;
     }
     return nullptr;
 }
@@ -89,14 +90,15 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer& s)
     AssetType type;
     type.set(typeStr);
     IncrementalAsset* asset;
-    switch(type.type()) {
-    case AssetType::none:
-        throw std::runtime_error("Can't deserialize none type");
-    case AssetType::mesh:
-        asset = new MeshAsset();
-        break;
-    default:
-        throw std::runtime_error("Tried to incrementally deserialize, non-incremental asset.");
+    switch(type.type())
+    {
+        case AssetType::none:
+            throw std::runtime_error("Can't deserialize none type");
+        case AssetType::mesh:
+            asset = new MeshAsset();
+            break;
+        default:
+            throw std::runtime_error("Tried to incrementally deserialize, non-incremental asset.");
     }
     s.setPos(sPos);
     asset->deserializeHeader(s);

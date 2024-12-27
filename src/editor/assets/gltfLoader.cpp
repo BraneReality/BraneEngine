@@ -3,19 +3,21 @@
 //
 
 #include "gltfLoader.h"
-#include "runtime/runtime.h"
 #include <filesystem>
 #include <iostream>
+#include "runtime/runtime.h"
 
 bool GLTFLoader::loadGltfFromFile(const std::filesystem::path& gltfFilename)
 {
     std::ifstream jsonFile(gltfFilename, std::ios::binary);
     if(!jsonFile.is_open())
         return false;
-    try {
+    try
+    {
         jsonFile >> _json;
     }
-    catch(const std::exception& e) {
+    catch(const std::exception& e)
+    {
         Runtime::error("Problem reading gltf: " + (std::string)e.what());
         return false;
     }
@@ -26,7 +28,8 @@ bool GLTFLoader::loadGltfFromFile(const std::filesystem::path& gltfFilename)
 
     std::ifstream binFile = std::ifstream(
         binFilename, std::ios::binary | std::ios::ate); // File will be closed when this object is destroyed.
-    if(!binFile.is_open()) {
+    if(!binFile.is_open())
+    {
         Runtime::error("Could not find bin file for gltf: " + binFilename.string());
         return false;
     }
@@ -56,7 +59,8 @@ bool GLTFLoader::loadGlbFromFile(const std::filesystem::path& glbFilename)
     binFile.read(jsonStr.data(), jsonLength);
 
     Json::Reader reader;
-    if(!reader.parse(jsonStr, _json)) {
+    if(!reader.parse(jsonStr, _json))
+    {
         std::cerr << "Problem parsing assetData: " << jsonStr << std::endl;
         return false;
     }
@@ -72,7 +76,8 @@ bool GLTFLoader::loadGlbFromFile(const std::filesystem::path& glbFilename)
 bool GLTFLoader::loadGltfFromString(const std::string& gltf, const std::string& bin)
 {
     Json::Reader reader;
-    if(!reader.parse(gltf, _json)) {
+    if(!reader.parse(gltf, _json))
+    {
         std::cerr << "Problem parsing assetData: " << gltf << std::endl;
         return false;
     }
@@ -96,7 +101,8 @@ bool GLTFLoader::loadGlbFromString(const std::string& glb)
     binFile.read(jsonStr.data(), jsonLength);
 
     Json::Reader reader;
-    if(!reader.parse(jsonStr, _json)) {
+    if(!reader.parse(jsonStr, _json))
+    {
         std::cerr << "Problem parsing assetData: " << jsonStr << std::endl;
         return false;
     }
@@ -119,11 +125,14 @@ void GLTFLoader::printInfo()
     size_t primitives = 0;
     size_t verts = 0;
     std::unordered_set<size_t> accessors;
-    for(Json::Value& mesh : _json["meshes"]) {
+    for(Json::Value& mesh : _json["meshes"])
+    {
         primitives += mesh["primitives"].size();
-        for(Json::Value& primitive : mesh["primitives"]) {
+        for(Json::Value& primitive : mesh["primitives"])
+        {
             int position = primitive["attributes"]["POSITION"].asInt();
-            if(!accessors.count(position)) {
+            if(!accessors.count(position))
+            {
                 accessors.insert(position);
                 verts += _json["accessors"][position]["count"].asLargestUInt();
             }
@@ -141,7 +150,8 @@ void GLTFLoader::printPositions(int meshIndex, int primitiveIndex)
 
     float* buffer = (float*)(_bin.data() + bufferView["byteOffset"].asInt());
 
-    for(int i = 0; i < positionAccessor["count"].asInt(); ++i) {
+    for(int i = 0; i < positionAccessor["count"].asInt(); ++i)
+    {
         std::cout << "(" << buffer[i * 3] << ", " << buffer[i * 3 + 1] << ", " << buffer[i * 3 + 2] << ")" << std::endl;
     }
 
@@ -176,7 +186,8 @@ std::vector<uint32_t> GLTFLoader::readScalarBuffer(uint32_t accessorIndex)
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
     // UNSIGNED_SHORT
-    if(accessor["componentType"].asUInt() == 5123) {
+    if(accessor["componentType"].asUInt() == 5123)
+    {
         uint32_t stride = bufferView.get("byteStride", sizeof(uint16_t)).asUInt();
         std::vector<uint32_t> buffer(count);
         for(uint32_t i = 0; i < count; ++i)
@@ -184,7 +195,8 @@ std::vector<uint32_t> GLTFLoader::readScalarBuffer(uint32_t accessorIndex)
         return buffer;
     }
     // UNSIGNED_INT
-    if(accessor["componentType"].asUInt() == 5125) {
+    if(accessor["componentType"].asUInt() == 5125)
+    {
         uint32_t stride = bufferView.get("byteStride", sizeof(uint32_t)).asUInt();
         std::vector<uint32_t> buffer(count);
         for(uint32_t i = 0; i < count; ++i)
@@ -206,7 +218,8 @@ std::vector<glm::vec2> GLTFLoader::readVec2Buffer(uint32_t accessorIndex)
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
     std::vector<glm::vec2> buffer(count);
-    for(uint32_t i = 0; i < count; ++i) {
+    for(uint32_t i = 0; i < count; ++i)
+    {
         float* ittr = (float*)&_bin[offset + stride * i];
         buffer[i].x = ittr[0];
         buffer[i].y = ittr[1];
@@ -229,7 +242,8 @@ std::vector<glm::vec3> GLTFLoader::readVec3Buffer(uint32_t accessorIndex)
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
     std::vector<glm::vec3> buffer(count);
-    for(uint32_t i = 0; i < count; ++i) {
+    for(uint32_t i = 0; i < count; ++i)
+    {
         float* ittr = (float*)&_bin[offset + stride * i];
         buffer[i].x = ittr[0];
         buffer[i].y = ittr[1];
@@ -238,7 +252,6 @@ std::vector<glm::vec3> GLTFLoader::readVec3Buffer(uint32_t accessorIndex)
 
     return buffer;
 }
-
 
 std::vector<glm::vec4> GLTFLoader::readVec4Buffer(uint32_t accessorIndex)
 {
@@ -254,7 +267,8 @@ std::vector<glm::vec4> GLTFLoader::readVec4Buffer(uint32_t accessorIndex)
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
     std::vector<glm::vec4> buffer(count);
-    for(uint32_t i = 0; i < count; ++i) {
+    for(uint32_t i = 0; i < count; ++i)
+    {
         float* ittr = (float*)&_bin[offset + stride * i];
         buffer[i].x = ittr[0];
         buffer[i].y = ittr[1];
@@ -268,34 +282,39 @@ std::vector<glm::vec4> GLTFLoader::readVec4Buffer(uint32_t accessorIndex)
 std::vector<MeshAsset*> GLTFLoader::extractAllMeshes()
 {
     std::vector<MeshAsset*> meshAssets;
-    for(auto& meshData : _json["meshes"]) {
+    for(auto& meshData : _json["meshes"])
+    {
         MeshAsset* mesh = new MeshAsset();
         mesh->name = meshData["name"].asString();
 
-        for(auto& primitive : meshData["primitives"]) {
+        for(auto& primitive : meshData["primitives"])
+        {
             auto positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
             size_t pIndex;
             auto indexBufferType = accessorComponentType(primitive["indices"].asUInt());
             if(indexBufferType == 5123) // UNSIGNED_SHORT
-                pIndex = mesh->addPrimitive(
-                    readShortScalarBuffer(primitive["indices"].asUInt()), static_cast<uint32_t>(positions.size()));
+                pIndex = mesh->addPrimitive(readShortScalarBuffer(primitive["indices"].asUInt()),
+                                            static_cast<uint32_t>(positions.size()));
             else // UNSIGNED_INT
-                pIndex = mesh->addPrimitive(
-                    readScalarBuffer(primitive["indices"].asUInt()), static_cast<uint32_t>(positions.size()));
+                pIndex = mesh->addPrimitive(readScalarBuffer(primitive["indices"].asUInt()),
+                                            static_cast<uint32_t>(positions.size()));
             mesh->addAttribute(pIndex, "POSITION", positions);
 
-            if(primitive["attributes"].isMember("NORMAL")) {
+            if(primitive["attributes"].isMember("NORMAL"))
+            {
                 auto v = readVec3Buffer(primitive["attributes"]["NORMAL"].asUInt());
                 mesh->addAttribute(pIndex, "NORMAL", v);
             }
 
-            if(primitive["attributes"].isMember("TANGENT")) {
+            if(primitive["attributes"].isMember("TANGENT"))
+            {
                 auto v = readVec4Buffer(primitive["attributes"]["TANGENT"].asUInt());
                 mesh->addAttribute(pIndex, "TANGENT", v);
             }
 
             // TODO  make it so that we automatically detect all texcoords
-            if(primitive["attributes"].isMember("TEXCOORD_0")) {
+            if(primitive["attributes"].isMember("TEXCOORD_0"))
+            {
                 auto v = readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
                 mesh->addAttribute(pIndex, "TEXCOORD_0", v);
             }

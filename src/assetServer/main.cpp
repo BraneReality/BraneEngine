@@ -1,6 +1,6 @@
 // Asset server
-#include "assetServer.h"
 #include "assets/assetManager.h"
+#include "assetServer.h"
 #include "networking/networking.h"
 #include <common/config/config.h>
 #include <database/database.h>

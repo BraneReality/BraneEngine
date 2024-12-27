@@ -9,14 +9,15 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "PreppedSQLCall.h"
 #include "databaseAsset.h"
+#include "PreppedSQLCall.h"
 
 #include "runtime/module.h"
 
 class AssetID;
 
-class Database : public Module {
+class Database : public Module
+{
     sqlite3* _db;
     PreppedSQLCall<sqlTEXT> _getLastInserted;
     PreppedSQLCall<sqlTEXT> _loginCall;
@@ -47,16 +48,21 @@ class Database : public Module {
     std::unordered_map<size_t, std::string> _permissions;
 
   public:
-    struct sqlColumn {
+    struct sqlColumn
+    {
         char* name;
         char* value;
     };
-    struct AssetSearchResult {
+
+    struct AssetSearchResult
+    {
         uint32_t id;
         std::string name;
         AssetType type;
     };
-    struct UserSearchResult {
+
+    struct UserSearchResult
+    {
         uint32_t id;
         std::string username;
     };

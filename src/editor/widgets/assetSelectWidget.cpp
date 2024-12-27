@@ -26,18 +26,23 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
 
-    if(ImGui::IsItemHovered()) {
-        if(ImGui::IsMouseDoubleClicked(0)) {
+    if(ImGui::IsItemHovered())
+    {
+        if(ImGui::IsMouseDoubleClicked(0))
+        {
             _searchWidget = std::make_unique<AssetSearchWidget>(type);
             ImGui::OpenPopup("select asset");
         }
-        if(ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+        if(ImGui::IsKeyPressed(ImGuiKey_Delete))
+        {
             id.setNull();
             changed = true;
         }
     }
-    if(ImGui::BeginPopup("select asset")) {
-        if(_searchWidget->draw()) {
+    if(ImGui::BeginPopup("select asset"))
+    {
+        if(_searchWidget->draw())
+        {
             id = _searchWidget->currentSelected();
             changed = true;
             ImGui::CloseCurrentPopup();

@@ -7,7 +7,8 @@
 
 ScheduledBlock* Timeline::getTimeBlock(const std::string& name)
 {
-    for(auto& block : _blocks) {
+    for(auto& block : _blocks)
+    {
         if(name == block.name())
             return &block;
     }
@@ -31,8 +32,10 @@ void Timeline::addBlockBefore(const std::string& name, const std::string& before
         _blocks.push_front(ScheduledBlock(name));
     parentBlock++;
 
-    while(parentBlock != _blocks.end()) {
-        if(parentBlock->name() == before) {
+    while(parentBlock != _blocks.end())
+    {
+        if(parentBlock->name() == before)
+        {
             parentBlock--;
             _blocks.insert(parentBlock, ScheduledBlock(name));
             return;
@@ -45,8 +48,10 @@ void Timeline::addBlockBefore(const std::string& name, const std::string& before
 void Timeline::addBlockAfter(const std::string& name, const std::string& before)
 {
     auto parentBlock = _blocks.begin();
-    while(parentBlock != _blocks.end()) {
-        if(parentBlock->name() == before) {
+    while(parentBlock != _blocks.end())
+    {
+        if(parentBlock->name() == before)
+        {
             _blocks.insert(parentBlock, ScheduledBlock(name));
             return;
         }
@@ -75,7 +80,8 @@ ScheduledBlock::ScheduledBlock(const std::string& name) { _name = name; }
 
 void ScheduledBlock::run()
 {
-    for(auto& task : _tasks) {
+    for(auto& task : _tasks)
+    {
         task.run();
     }
 }

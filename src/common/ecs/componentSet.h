@@ -1,15 +1,16 @@
 #pragma once
 
-#include "assets/types/componentAsset.h"
-#include <unordered_map>
-#include <unordered_set>
 #include <cassert>
 #include <cstddef>
 #include <set>
 #include <vector>
+#include "assets/types/componentAsset.h"
+#include <unordered_map>
+#include <unordered_set>
 
 // Class that always has components sorted
-class ComponentSet {
+class ComponentSet
+{
   private:
     std::unordered_set<ComponentID> _components;
 

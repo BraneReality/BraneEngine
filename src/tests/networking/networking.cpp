@@ -26,12 +26,11 @@ TEST(networking, SerializedDataTest)
 
     iData >> first >> second >> third;
 
-    EXPECT_EQ(
-        first.
+    EXPECT_EQ(first.
 
-        size(),
+              size(),
 
-        5);
+              5);
     EXPECT_EQ(first[0], 1);
     EXPECT_EQ(first[1], 2);
     EXPECT_EQ(first[2], 4);

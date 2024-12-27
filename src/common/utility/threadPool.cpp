@@ -5,8 +5,7 @@
 
 BraneJob::BraneJob(std::function<void()> f, std::shared_ptr<JobHandle> handle)
     : f(std::move(f)), handle(std::move(handle))
-{
-}
+{}
 
 std::thread::id ThreadPool::main_thread_id;
 size_t ThreadPool::_instances;
@@ -24,14 +23,16 @@ std::queue<BraneJob> ThreadPool::_mainThreadJobs;
 
 int ThreadPool::threadRuntime()
 {
-    while(_running) {
+    while(_running)
+    {
 
         BraneJob job;
         {
             std::unique_lock<std::mutex> lock(_queueMutex);
             if(_workAvailable.wait_until(lock, std::chrono::system_clock::now() + std::chrono::milliseconds(200), [] {
                    return !_jobs.empty();
-               })) {
+               }))
+            {
                 job = std::move(_jobs.front());
                 _jobs.pop();
             }
@@ -39,12 +40,14 @@ int ThreadPool::threadRuntime()
                 continue;
         }
 #if NDEBUG
-        try {
+        try
+        {
 #endif
             job.f();
 #if NDEBUG
         }
-        catch(const std::exception& e) {
+        catch(const std::exception& e)
+        {
             std::cerr << "Thread Error: " << e.what() << std::endl;
         }
 #endif
@@ -60,11 +63,13 @@ void ThreadPool::init(size_t minThreads)
     _minThreads = minThreads;
     main_thread_id = std::this_thread::get_id();
     _instances++;
-    if(_instances == 1) {
+    if(_instances == 1)
+    {
         _running = true;
         size_t threadCount = std::max<size_t>(std::thread::hardware_concurrency(), minThreads);
         _threads.reserve(threadCount);
-        for(size_t i = 0; i < threadCount; i++) {
+        for(size_t i = 0; i < threadCount; i++)
+        {
             _threads.emplace_back(threadRuntime);
         }
         Runtime::log("Started up thread pool with " + std::to_string(threadCount) + " threads");
@@ -74,14 +79,18 @@ void ThreadPool::init(size_t minThreads)
 void ThreadPool::cleanup()
 {
     _instances--;
-    if(_instances == 0) {
+    if(_instances == 0)
+    {
         _running = false;
-        for(auto& _thread : _threads) {
-            try {
+        for(auto& _thread : _threads)
+        {
+            try
+            {
                 if(_thread.joinable())
                     _thread.join();
             }
-            catch(const std::exception& e) {
+            catch(const std::exception& e)
+            {
                 std::cout << "Error when exiting thread: " << e.what() << std::endl;
             }
         }
@@ -121,7 +130,8 @@ std::shared_ptr<JobHandle> ThreadPool::enqueueBatch(std::vector<std::function<vo
     std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
 
     _queueMutex.lock();
-    for(auto& function : functions) {
+    for(auto& function : functions)
+    {
         handle->_instances += 1;
         _jobs.emplace(std::move(function), handle);
     }
@@ -136,7 +146,8 @@ std::shared_ptr<JobHandle> ThreadPool::addStaticThread(std::function<void()> fun
     std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
 
     _staticThreads++;
-    if(_threads.size() - _staticThreads < _minThreads) {
+    if(_threads.size() - _staticThreads < _minThreads)
+    {
         _threads.emplace_back(function);
         _workAvailable.notify_one();
     }
@@ -167,7 +178,8 @@ std::shared_ptr<ConditionJob> ThreadPool::conditionalEnqueue(std::function<void(
 void ThreadPool::runMainJobs()
 {
     _mainQueueMutex.lock();
-    while(!_mainThreadJobs.empty()) {
+    while(!_mainThreadJobs.empty())
+    {
         auto job = std::move(_mainThreadJobs.front());
         _mainThreadJobs.pop();
         _mainQueueMutex.unlock();
@@ -183,7 +195,8 @@ bool JobHandle::finished() { return _instances == 0; }
 
 void JobHandle::finish()
 {
-    while(!finished()) {
+    while(!finished())
+    {
         std::this_thread::yield();
     }
 }

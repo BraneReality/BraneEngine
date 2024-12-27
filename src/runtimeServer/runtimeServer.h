@@ -1,9 +1,10 @@
 #pragma once
 
-#include <ecs/entity.h>
 #include <vector>
+#include <ecs/entity.h>
 
-class RuntimeServer {
+class RuntimeServer
+{
     bool _running;
     EntityManager em;
 

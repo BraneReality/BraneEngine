@@ -3,9 +3,9 @@
 //
 
 #include "renderTarget.h"
+#include <exception>
 #include "graphicsDevice.h"
 #include "swapChain.h"
-#include <exception>
 
 VkFormat graphics::RenderTexture::imageFormat() { return _format; }
 
@@ -41,13 +41,16 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
 
     _images.resize(swapChain.size());
     _imageViews.resize(swapChain.size());
-    for(size_t i = 0; i < swapChain.size(); ++i) {
-        if(vkCreateImage(device->get(), &imageInfo, nullptr, &_images[i]) != VK_SUCCESS) {
+    for(size_t i = 0; i < swapChain.size(); ++i)
+    {
+        if(vkCreateImage(device->get(), &imageInfo, nullptr, &_images[i]) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create texture!");
         }
     }
 
-    if(depthTexture) {
+    if(depthTexture)
+    {
         VkImageCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         createInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -66,7 +69,8 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
         createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         createInfo.flags = 0;
 
-        if(vkCreateImage(device->get(), &createInfo, nullptr, &_depthTexture) != VK_SUCCESS) {
+        if(vkCreateImage(device->get(), &createInfo, nullptr, &_depthTexture) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create image!");
         }
     }
@@ -80,7 +84,8 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
     allocInfo.allocationSize = alignedImageSize * _images.size();
 
     VkDeviceSize depthTexOffset;
-    if(depthTexture) {
+    if(depthTexture)
+    {
         VkMemoryRequirements depthReqs;
         vkGetImageMemoryRequirements(device->get(), _depthTexture, &depthReqs);
         depthTexOffset =
@@ -90,11 +95,13 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
     }
     allocInfo.memoryTypeIndex = device->findMemoryType(imageReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    if(vkAllocateMemory(device->get(), &allocInfo, nullptr, &_imageMemory) != VK_SUCCESS) {
+    if(vkAllocateMemory(device->get(), &allocInfo, nullptr, &_imageMemory) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to allocate texture memory!");
     }
 
-    for(size_t i = 0; i < swapChain.size(); ++i) {
+    for(size_t i = 0; i < swapChain.size(); ++i)
+    {
         vkBindImageMemory(device->get(), _images[i], _imageMemory, alignedImageSize * i);
 
         VkImageViewCreateInfo viewInfo{};
@@ -108,12 +115,14 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        if(vkCreateImageView(device->get(), &viewInfo, nullptr, &_imageViews[i]) != VK_SUCCESS) {
+        if(vkCreateImageView(device->get(), &viewInfo, nullptr, &_imageViews[i]) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create texture image view!");
         }
     }
 
-    if(depthTexture) {
+    if(depthTexture)
+    {
         vkBindImageMemory(device->get(), _depthTexture, _imageMemory, depthTexOffset);
 
         VkImageViewCreateInfo viewInfo{};
@@ -127,7 +136,8 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        if(vkCreateImageView(device->get(), &viewInfo, nullptr, &_depthTextureView) != VK_SUCCESS) {
+        if(vkCreateImageView(device->get(), &viewInfo, nullptr, &_depthTextureView) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create texture image view!");
         }
     }
@@ -151,7 +161,8 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if(vkCreateSampler(device->get(), &samplerInfo, nullptr, &_sampler) != VK_SUCCESS) {
+    if(vkCreateSampler(device->get(), &samplerInfo, nullptr, &_sampler) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
@@ -160,11 +171,13 @@ VkSampler graphics::RenderTexture::sampler() { return _sampler; }
 
 graphics::RenderTexture::~RenderTexture()
 {
-    for(size_t i = 0; i < _images.size(); ++i) {
+    for(size_t i = 0; i < _images.size(); ++i)
+    {
         vkDestroyImageView(device->get(), _imageViews[i], nullptr);
         vkDestroyImage(device->get(), _images[i], nullptr);
     }
-    if(_depthTexture) {
+    if(_depthTexture)
+    {
         vkDestroyImageView(device->get(), _depthTextureView, nullptr);
         vkDestroyImage(device->get(), _depthTexture, nullptr);
     }

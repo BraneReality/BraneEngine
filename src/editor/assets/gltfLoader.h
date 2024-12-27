@@ -5,20 +5,22 @@
 #ifndef BRANEENGINE_GLTFLOADER_H
 #define BRANEENGINE_GLTFLOADER_H
 
-#include "common/assets/types/meshAsset.h"
-#include "common/byte.h"
-#include "json/json.h"
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <string>
+#include "common/assets/types/meshAsset.h"
+#include "common/byte.h"
+#include "json/json.h"
 
-class GLTFLoader {
+class GLTFLoader
+{
     std::vector<byte> _bin;
     Json::Value _json;
     bool _usingFile;
 
-    template <typename T> void concatVector(std::vector<T>& dest, const std::vector<T>& src)
+    template<typename T>
+    void concatVector(std::vector<T>& dest, const std::vector<T>& src)
     {
         size_t end = dest.size();
         dest.resize(dest.size() + src.size());

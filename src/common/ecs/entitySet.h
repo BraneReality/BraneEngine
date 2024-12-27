@@ -21,19 +21,23 @@ class Archetype;
 class ArchetypeManager;
 
 typedef uint8_t ComponentFilterFlags;
-enum ComponentFilterFlags_ {
+
+enum ComponentFilterFlags_
+{
     ComponentFilterFlags_None = 0,
     ComponentFilterFlags_Const = 1 << 0,
     ComponentFilterFlags_Changed = 1 << 1,
     ComponentFilterFlags_Exclude = 1 << 2
 };
 
-class ComponentFilter {
+class ComponentFilter
+{
     SystemContext* _system;
     bool _chunkFlags = false;
 
   public:
-    struct Component {
+    struct Component
+    {
         ComponentID id;
         ComponentFilterFlags flags;
     };
@@ -55,7 +59,8 @@ class ComponentFilter {
     bool checkChunk(Chunk* chunk) const;
 };
 
-class EntitySet {
+class EntitySet
+{
     ComponentFilter _filter;
     std::vector<Archetype*> _archetypes;
 

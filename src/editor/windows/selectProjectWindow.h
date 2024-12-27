@@ -5,16 +5,19 @@
 #ifndef BRANEENGINE_SELECTPROJECTWINDOW_H
 #define BRANEENGINE_SELECTPROJECTWINDOW_H
 
-#include "editorWindow.h"
 #include <filesystem>
 #include <string>
 #include <vector>
+#include "editorWindow.h"
 
-class SelectProjectWindow : public EditorWindow {
-    struct RecentProject {
+class SelectProjectWindow : public EditorWindow
+{
+    struct RecentProject
+    {
         std::string name;
         std::string path;
     };
+
     std::string _projectName = "new project";
     std::string _projectPath;
     std::string _creationStatus;

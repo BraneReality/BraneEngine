@@ -9,11 +9,13 @@
 
 class EntityManager;
 
-class AssetManager : public Module {
+class AssetManager : public Module
+{
   public:
     using FetchCallback = std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)>;
 
-    enum class LoadState : uint8_t {
+    enum class LoadState : uint8_t
+    {
         unloaded = 0,
         failed = 1,
         requested = 2,
@@ -22,7 +24,8 @@ class AssetManager : public Module {
         loaded = 5
     };
 
-    struct AssetData {
+    struct AssetData
+    {
         std::unique_ptr<Asset> asset;
         uint32_t useCount = 0;
         uint32_t unloadedDependencies = 0;
@@ -37,7 +40,8 @@ class AssetManager : public Module {
 
     size_t _nativeComponentID = 0;
 
-    template <typename T> void addNativeComponent(EntityManager& em);
+    template<typename T>
+    void addNativeComponent(EntityManager& em);
 
     // To account for different ways of fetching assets for different build targets, this function is defined multiple
     // times
@@ -46,7 +50,8 @@ class AssetManager : public Module {
   public:
     AssetManager();
 
-    template <typename T> T* getAsset(const AssetID& id)
+    template<typename T>
+    T* getAsset(const AssetID& id)
     {
         static_assert(std::is_base_of<Asset, T>());
         std::scoped_lock lock(_assetLock);
@@ -57,7 +62,8 @@ class AssetManager : public Module {
 
     AsyncData<Asset*> fetchAsset(const AssetID& id, bool incremental = false);
 
-    template <typename T> AsyncData<T*> fetchAsset(const AssetID& id)
+    template<typename T>
+    AsyncData<T*> fetchAsset(const AssetID& id)
     {
         static_assert(std::is_base_of<Asset, T>());
         AsyncData<T*> asset;

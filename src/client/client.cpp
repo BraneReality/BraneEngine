@@ -11,11 +11,11 @@
 #include "networking/networking.h"
 #include "systems/transforms.h"
 
+#include <asio.hpp>
 #include "assets/chunk.h"
 #include "chunk/chunkLoader.h"
 #include "glm/gtx/quaternion.hpp"
 #include "networking/connection.h"
-#include <asio.hpp>
 #include <utility/threadPool.h>
 
 const char* Client::name() { return "client"; }
@@ -30,18 +30,24 @@ void Client::start()
     auto* em = Runtime::getModule<EntityManager>();
 
     cl->addOnLODChangeCallback([this, em, am](const WorldChunk* chunk, uint32_t oldLod, uint32_t newLod) {
-        if(oldLod != NullLOD) {
-            for(auto& lod : chunk->LODs) {
-                if(lod.min > newLod || lod.max < newLod) {
+        if(oldLod != NullLOD)
+        {
+            for(auto& lod : chunk->LODs)
+            {
+                if(lod.min > newLod || lod.max < newLod)
+                {
                     assert(_chunkRoots.contains(lod.assembly));
                     Runtime::getModule<Transforms>()->destroyRecursive(_chunkRoots.at(lod.assembly));
                     _chunkRoots.erase(lod.assembly);
                 }
             }
         }
-        if(newLod != NullLOD) {
-            for(auto& lod : chunk->LODs) {
-                if(lod.min <= newLod && newLod <= lod.max) {
+        if(newLod != NullLOD)
+        {
+            for(auto& lod : chunk->LODs)
+            {
+                if(lod.min <= newLod && newLod <= lod.max)
+                {
                     AssetID id = lod.assembly;
                     if(id.address().empty())
                         id.setAddress(chunk->id.address());
@@ -78,7 +84,8 @@ void Client::start()
     em->setComponent(_mainCamera, camera);
 
     nm->async_connectToAssetServer("localhost", 2001, [nm](bool success) {
-        if(success) {
+        if(success)
+        {
             auto* assetServer = nm->getServer("localhost");
             SerializedData data;
             OutputSerializer s(data);
@@ -86,21 +93,25 @@ void Client::start()
             std::string password = Config::json()["user"]["password"].asString();
             s << username << password;
             assetServer->sendRequest("login", std::move(data), [assetServer](auto rc, InputSerializer res) {
-                if(rc == net::ResponseCode::success) {
+                if(rc == net::ResponseCode::success)
+                {
                     assetServer->sendRequest("defaultChunk", {}, [](auto rc, InputSerializer res) {
-                        if(rc != net::ResponseCode::success) {
+                        if(rc != net::ResponseCode::success)
+                        {
                             Runtime::error("Problem fetching default chunk");
                             return;
                         }
                         Runtime::log("Requested default chunk");
                     });
                 }
-                else {
+                else
+                {
                     Runtime::error("Failed to log in");
                 }
             });
         }
-        else {
+        else
+        {
             Runtime::error("Failed to connect to asset server");
         }
     });
@@ -109,22 +120,25 @@ void Client::start()
 AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
     AsyncData<Asset*> asset;
-    if(id.address().empty()) {
-        asset.setError(
-            "Asset with id " + std::string(id.idStr()) +
-            " was not found and can not be remotely fetched since it lacks a server address");
+    if(id.address().empty())
+    {
+        asset.setError("Asset with id " + std::string(id.idStr()) +
+                       " was not found and can not be remotely fetched since it lacks a server address");
         return asset;
     }
     auto* nm = Runtime::getModule<NetworkManager>();
-    if(incremental) {
+    if(incremental)
+    {
         nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr) { asset.setData(ptr); });
     }
-    else {
+    else
+    {
         nm->async_requestAsset(id).then([this, asset](Asset* ptr) {
             _assetLock.lock();
             _assets.at(ptr->id)->loadState = LoadState::awaitingDependencies;
             _assetLock.unlock();
-            if(dependenciesLoaded(ptr)) {
+            if(dependenciesLoaded(ptr))
+            {
                 asset.setData(ptr);
                 return;
             }

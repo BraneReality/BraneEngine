@@ -3,6 +3,7 @@
 //
 
 #include "editorShaderAsset.h"
+#include <mutex>
 #include "assets/types/shaderAsset.h"
 #include "editor/braneProject.h"
 #include "editor/editor.h"
@@ -10,13 +11,13 @@
 #include "graphics/shader.h"
 #include "runtime/runtime.h"
 #include "utility/hex.h"
-#include <mutex>
 
 EditorShaderAsset::EditorShaderAsset(const std::filesystem::path& file, BraneProject& project)
     : EditorAsset(file, project)
 {
     // Generate default
-    if(!std::filesystem::exists(_file)) {
+    if(!std::filesystem::exists(_file))
+    {
         _json.data()["source"] = "";
     }
 }
@@ -28,7 +29,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
     std::string hash = FileManager::fileHash(source);
     bool changed = _json.data().get("lastSourceHash", "") != hash;
 
-    if(changed) {
+    if(changed)
+    {
         _json.data()["lastSourceHash"] = hash;
         Runtime::log("Extracting shader attributes for " + name());
         ShaderCompiler::ShaderAttributes attributes;
@@ -37,13 +39,16 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
         auto includer = std::make_unique<ShaderIncluder>();
         includer->addSearchDir(dir);
         if(FileManager::readFile(source, glsl) &&
-           _project.editor().shaderCompiler().extractAttributes(glsl, shaderType(), std::move(includer), attributes)) {
+           _project.editor().shaderCompiler().extractAttributes(glsl, shaderType(), std::move(includer), attributes))
+        {
             Json::Value atr;
-            for(auto& ub : attributes.uniforms) {
+            for(auto& ub : attributes.uniforms)
+            {
                 Json::Value uniform;
                 uniform["name"] = ub.name;
                 uniform["binding"] = ub.binding;
-                for(auto& m : ub.members) {
+                for(auto& m : ub.members)
+                {
                     Json::Value member;
                     member["name"] = m.name;
                     member["type"] = ShaderVariableData::typeNames.toString(m.type);
@@ -53,11 +58,13 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
                 atr["uniforms"][ub.name] = uniform;
             }
 
-            for(auto& ub : attributes.buffers) {
+            for(auto& ub : attributes.buffers)
+            {
                 Json::Value buffer;
                 buffer["name"] = ub.name;
                 buffer["binding"] = ub.binding;
-                for(auto& m : ub.members) {
+                for(auto& m : ub.members)
+                {
                     Json::Value member;
                     member["name"] = m.name;
                     member["type"] = ShaderVariableData::typeNames.toString(m.type);
@@ -67,7 +74,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
                 atr["buffers"][ub.name] = buffer;
             }
 
-            for(auto& in : attributes.inputVariables) {
+            for(auto& in : attributes.inputVariables)
+            {
                 Json::Value input;
                 input["name"] = in.name;
                 input["type"] = ShaderVariableData::typeNames.toString(in.type);
@@ -75,7 +83,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
                 atr["inputs"][std::to_string(in.location)] = input;
             }
 
-            for(auto& out : attributes.outputVariables) {
+            for(auto& out : attributes.outputVariables)
+            {
                 Json::Value output;
                 output["name"] = out.name;
                 output["type"] = ShaderVariableData::typeNames.toString(out.type);
@@ -83,7 +92,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
                 atr["outputs"][std::to_string(out.location)] = output;
             }
 
-            for(auto& samp : attributes.samplers) {
+            for(auto& samp : attributes.samplers)
+            {
                 Json::Value sampler;
                 sampler["name"] = samp.name;
                 sampler["binding"] = samp.location;
@@ -100,7 +110,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 {
     assert(id.string() == _json["id"].asString());
-    if(_json["source"].asString().empty()) {
+    if(_json["source"].asString().empty())
+    {
         Runtime::error("Shader source not set for " + _json["name"].asString());
         return nullptr;
     }
@@ -113,7 +124,8 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
     shader->shaderType = shaderType();
 
     std::string shaderCode;
-    if(!FileManager::readFile(source, shaderCode)) {
+    if(!FileManager::readFile(source, shaderCode))
+    {
         Runtime::error("Failed to open shader source: " + source.string());
         return nullptr;
     }
@@ -122,7 +134,8 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
     auto includer = std::make_unique<ShaderIncluder>();
     std::filesystem::path dir = std::filesystem::path{source}.remove_filename();
     includer->addSearchDir(dir);
-    if(!compiler.compileShader(shaderCode, shader->shaderType, shader->spirv, std::move(includer))) {
+    if(!compiler.compileShader(shaderCode, shader->shaderType, shader->spirv, std::move(includer)))
+    {
         delete shader;
         return nullptr;
     }
@@ -168,22 +181,24 @@ void EditorShaderAsset::createDefaultSource(ShaderType type)
     path.remove_filename();
 
     std::filesystem::path source = std::filesystem::current_path() / "defaultAssets" / "shaders";
-    switch(type) {
-    case ShaderType::vertex:
-        path /= name() + ".vert";
-        source /= "default.vert";
-        break;
-    case ShaderType::fragment:
-        path /= name() + ".frag";
-        source /= "default.frag";
-        break;
-    default:
-        Runtime::warn("Tried to create unimplemented shader type");
-        return;
+    switch(type)
+    {
+        case ShaderType::vertex:
+            path /= name() + ".vert";
+            source /= "default.vert";
+            break;
+        case ShaderType::fragment:
+            path /= name() + ".frag";
+            source /= "default.frag";
+            break;
+        default:
+            Runtime::warn("Tried to create unimplemented shader type");
+            return;
     }
     std::error_code ec;
     std::filesystem::copy_file(source, path, ec);
-    if(ec) {
+    if(ec)
+    {
         Runtime::error("Could not copy default shader code: " + ec.message());
         return;
     }

@@ -29,8 +29,10 @@ void AssemblyReloadManager::destroy(Assembly* assembly, EntityID assemblyRoot)
 {
     std::scoped_lock lock(m);
     auto& instanceSet = _instances[assembly];
-    for(auto instance = instanceSet.begin(); instance != instanceSet.end(); instance++) {
-        if(instance->root == assemblyRoot) {
+    for(auto instance = instanceSet.begin(); instance != instanceSet.end(); instance++)
+    {
+        if(instance->root == assemblyRoot)
+        {
             Runtime::getModule<Transforms>()->destroyRecursive(assemblyRoot);
             instanceSet.erase(instance);
             return;
@@ -43,11 +45,14 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
     std::scoped_lock lock(m);
     auto* am = Runtime::getModule<AssetManager>();
     VirtualComponent newData = component;
-    for(auto& i : _instances[assembly]) {
-        if(newData.description() == MeshRendererComponent::def()) {
+    for(auto& i : _instances[assembly])
+    {
+        if(newData.description() == MeshRendererComponent::def())
+        {
             auto* renderer = MeshRendererComponent::fromVirtual(newData);
             renderer->mesh = am->getAsset<MeshAsset>(assembly->meshes[renderer->mesh])->runtimeID;
-            for(auto& material : renderer->materials) {
+            for(auto& material : renderer->materials)
+            {
                 AssetID id;
                 if(material < assembly->materials.size())
                     id = assembly->materials[material];
@@ -57,11 +62,13 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
                     material = -1;
             }
         }
-        else if(newData.description() == LocalTransform::def()) {
+        else if(newData.description() == LocalTransform::def())
+        {
             auto* lt = LocalTransform::fromVirtual(newData);
             lt->parent = i.entities[lt->parent.id];
         }
-        else if(newData.description() == Children::def()) {
+        else if(newData.description() == Children::def())
+        {
             auto* children = Children::fromVirtual(newData);
             for(auto& child : children->children)
                 child = i.entities[child.id];
@@ -99,7 +106,8 @@ void AssemblyReloadManager::removeEntityComponent(Assembly* assembly, size_t ind
 void AssemblyReloadManager::insertEntity(Assembly* assembly, size_t index)
 {
     std::scoped_lock lock(m);
-    for(auto& i : _instances[assembly]) {
+    for(auto& i : _instances[assembly])
+    {
         EntityID newEnt = _em->createEntity();
         i.entities.insert(i.entities.begin() + index, newEnt);
     }
@@ -110,7 +118,8 @@ void AssemblyReloadManager::reorderEntity(Assembly* assembly, size_t before, siz
     std::scoped_lock lock(m);
     if(before == after)
         return;
-    for(auto& i : _instances[assembly]) {
+    for(auto& i : _instances[assembly])
+    {
         EntityID entity = i.entities[before];
         i.entities.erase(i.entities.begin() + before);
         i.entities.insert(i.entities.begin() + after, entity);
@@ -120,7 +129,8 @@ void AssemblyReloadManager::reorderEntity(Assembly* assembly, size_t before, siz
 void AssemblyReloadManager::removeEntity(Assembly* assembly, size_t index)
 {
     std::scoped_lock lock(m);
-    for(auto& i : _instances[assembly]) {
+    for(auto& i : _instances[assembly])
+    {
         Transforms::removeParent(i.entities[index], *_em, false);
         _em->destroyEntity(i.entities[index]);
         i.entities.erase(i.entities.begin() + index);

@@ -8,16 +8,24 @@
 #include "common/ecs/component.h"
 #include <json/json.h>
 
-enum class UiChangeType { none = 0, ongoing = 1, finished = 2 };
+enum class UiChangeType
+{
+    none = 0,
+    ongoing = 1,
+    finished = 2
+};
 
-class VirtualVariableWidgets {
+class VirtualVariableWidgets
+{
   public:
     static UiChangeType displayAssetComponentData(Json::Value& component, const Json::Value& assembly);
 
     static UiChangeType displayVirtualComponentData(VirtualComponentView component);
 
-    static UiChangeType displayVirtualVariable(
-        const char* name, VirtualType::Type type, byte* data, const Json::Value& assembly = Json::nullValue);
+    static UiChangeType displayVirtualVariable(const char* name,
+                                               VirtualType::Type type,
+                                               byte* data,
+                                               const Json::Value& assembly = Json::nullValue);
 };
 
 #endif // BRANEENGINE_VIRTUALVARIABLEWIDGETS_H

@@ -14,7 +14,8 @@ EditorMaterialAsset::EditorMaterialAsset(const std::filesystem::path& file, Bran
     : EditorAsset(file, project)
 {
     // Generate default
-    if(!std::filesystem::exists(_file)) {
+    if(!std::filesystem::exists(_file))
+    {
         _json.data()["inputs"] = Json::arrayValue;
         _json.data()["vertexShader"] = "null"; // TODO default fragment and vertex shaders applied here
         _json.data()["fragmentShader"] = "null";
@@ -29,7 +30,8 @@ Asset* EditorMaterialAsset::buildAsset(const AssetID& id) const
     material->id = _json["id"].asString();
     material->vertexShader = _json["vertexShader"].asString();
     material->fragmentShader = _json["fragmentShader"].asString();
-    for(auto& texture : _json["textures"]) {
+    for(auto& texture : _json["textures"])
+    {
         std::pair<uint16_t, AssetID> tb;
         tb.first = texture["binding"].asUInt();
         tb.second = texture["id"].asString();
@@ -58,33 +60,40 @@ size_t alignedTo(size_t index, size_t alignment)
 std::vector<uint8_t> EditorMaterialAsset::serializeProperties() const
 {
     std::vector<uint8_t> sp;
-    for(auto& prop : _json["properties"]) {
+    for(auto& prop : _json["properties"])
+    {
         std::string type = prop["type"].asString();
-        if(type == "bool") {
+        if(type == "bool")
+        {
             sp.resize(alignedTo(sp.size(), sizeof(bool)));
             sp.push_back(prop["value"].asBool());
         }
-        else if(type == "int") {
+        else if(type == "int")
+        {
             sp.resize(alignedTo(sp.size(), sizeof(int)) + sizeof(int));
             size_t index = sp.size() - sizeof(int);
             *(int*)&sp[index] = prop["value"].asInt();
         }
-        else if(type == "float") {
+        else if(type == "float")
+        {
             sp.resize(alignedTo(sp.size(), sizeof(float)) + sizeof(float));
             size_t index = sp.size() - sizeof(float);
             *(float*)&sp[index] = prop["value"].asFloat();
         }
-        else if(type == "vec2") {
+        else if(type == "vec2")
+        {
             sp.resize(alignedTo(sp.size(), sizeof(glm::vec2)) + sizeof(glm::vec2));
             size_t index = sp.size() - sizeof(glm::vec2);
             *(glm::vec2*)&sp[index] = fromJson<glm::vec2>(prop["value"]);
         }
-        else if(type == "vec3") {
+        else if(type == "vec3")
+        {
             sp.resize(alignedTo(sp.size(), sizeof(glm::vec4)) + sizeof(glm::vec3));
             size_t index = sp.size() - sizeof(glm::vec3);
             *(glm::vec3*)&sp[index] = fromJson<glm::vec3>(prop["value"]);
         }
-        else if(type == "vec4") {
+        else if(type == "vec4")
+        {
             sp.resize(alignedTo(sp.size(), sizeof(glm::vec4)) + sizeof(glm::vec4));
             size_t index = sp.size() - sizeof(glm::vec4);
             *(glm::vec4*)&sp[index] = fromJson<glm::vec4>(prop["value"]);
@@ -96,7 +105,8 @@ std::vector<uint8_t> EditorMaterialAsset::serializeProperties() const
 void EditorMaterialAsset::initializeProperties(EditorShaderAsset* shaderAsset)
 {
     auto& props = _json.data()["properties"];
-    if(!shaderAsset->json()["attributes"]["uniforms"].isMember("MaterialProperties")) {
+    if(!shaderAsset->json()["attributes"]["uniforms"].isMember("MaterialProperties"))
+    {
         props.clear();
         return;
     }
@@ -105,54 +115,59 @@ void EditorMaterialAsset::initializeProperties(EditorShaderAsset* shaderAsset)
         oldValues.insert({prop["name"].asString(), prop["value"]});
     props.clear();
 
-    for(auto& member : shaderAsset->json()["attributes"]["uniforms"]["MaterialProperties"]["members"]) {
+    for(auto& member : shaderAsset->json()["attributes"]["uniforms"]["MaterialProperties"]["members"])
+    {
         Json::Value newProp;
         std::string name = member["name"].asString();
         newProp["name"] = name;
         auto layout = ShaderVariableData::layoutNames.toEnum(member["layout"].asString());
-        switch(layout) {
+        switch(layout)
+        {
 
-        case ShaderVariableData::scalar: {
-            auto type = ShaderVariableData::typeNames.toEnum(member["type"].asString());
-            switch(type) {
-            case ShaderVariableData::Boolean:
-                newProp["type"] = "bool";
-                newProp["value"] = false;
+            case ShaderVariableData::scalar:
+            {
+                auto type = ShaderVariableData::typeNames.toEnum(member["type"].asString());
+                switch(type)
+                {
+                    case ShaderVariableData::Boolean:
+                        newProp["type"] = "bool";
+                        newProp["value"] = false;
+                        break;
+                    case ShaderVariableData::Int:
+                        newProp["type"] = "int";
+                        newProp["value"] = 0;
+                        break;
+                    case ShaderVariableData::Float:
+                        newProp["type"] = "float";
+                        newProp["value"] = 0;
+                        break;
+                    default:
+                        Runtime::error("MaterialProperties does not support " + member["type"].asString() + " types");
+                        return;
+                }
+            }
+            break;
+            case ShaderVariableData::vec2:
+                newProp["type"] = "vec2";
+                newProp["value"].append(0);
+                newProp["value"].append(0);
                 break;
-            case ShaderVariableData::Int:
-                newProp["type"] = "int";
-                newProp["value"] = 0;
+            case ShaderVariableData::vec3:
+                newProp["type"] = "vec3";
+                newProp["value"].append(0);
+                newProp["value"].append(0);
+                newProp["value"].append(0);
                 break;
-            case ShaderVariableData::Float:
-                newProp["type"] = "float";
-                newProp["value"] = 0;
+            case ShaderVariableData::vec4:
+                newProp["type"] = "vec4";
+                newProp["value"].append(0);
+                newProp["value"].append(0);
+                newProp["value"].append(0);
+                newProp["value"].append(0);
                 break;
             default:
-                Runtime::error("MaterialProperties does not support " + member["type"].asString() + " types");
+                Runtime::error("MaterialProperties does not support " + member["layout"].asString() + " yet");
                 return;
-            }
-        } break;
-        case ShaderVariableData::vec2:
-            newProp["type"] = "vec2";
-            newProp["value"].append(0);
-            newProp["value"].append(0);
-            break;
-        case ShaderVariableData::vec3:
-            newProp["type"] = "vec3";
-            newProp["value"].append(0);
-            newProp["value"].append(0);
-            newProp["value"].append(0);
-            break;
-        case ShaderVariableData::vec4:
-            newProp["type"] = "vec4";
-            newProp["value"].append(0);
-            newProp["value"].append(0);
-            newProp["value"].append(0);
-            newProp["value"].append(0);
-            break;
-        default:
-            Runtime::error("MaterialProperties does not support " + member["layout"].asString() + " yet");
-            return;
         }
         if(oldValues.count(name) && oldValues[name].type() == newProp["value"].type())
             newProp["value"] = oldValues[name];
@@ -160,7 +175,8 @@ void EditorMaterialAsset::initializeProperties(EditorShaderAsset* shaderAsset)
     }
 }
 
-class PropertyChange : public JsonChange {
+class PropertyChange : public JsonChange
+{
     EditorMaterialAsset* _asset;
 
   public:
@@ -197,7 +213,8 @@ Json::Value _sketchyStateholdingVariableBecauseImLazy;
 
 void EditorMaterialAsset::changeProperty(size_t index, Json::Value value, bool finished)
 {
-    if(finished) {
+    if(finished)
+    {
         _json.recordChange(std::make_unique<PropertyChange>(
             index, std::move(value), _sketchyStateholdingVariableBecauseImLazy, this, &_json));
         _sketchyStateholdingVariableBecauseImLazy = Json::nullValue;

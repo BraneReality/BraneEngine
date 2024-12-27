@@ -1,9 +1,9 @@
 #include "fileManager.h"
+#include <fstream>
+#include <tinyfiledialogs.h>
 #include "gtest/internal/gtest-port.h"
 #include <config/config.h>
-#include <fstream>
 #include <openssl/md5.h>
-#include <tinyfiledialogs.h>
 #include <utility/hex.h>
 #include <utility/serializedData.h>
 #include <utility/strCaseCompare.h>
@@ -104,8 +104,10 @@ std::unique_ptr<FileManager::Directory> FileManager::getDirectoryTree(const std:
     auto d = std::make_unique<Directory>();
     d->name = path.filename().string();
     d->open = true;
-    for(auto& file : std::filesystem::directory_iterator{path}) {
-        if(file.is_directory()) {
+    for(auto& file : std::filesystem::directory_iterator{path})
+    {
+        if(file.is_directory())
+        {
             auto c = getDirectoryTree(file);
             c->parent = d.get();
             d->children.push_back(std::move(c));
@@ -123,18 +125,22 @@ void FileManager::refreshDirectoryTree(Directory* dir, const std::filesystem::pa
     children.erase(
         std::remove_if(children.begin(), children.end(), [](auto& c) { return !std::filesystem::exists(c->path()); }),
         children.end());
-    for(auto& file : std::filesystem::directory_iterator{root / dir->path()}) {
+    for(auto& file : std::filesystem::directory_iterator{root / dir->path()})
+    {
         if(!file.is_directory())
             continue;
 
         bool found = false;
-        for(auto& c : children) {
-            if(c->name == file.path().filename()) {
+        for(auto& c : children)
+        {
+            if(c->name == file.path().filename())
+            {
                 found = true;
                 break;
             }
         }
-        if(!found) {
+        if(!found)
+        {
             auto c = getDirectoryTree(file);
             c->parent = dir;
             children.push_back(std::move(c));
@@ -185,7 +191,8 @@ std::filesystem::path FileManager::Directory::path() const
 
 void FileManager::Directory::setParentsOpen()
 {
-    if(parent) {
+    if(parent)
+    {
         parent->open = true;
         parent->setParentsOpen();
     }

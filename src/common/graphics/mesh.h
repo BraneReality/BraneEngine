@@ -3,19 +3,21 @@
 #include <GLFW/glfw3.h>
 
 #include <array>
-#include <glm/glm.hpp>
 #include <string>
 #include <vector>
+#include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
 
 class MeshAsset;
 
-namespace graphics {
+namespace graphics
+{
     class GraphicsBuffer;
 
     using MeshID = uint32_t;
 
-    class Mesh {
+    class Mesh
+    {
       private:
         bool _locked;
         GraphicsBuffer* _stagingBuffer;

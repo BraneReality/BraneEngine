@@ -10,12 +10,14 @@
 
 class EntityManager;
 
-struct SystemContext {
+struct SystemContext
+{
     uint32_t version = 0;
     uint32_t lastVersion = 0;
 };
 
-class System {
+class System
+{
   protected:
     SystemContext _ctx;
 

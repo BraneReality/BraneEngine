@@ -20,18 +20,21 @@ AssetSearchWidget::AssetSearchWidget(AssetType type, size_t searchIncrement)
 bool AssetSearchWidget::draw()
 {
     bool submit = false;
-    if(ImGui::InputText("search", &_searchText)) {
+    if(ImGui::InputText("search", &_searchText))
+    {
         _selected = -1;
         _searchResults = _project->searchAssets(_searchText, _assetType);
     }
     ImGui::Separator();
 
     ImGui::BeginChild("asset search", {ImGui::GetContentRegionAvail().x, 500});
-    for(size_t i = 0; i < _searchResults.size(); ++i) {
+    for(size_t i = 0; i < _searchResults.size(); ++i)
+    {
         auto& r = _searchResults[i];
         if(ImGui::Selectable(r.second.stem().string().c_str(), _selected == i, ImGuiSelectableFlags_DontClosePopups))
             _selected = i;
-        if(ImGui::IsItemHovered()) {
+        if(ImGui::IsItemHovered())
+        {
             ImGui::SetTooltip("ID: %s", r.first.string().c_str());
             if(ImGui::IsMouseDoubleClicked(0))
                 submit = true;

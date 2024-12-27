@@ -21,15 +21,18 @@
 #include "shader.h"
 #include "window.h"
 
-namespace graphics {
+namespace graphics
+{
     void VulkanRuntime::draw(EntityManager& em)
     {
         std::scoped_lock assetLock(_assetLock);
-        while(!_newAssets.empty()) {
+        while(!_newAssets.empty())
+        {
             processAsset(_newAssets.front().first, _newAssets.front().second);
             _newAssets.pop_front();
         }
-        while(!_reloadAssets.empty()) {
+        while(!_reloadAssets.empty())
+        {
             reloadAsset(_reloadAssets.front(), false);
             _reloadAssets.pop_front();
         }
@@ -38,7 +41,8 @@ namespace graphics {
         vkWaitForFences(_device->get(), 1, &_inFlightFences[_swapChain->nextFrame()], VK_TRUE, UINT64_MAX);
 
         VkResult result = _swapChain->acquireNextImage();
-        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        {
             vkDeviceWaitIdle(_device->get());
             _swapChain->resize();
             for(auto& r : _renderers)
@@ -61,7 +65,8 @@ namespace graphics {
 
         vkBeginCommandBuffer(drawBuffer, &beginInfo);
 
-        for(size_t i = _renderers.size() - 1; i < _renderers.size(); --i) {
+        for(size_t i = _renderers.size() - 1; i < _renderers.size(); --i)
+        {
             _renderers[i]->render(drawBuffer);
         }
 
@@ -86,7 +91,8 @@ namespace graphics {
 
         vkResetFences(_device->get(), 1, &_inFlightFences[_swapChain->currentFrame()]);
         if(vkQueueSubmit(_device->graphicsQueue(), 1, &submitInfo, _inFlightFences[_swapChain->currentFrame()]) !=
-           VK_SUCCESS) {
+           VK_SUCCESS)
+        {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -102,7 +108,8 @@ namespace graphics {
         presentInfo.pImageIndices = &_swapChain->currentFrame();
         presentInfo.pResults = nullptr; // Optional
         result = vkQueuePresentKHR(_device->presentQueue(), &presentInfo);
-        if(result == VK_SUBOPTIMAL_KHR) {
+        if(result == VK_SUBOPTIMAL_KHR)
+        {
             vkDeviceWaitIdle(_device->get());
             _swapChain->resize();
             for(auto& r : _renderers)
@@ -145,7 +152,8 @@ namespace graphics {
         _textures.clear();
         _meshes.clear();
 
-        for(size_t i = 0; i < _renderFinishedSemaphores.size(); i++) {
+        for(size_t i = 0; i < _renderFinishedSemaphores.size(); i++)
+        {
             vkDestroyFence(_device->get(), _inFlightFences[i], nullptr);
             vkDestroySemaphore(_device->get(), _renderFinishedSemaphores[i], nullptr);
         }
@@ -163,7 +171,8 @@ namespace graphics {
 
     void VulkanRuntime::createInstance()
     {
-        if(_validationLayersEnabled && !validationLayersSupported()) {
+        if(_validationLayersEnabled && !validationLayersSupported())
+        {
             throw std::runtime_error("vulkan validation layers are not available!");
         }
 
@@ -190,14 +199,16 @@ namespace graphics {
 
         // validation layers and debug callback
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-        if(_validationLayersEnabled) {
+        if(_validationLayersEnabled)
+        {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
 
             setDebugMessengerCreateInfo(debugCreateInfo);
             createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
         }
-        else {
+        else
+        {
             createInfo.enabledLayerCount = 0;
 
             createInfo.pNext = nullptr;
@@ -206,7 +217,8 @@ namespace graphics {
 
         // Create Instance
         VkResult res = vkCreateInstance(&createInfo, nullptr, &_instance);
-        if(res != VK_SUCCESS) {
+        if(res != VK_SUCCESS)
+        {
             Runtime::error("Could not create vulkan instance: " + std::to_string(res));
             throw std::runtime_error("failed to create vulkan instance!");
         }
@@ -225,10 +237,12 @@ namespace graphics {
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for(size_t i = 0; i < _swapChain->size(); i++) {
+        for(size_t i = 0; i < _swapChain->size(); i++)
+        {
             if(vkCreateSemaphore(_device->get(), &semaphoreInfo, nullptr, &_renderFinishedSemaphores[i]) !=
                    VK_SUCCESS ||
-               vkCreateFence(_device->get(), &fenceInfo, nullptr, &_inFlightFences[i]) != VK_SUCCESS) {
+               vkCreateFence(_device->get(), &fenceInfo, nullptr, &_inFlightFences[i]) != VK_SUCCESS)
+            {
 
                 throw std::runtime_error("failed to create semaphores for a frame!");
             }
@@ -255,17 +269,21 @@ namespace graphics {
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-        for(const char* layerName : validationLayers) {
+        for(const char* layerName : validationLayers)
+        {
             bool layerFound = false;
 
-            for(const auto& layerProperties : availableLayers) {
-                if(strcmp(layerName, layerProperties.layerName) == 0) {
+            for(const auto& layerProperties : availableLayers)
+            {
+                if(strcmp(layerName, layerProperties.layerName) == 0)
+                {
                     layerFound = true;
                     break;
                 }
             }
 
-            if(!layerFound) {
+            if(!layerFound)
+            {
                 return false;
             }
         }
@@ -306,45 +324,50 @@ namespace graphics {
         VkDebugUtilsMessengerCreateInfoEXT createInfo{};
         setDebugMessengerCreateInfo(createInfo);
 
-        if(CreateDebugUtilsMessengerEXT(_instance, &createInfo, nullptr, &_debugMessenger) != VK_SUCCESS) {
+        if(CreateDebugUtilsMessengerEXT(_instance, &createInfo, nullptr, &_debugMessenger) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to set up debug messenger!");
         }
     }
 
-    VkResult VulkanRuntime::CreateDebugUtilsMessengerEXT(
-        VkInstance instance,
-        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-        const VkAllocationCallbacks* pAllocator,
-        VkDebugUtilsMessengerEXT* pDebugMessenger)
+    VkResult VulkanRuntime::CreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                         const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkDebugUtilsMessengerEXT* pDebugMessenger)
     {
         auto func =
             (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        if(func != nullptr) {
+        if(func != nullptr)
+        {
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
         }
-        else {
+        else
+        {
             return VK_ERROR_EXTENSION_NOT_PRESENT;
         }
     }
 
-    void VulkanRuntime::DestroyDebugUtilsMessengerEXT(
-        VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+    void VulkanRuntime::DestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                                      VkDebugUtilsMessengerEXT debugMessenger,
+                                                      const VkAllocationCallbacks* pAllocator)
     {
         auto func =
             (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-        if(func != nullptr) {
+        if(func != nullptr)
+        {
             func(instance, debugMessenger, pAllocator);
         }
     }
 
-    VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRuntime::debugCallback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData)
+    VKAPI_ATTR VkBool32 VKAPI_CALL
+    VulkanRuntime::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                 VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                 void* pUserData)
     {
 
-        if(messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+        if(messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+        {
             if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
                 Runtime::warn("Vulkan: " + std::string(pCallbackData->pMessage));
             else if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
@@ -352,8 +375,8 @@ namespace graphics {
             else
                 Runtime::log("Vulkan: " + std::string(pCallbackData->pMessage));
 #ifndef NDEBUG
-            /*if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-                throw std::runtime_error("Vulkan debug error");*/
+                /*if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+                    throw std::runtime_error("Vulkan debug error");*/
 #endif
         }
         return VK_FALSE;
@@ -373,20 +396,22 @@ namespace graphics {
         Runtime::timeline().addTask(
             "draw",
             [this, em] {
-                updateWindow();
-                if(_window->closed()) {
-                    bool closing = true;
-                    if(_onWindowClosed)
-                        closing = _onWindowClosed();
+            updateWindow();
+            if(_window->closed())
+            {
+                bool closing = true;
+                if(_onWindowClosed)
+                    closing = _onWindowClosed();
 
-                    if(closing) {
-                        Runtime::stop();
-                        return;
-                    }
-                    else
-                        glfwSetWindowShouldClose(_window->window(), GL_FALSE);
+                if(closing)
+                {
+                    Runtime::stop();
+                    return;
                 }
-                draw(*em);
+                else
+                    glfwSetWindowShouldClose(_window->window(), GL_FALSE);
+            }
+            draw(*em);
             },
             "draw");
     }
@@ -435,8 +460,10 @@ namespace graphics {
 
     void VulkanRuntime::removeRenderer(Renderer* renderer)
     {
-        for(auto i = _renderers.begin(); i != _renderers.end(); i++) {
-            if((*i).get() == renderer) {
+        for(auto i = _renderers.begin(); i != _renderers.end(); i++)
+        {
+            if((*i).get() == renderer)
+            {
                 _renderers.erase(i);
                 return;
             }
@@ -459,19 +486,23 @@ namespace graphics {
         auto image = dynamic_cast<ImageAsset*>(graphicalAsset);
         assert(shader || material || mesh || image);
         uint32_t runtimeID;
-        if(shader) {
+        if(shader)
+        {
             runtimeID = _shaders.size();
             _shaders.push(0);
         }
-        if(material) {
+        if(material)
+        {
             runtimeID = _materials.size();
             _materials.push(0);
         }
-        if(mesh) {
+        if(mesh)
+        {
             runtimeID = _meshes.size();
             _meshes.push(0);
         }
-        if(image) {
+        if(image)
+        {
             runtimeID = _textures.size();
             _textures.push(0);
         }
@@ -481,26 +512,27 @@ namespace graphics {
 
     void VulkanRuntime::processAsset(uint32_t runtimeID, Asset* graphicalAsset)
     {
-        switch(graphicalAsset->type.type()) {
-        case AssetType::mesh:
-            assert(_meshes[runtimeID] == nullptr);
-            _meshes[runtimeID] = std::make_unique<Mesh>(dynamic_cast<MeshAsset*>(graphicalAsset));
-            break;
-        case AssetType::shader:
-            assert(_shaders[runtimeID] == nullptr);
-            _shaders[runtimeID] = std::make_unique<Shader>(dynamic_cast<ShaderAsset*>(graphicalAsset));
-            break;
-        case AssetType::material:
-            assert(_materials[runtimeID] == nullptr);
-            _materials[runtimeID] = std::make_unique<Material>(dynamic_cast<MaterialAsset*>(graphicalAsset), this);
-            break;
-        case AssetType::image:
-            assert(_textures[runtimeID] == nullptr);
-            _textures[runtimeID] = std::make_unique<Texture>(dynamic_cast<ImageAsset*>(graphicalAsset));
-            break;
-        default:
-            Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' is not a graphical asset");
-            assert(false);
+        switch(graphicalAsset->type.type())
+        {
+            case AssetType::mesh:
+                assert(_meshes[runtimeID] == nullptr);
+                _meshes[runtimeID] = std::make_unique<Mesh>(dynamic_cast<MeshAsset*>(graphicalAsset));
+                break;
+            case AssetType::shader:
+                assert(_shaders[runtimeID] == nullptr);
+                _shaders[runtimeID] = std::make_unique<Shader>(dynamic_cast<ShaderAsset*>(graphicalAsset));
+                break;
+            case AssetType::material:
+                assert(_materials[runtimeID] == nullptr);
+                _materials[runtimeID] = std::make_unique<Material>(dynamic_cast<MaterialAsset*>(graphicalAsset), this);
+                break;
+            case AssetType::image:
+                assert(_textures[runtimeID] == nullptr);
+                _textures[runtimeID] = std::make_unique<Texture>(dynamic_cast<ImageAsset*>(graphicalAsset));
+                break;
+            default:
+                Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' is not a graphical asset");
+                assert(false);
         }
     }
 
@@ -508,17 +540,22 @@ namespace graphics {
     {
         vkDeviceWaitIdle(device());
         std::scoped_lock l(_assetLock);
-        for(auto s = _shaders.begin(); s != _shaders.end(); ++s) {
-            if((*s)->asset() == shader) {
+        for(auto s = _shaders.begin(); s != _shaders.end(); ++s)
+        {
+            if((*s)->asset() == shader)
+            {
                 shader->runtimeID = s.index();
                 *(*s) = std::move(Shader(shader));
 
-                for(auto& m : _materials) {
+                for(auto& m : _materials)
+                {
                     if(!m)
                         continue;
-                    if(m->fragmentShader() == (*s).get() || m->vertexShader() == (*s).get()) {
+                    if(m->fragmentShader() == (*s).get() || m->vertexShader() == (*s).get())
+                    {
                         (*m) = Material(m->asset(), this);
-                        for(auto& r : _renderers) {
+                        for(auto& r : _renderers)
+                        {
                             auto sr = dynamic_cast<SceneRenderer*>(r.get());
                             if(sr)
                                 sr->reloadMaterial(m.get());
@@ -534,11 +571,14 @@ namespace graphics {
     {
         vkDeviceWaitIdle(device());
         std::scoped_lock l(_assetLock);
-        for(auto m = _materials.begin(); m != _materials.end(); ++m) {
-            if((*m)->asset() == material) {
+        for(auto m = _materials.begin(); m != _materials.end(); ++m)
+        {
+            if((*m)->asset() == material)
+            {
                 material->runtimeID = m.index();
                 *(*m) = Material(material, this);
-                for(auto& r : _renderers) {
+                for(auto& r : _renderers)
+                {
                     auto sr = dynamic_cast<SceneRenderer*>(r.get());
                     if(sr)
                         sr->reloadMaterial((*m).get());
@@ -550,22 +590,24 @@ namespace graphics {
 
     void VulkanRuntime::reloadAsset(Asset* graphicalAsset, bool async)
     {
-        if(async) {
+        if(async)
+        {
             std::scoped_lock aLock(_assetLock);
             _reloadAssets.push_back(graphicalAsset);
             return;
         }
-        switch(graphicalAsset->type.type()) {
-        case AssetType::shader:
-            reloadShader((ShaderAsset*)graphicalAsset);
-            break;
-        case AssetType::material:
-            reloadMaterial((MaterialAsset*)graphicalAsset);
-            break;
-        default:
-            Runtime::log(
-                "Asset type '" + graphicalAsset->type.toString() + "' cannot be reloaded by the graphics runtime");
-            assert(false);
+        switch(graphicalAsset->type.type())
+        {
+            case AssetType::shader:
+                reloadShader((ShaderAsset*)graphicalAsset);
+                break;
+            case AssetType::material:
+                reloadMaterial((MaterialAsset*)graphicalAsset);
+                break;
+            default:
+                Runtime::log("Asset type '" + graphicalAsset->type.toString() +
+                             "' cannot be reloaded by the graphics runtime");
+                assert(false);
         }
     }
 

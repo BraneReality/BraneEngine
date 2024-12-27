@@ -11,9 +11,11 @@
 
 class MaterialAsset;
 
-class AssemblyBuilder {
+class AssemblyBuilder
+{
   public:
-    struct AssemblyAssets {
+    struct AssemblyAssets
+    {
         std::unique_ptr<Assembly> assembly;
         std::vector<std::unique_ptr<MeshAsset>> meshes;
     };

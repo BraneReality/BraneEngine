@@ -10,7 +10,8 @@
 #include "runtime/runtime.h"
 #endif
 
-struct ImageSerializationContext : IncrementalAsset::SerializationContext {
+struct ImageSerializationContext : IncrementalAsset::SerializationContext
+{
     uint32_t pos = 0;
 };
 
@@ -53,9 +54,11 @@ void ImageAsset::deserializeHeader(InputSerializer& s)
     uint32_t lineWidth = 2;
     uint32_t lineSpacing = 10;
     uint8_t gridColor[4] = {50, 168, 82, 255};
-    for(uint32_t y = 0; y < size.y; ++y) {
+    for(uint32_t y = 0; y < size.y; ++y)
+    {
         bool yLine = y % lineSpacing < lineWidth;
-        for(uint32_t x = 0; x < size.x; ++x) {
+        for(uint32_t x = 0; x < size.x; ++x)
+        {
             uint32_t pixel = y * size.x + x;
             if(yLine || x % lineSpacing < lineWidth)
                 ((uint32_t*)data.data())[pixel] = *((uint32_t*)gridColor);
@@ -79,8 +82,10 @@ bool ImageAsset::serializeIncrement(OutputSerializer& s, IncrementalAsset::Seria
 
     glm::uvec2 start = {ctx->pos % size.x, ctx->pos / size.x};
     glm::uvec2 end = {std::min(start.x + squareSize, size.x), std::min(start.y + squareSize, size.y)};
-    for(uint32_t y = start.y; y < end.y; ++y) {
-        for(uint32_t x = start.x; x < end.x; ++x) {
+    for(uint32_t y = start.y; y < end.y; ++y)
+    {
+        for(uint32_t x = start.x; x < end.x; ++x)
+        {
             uint32_t pixel = y * size.x + x;
             s << ((uint32_t*)data.data())[pixel];
             ctx->pos++;
@@ -97,8 +102,10 @@ void ImageAsset::deserializeIncrement(InputSerializer& s)
 
     glm::uvec2 start = {pos % size.x, pos / size.x};
     glm::uvec2 end = {std::min(start.x + squareSize, size.x), std::min(start.y + squareSize, size.y)};
-    for(uint32_t y = start.y; y < end.y; ++y) {
-        for(uint32_t x = start.x; x < end.x; ++x) {
+    for(uint32_t y = start.y; y < end.y; ++y)
+    {
+        for(uint32_t x = start.x; x < end.x; ++x)
+        {
             uint32_t pixel = y * size.x + x;
             s >> ((uint32_t*)data.data())[pixel];
         }

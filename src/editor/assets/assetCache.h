@@ -5,9 +5,9 @@
 #ifndef BRANEENGINE_ASSETCACHE_H
 #define BRANEENGINE_ASSETCACHE_H
 
-#include "json/value.h"
 #include <filesystem>
 #include <string>
+#include "json/value.h"
 
 class Asset;
 
@@ -15,7 +15,8 @@ class AssetID;
 
 class BraneProject;
 
-class AssetCache {
+class AssetCache
+{
     BraneProject* _project = nullptr;
 
     std::filesystem::path getPath(const AssetID& id);

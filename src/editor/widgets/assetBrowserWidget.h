@@ -5,17 +5,18 @@
 #ifndef BRANEENGINE_ASSETBROWSERWIDGET_H
 #define BRANEENGINE_ASSETBROWSERWIDGET_H
 
+#include <filesystem>
+#include <memory>
+#include <string>
+#include <vector>
 #include "fileManager/fileManager.h"
 #include "glm/vec2.hpp"
 #include "ui/gui.h"
 #include "ui/guiPopup.h"
 #include "utility/asyncQueue.h"
-#include <filesystem>
-#include <memory>
-#include <string>
-#include <vector>
 
-class AssetBrowserWidget {
+class AssetBrowserWidget
+{
   private:
     std::filesystem::path _rootPath;
     std::unique_ptr<FileManager::Directory> _root;
@@ -29,7 +30,14 @@ class AssetBrowserWidget {
     bool _allowEdits;
     AsyncQueue<std::function<void()>> _mainThreadActions;
 
-    enum class FileType { unknown, directory, normal, source, asset };
+    enum class FileType
+    {
+        unknown,
+        directory,
+        normal,
+        source,
+        asset
+    };
 
     const char* getIcon(const std::filesystem::path& path);
 

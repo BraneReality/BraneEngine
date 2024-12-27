@@ -5,18 +5,21 @@
 #ifndef BRANEENGINE_ENUMNAMEMAP_H
 #define BRANEENGINE_ENUMNAMEMAP_H
 
-#include <unordered_map>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
-template <typename Enum> class EnumNameMap {
+template<typename Enum>
+class EnumNameMap
+{
     std::unordered_map<Enum, std::string> _enumToString;
     std::unordered_map<std::string, Enum> _stringToEnum;
 
   public:
     EnumNameMap(std::vector<std::pair<Enum, std::string>>&& map)
     {
-        for(auto& pair : map) {
+        for(auto& pair : map)
+        {
             _stringToEnum.emplace(pair.second, pair.first);
             _enumToString.emplace(std::move(pair));
         }

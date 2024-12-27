@@ -7,7 +7,8 @@
 
 #include "../editorAsset.h"
 
-class EditorChunkAsset : public EditorAsset {
+class EditorChunkAsset : public EditorAsset
+{
     Asset* buildAssembly() const;
 
     Asset* buildMesh(const AssetID& id) const;

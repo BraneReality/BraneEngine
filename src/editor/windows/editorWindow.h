@@ -9,7 +9,8 @@
 
 class Editor;
 
-class EditorWindow : public GUIWindow {
+class EditorWindow : public GUIWindow
+{
   protected:
     Editor& _editor;
 

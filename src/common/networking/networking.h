@@ -24,7 +24,8 @@ class Asset;
 
 class IncrementalAsset;
 
-struct RequestCTX {
+struct RequestCTX
+{
     uint32_t id;
     std::string name;
     net::Connection* sender;
@@ -43,7 +44,8 @@ struct RequestCTX {
     ~RequestCTX();
 };
 
-class NetworkManager : public Module {
+class NetworkManager : public Module
+{
     asio::io_context _context;
 
     std::shared_ptr<JobHandle> _threadHandle;
@@ -68,32 +70,34 @@ class NetworkManager : public Module {
 
     void connectToAssetServer(std::string ip, uint16_t port);
 
-    template <typename socket_t>
-    void
-    async_acceptConnections(size_t acceptor, std::function<void(std::unique_ptr<net::Connection>& connection)> callback)
+    template<typename socket_t>
+    void async_acceptConnections(size_t acceptor,
+                                 std::function<void(std::unique_ptr<net::Connection>& connection)> callback)
     {
         socket_t* socket;
         if constexpr(std::is_same<socket_t, net::tcp_socket>().value)
             socket = new net::tcp_socket(_context);
         if constexpr(std::is_same<socket_t, net::ssl_socket>().value)
             socket = new net::ssl_socket(_context, _ssl_context);
-        _acceptors[acceptor].async_accept(
-            socket->lowest_layer(), [this, acceptor, socket, callback](std::error_code ec) {
-                if(!ec) {
-                    std::unique_ptr<net::Connection> connection =
-                        std::make_unique<net::ServerConnection<socket_t>>(std::move(*socket));
-                    connection->onRequest([this](auto c, auto m) { handleResponse(c, std::move(m)); });
-                    callback(connection);
-                    _clientLock.lock();
-                    _clients.push_back(std::move(connection));
-                    _clientLock.unlock();
-                }
-                else {
-                    Runtime::error("Connection Error: " + std::string(ec.message()));
-                }
-                delete socket;
-                async_acceptConnections<socket_t>(acceptor, callback);
-            });
+        _acceptors[acceptor].async_accept(socket->lowest_layer(),
+                                          [this, acceptor, socket, callback](std::error_code ec) {
+            if(!ec)
+            {
+                std::unique_ptr<net::Connection> connection =
+                    std::make_unique<net::ServerConnection<socket_t>>(std::move(*socket));
+                connection->onRequest([this](auto c, auto m) { handleResponse(c, std::move(m)); });
+                callback(connection);
+                _clientLock.lock();
+                _clients.push_back(std::move(connection));
+                _clientLock.unlock();
+            }
+            else
+            {
+                Runtime::error("Connection Error: " + std::string(ec.message()));
+            }
+            delete socket;
+            async_acceptConnections<socket_t>(acceptor, callback);
+        });
     }
 
     void startSystems();
@@ -115,9 +119,9 @@ class NetworkManager : public Module {
 
     net::Connection* getServer(const std::string& address) const;
 
-    template <typename socket_t>
-    void openClientAcceptor(
-        const uint32_t port, std::function<void(const std::unique_ptr<net::Connection>& connection)> callback)
+    template<typename socket_t>
+    void openClientAcceptor(const uint32_t port,
+                            std::function<void(const std::unique_ptr<net::Connection>& connection)> callback)
     {
         _acceptors.emplace_back(_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port));
         auto& acceptor = *(_acceptors.end() - 1);

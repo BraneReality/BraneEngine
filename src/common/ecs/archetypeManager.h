@@ -11,7 +11,8 @@
 
 class ComponentManager;
 
-class ArchetypeManager {
+class ArchetypeManager
+{
 #ifdef TEST_BUILD
   public:
 #endif
@@ -23,7 +24,8 @@ class ArchetypeManager {
     ComponentManager& _componentManager;
 
   public:
-    class iterator {
+    class iterator
+    {
         ArchetypeManager& _ref;
         size_t _size;
         size_t _archetype;

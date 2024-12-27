@@ -7,7 +7,8 @@
 
 #include "ecs/nativeComponent.h"
 
-class PointLightComponent : public NativeComponent<PointLightComponent> {
+class PointLightComponent : public NativeComponent<PointLightComponent>
+{
     REGISTER_MEMBERS_1("Point Light", color, "color");
 
   public:

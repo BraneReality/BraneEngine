@@ -8,7 +8,8 @@
 #include "../editorAsset.h"
 #include "ecs/component.h"
 
-class EditorAssemblyAsset : public EditorAsset {
+class EditorAssemblyAsset : public EditorAsset
+{
     Asset* buildAssembly() const;
 
     Asset* buildMesh(const AssetID& id) const;

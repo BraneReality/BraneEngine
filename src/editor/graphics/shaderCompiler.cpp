@@ -3,12 +3,12 @@
 //
 
 #include "shaderCompiler.h"
-#include "assets/types/shaderAsset.h"
-#include "runtime/runtime.h"
-#include "spirv_cross/spirv_cross.hpp"
-#include "fileManager/fileManager.h"
 #include <filesystem>
 #include <memory>
+#include "assets/types/shaderAsset.h"
+#include "fileManager/fileManager.h"
+#include "runtime/runtime.h"
+#include "spirv_cross/spirv_cross.hpp"
 
 ShaderCompiler::ShaderCompiler() {}
 
@@ -17,8 +17,10 @@ ShaderIncluder::ShaderIncluder()
     _search_dirs.push_back(std::filesystem::current_path() / "defaultAssets" / "shaders");
 }
 
-shaderc_include_result* ShaderIncluder::GetInclude(
-    const char* requested_source, shaderc_include_type type, const char* requesting_source, size_t include_depth)
+shaderc_include_result* ShaderIncluder::GetInclude(const char* requested_source,
+                                                   shaderc_include_type type,
+                                                   const char* requesting_source,
+                                                   size_t include_depth)
 {
 
     std::cout << "Shader wants: '" << requested_source << "' and is asking from: '" << requesting_source << "'"
@@ -29,10 +31,12 @@ shaderc_include_result* ShaderIncluder::GetInclude(
     std::vector<char> file;
 
     std::cout << "Searching " << _search_dirs.size() << " dirs" << std::endl;
-    for(auto dir : _search_dirs) {
+    for(auto dir : _search_dirs)
+    {
         std::cout << "searching " << dir << std::endl;
         auto path = dir / requested_source;
-        if(FileManager::readFile(path, file)) {
+        if(FileManager::readFile(path, file))
+        {
             std::cout << "Found: " << path << std::endl;
             shaderc_include_result* result = new shaderc_include_result{};
             auto pathStr = path.u8string();
@@ -71,32 +75,32 @@ void ShaderIncluder::ReleaseInclude(shaderc_include_result* data)
 
 void ShaderIncluder::addSearchDir(std::filesystem::path dir) { _search_dirs.push_back(dir); }
 
-bool ShaderCompiler::compileShader(
-    const std::string& glsl,
-    ShaderType type,
-    std::vector<uint32_t>& spirv,
-    std::unique_ptr<ShaderIncluder> includer,
-    bool optimize)
+bool ShaderCompiler::compileShader(const std::string& glsl,
+                                   ShaderType type,
+                                   std::vector<uint32_t>& spirv,
+                                   std::unique_ptr<ShaderIncluder> includer,
+                                   bool optimize)
 {
     shaderc_shader_kind kind;
-    switch(type) {
+    switch(type)
+    {
 
-    case ShaderType::vertex:
-        kind = shaderc_glsl_vertex_shader;
-        break;
-    case ShaderType::fragment:
-        kind = shaderc_glsl_fragment_shader;
-        break;
-    case ShaderType::geometry:
-        kind = shaderc_glsl_geometry_shader;
-        break;
-    case ShaderType::compute:
-        kind = shaderc_glsl_compute_shader;
-        break;
-    default:
-        Runtime::error("Tried to compile unknown shader type!");
-        assert(false);
-        return false;
+        case ShaderType::vertex:
+            kind = shaderc_glsl_vertex_shader;
+            break;
+        case ShaderType::fragment:
+            kind = shaderc_glsl_fragment_shader;
+            break;
+        case ShaderType::geometry:
+            kind = shaderc_glsl_geometry_shader;
+            break;
+        case ShaderType::compute:
+            kind = shaderc_glsl_compute_shader;
+            break;
+        default:
+            Runtime::error("Tried to compile unknown shader type!");
+            assert(false);
+            return false;
     }
 
     shaderc::Compiler compiler;
@@ -110,7 +114,8 @@ bool ShaderCompiler::compileShader(
 
     auto result = compiler.CompileGlslToSpv(glsl, kind, "shader line", options);
 
-    if(result.GetCompilationStatus() != shaderc_compilation_status_success) {
+    if(result.GetCompilationStatus() != shaderc_compilation_status_success)
+    {
         Runtime::error("Could not compile shader:\n" + result.GetErrorMessage());
         return false;
     }
@@ -120,49 +125,49 @@ bool ShaderCompiler::compileShader(
 
 ShaderVariableData::Type typeFromSpirvType(spirv_cross::SPIRType::BaseType type)
 {
-    switch(type) {
-    case spirv_cross::SPIRType::Boolean:
-        return ShaderVariableData::Type::Boolean;
-    case spirv_cross::SPIRType::SByte:
-        return ShaderVariableData::Type::Byte;
-    case spirv_cross::SPIRType::UByte:
-        return ShaderVariableData::Type::UByte;
-    case spirv_cross::SPIRType::Short:
-        return ShaderVariableData::Type::Short;
-    case spirv_cross::SPIRType::UShort:
-        return ShaderVariableData::Type::UShort;
-    case spirv_cross::SPIRType::Int:
-        return ShaderVariableData::Type::Int;
-    case spirv_cross::SPIRType::UInt:
-        return ShaderVariableData::Type::UInt;
-    case spirv_cross::SPIRType::Int64:
-        return ShaderVariableData::Type::Int64;
-    case spirv_cross::SPIRType::UInt64:
-        return ShaderVariableData::Type::UInt64;
-    case spirv_cross::SPIRType::Half:
-        return ShaderVariableData::Type::Half;
-    case spirv_cross::SPIRType::Float:
-        return ShaderVariableData::Type::Float;
-    case spirv_cross::SPIRType::Double:
-        return ShaderVariableData::Type::Double;
-    case spirv_cross::SPIRType::Struct:
-        return ShaderVariableData::Type::Struct;
-    case spirv_cross::SPIRType::Image:
-        return ShaderVariableData::Type::Image;
-    case spirv_cross::SPIRType::SampledImage:
-        return ShaderVariableData::Type::SampledImage;
-    case spirv_cross::SPIRType::Sampler:
-        return ShaderVariableData::Type::Sampler;
-    default:
-        return ShaderVariableData::Type::None;
+    switch(type)
+    {
+        case spirv_cross::SPIRType::Boolean:
+            return ShaderVariableData::Type::Boolean;
+        case spirv_cross::SPIRType::SByte:
+            return ShaderVariableData::Type::Byte;
+        case spirv_cross::SPIRType::UByte:
+            return ShaderVariableData::Type::UByte;
+        case spirv_cross::SPIRType::Short:
+            return ShaderVariableData::Type::Short;
+        case spirv_cross::SPIRType::UShort:
+            return ShaderVariableData::Type::UShort;
+        case spirv_cross::SPIRType::Int:
+            return ShaderVariableData::Type::Int;
+        case spirv_cross::SPIRType::UInt:
+            return ShaderVariableData::Type::UInt;
+        case spirv_cross::SPIRType::Int64:
+            return ShaderVariableData::Type::Int64;
+        case spirv_cross::SPIRType::UInt64:
+            return ShaderVariableData::Type::UInt64;
+        case spirv_cross::SPIRType::Half:
+            return ShaderVariableData::Type::Half;
+        case spirv_cross::SPIRType::Float:
+            return ShaderVariableData::Type::Float;
+        case spirv_cross::SPIRType::Double:
+            return ShaderVariableData::Type::Double;
+        case spirv_cross::SPIRType::Struct:
+            return ShaderVariableData::Type::Struct;
+        case spirv_cross::SPIRType::Image:
+            return ShaderVariableData::Type::Image;
+        case spirv_cross::SPIRType::SampledImage:
+            return ShaderVariableData::Type::SampledImage;
+        case spirv_cross::SPIRType::Sampler:
+            return ShaderVariableData::Type::Sampler;
+        default:
+            return ShaderVariableData::Type::None;
     }
 }
 
-bool ShaderCompiler::extractAttributes(
-    const std::string& glsl,
-    ShaderType shaderType,
-    std::unique_ptr<ShaderIncluder> includer,
-    ShaderAttributes& attributes)
+bool ShaderCompiler::extractAttributes(const std::string& glsl,
+                                       ShaderType shaderType,
+                                       std::unique_ptr<ShaderIncluder> includer,
+                                       ShaderAttributes& attributes)
 {
     // We need to compile without optimization to be able to extract variable names
     std::vector<uint32_t> spirv;
@@ -172,7 +177,8 @@ bool ShaderCompiler::extractAttributes(
     spirv_cross::Compiler compiler(std::move(spirv));
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
-    for(auto& uniformBuffer : resources.uniform_buffers) {
+    for(auto& uniformBuffer : resources.uniform_buffers)
+    {
         UniformBufferData ub{};
         ub.name = uniformBuffer.name;
 
@@ -181,7 +187,8 @@ bool ShaderCompiler::extractAttributes(
         auto& type = compiler.get_type(uniformBuffer.base_type_id);
         assert(type.basetype == spirv_cross::SPIRType::Struct);
         ub.size = compiler.get_declared_struct_size(type);
-        for(size_t i = 0; i < type.member_types.size(); ++i) {
+        for(size_t i = 0; i < type.member_types.size(); ++i)
+        {
             auto& memberType = compiler.get_type(type.member_types[i]);
             ShaderVariableData memberData;
             memberData.location = compiler.get_member_decoration(uniformBuffer.base_type_id, i, spv::DecorationOffset);
@@ -195,14 +202,16 @@ bool ShaderCompiler::extractAttributes(
 
         attributes.uniforms.push_back(ub);
     }
-    for(auto& uniformBuffer : resources.storage_buffers) {
+    for(auto& uniformBuffer : resources.storage_buffers)
+    {
         UniformBufferData ub{};
         ub.name = uniformBuffer.name;
         ub.binding = compiler.get_decoration(uniformBuffer.id, spv::DecorationBinding);
         auto& type = compiler.get_type(uniformBuffer.base_type_id);
         assert(type.basetype == spirv_cross::SPIRType::Struct);
         ub.size = compiler.get_declared_struct_size(type);
-        for(size_t i = 0; i < type.member_types.size(); ++i) {
+        for(size_t i = 0; i < type.member_types.size(); ++i)
+        {
             auto& memberType = compiler.get_type(type.member_types[i]);
             ShaderVariableData memberData;
             memberData.location = compiler.get_member_decoration(uniformBuffer.base_type_id, i, spv::DecorationOffset);
@@ -216,13 +225,15 @@ bool ShaderCompiler::extractAttributes(
 
         attributes.buffers.push_back(ub);
     }
-    for(auto& sampler : resources.sampled_images) {
+    for(auto& sampler : resources.sampled_images)
+    {
         ShaderVariableData samp{};
         samp.name = sampler.name;
         samp.location = compiler.get_decoration(sampler.id, spv::DecorationBinding);
         attributes.samplers.push_back(samp);
     }
-    for(auto& stageInput : resources.stage_inputs) {
+    for(auto& stageInput : resources.stage_inputs)
+    {
 
         ShaderVariableData var;
         var.location = compiler.get_decoration(stageInput.id, spv::DecorationLocation);
@@ -236,7 +247,8 @@ bool ShaderCompiler::extractAttributes(
         var.columns = type.columns;
         attributes.inputVariables.push_back(var);
     }
-    for(auto& stageOutput : resources.stage_outputs) {
+    for(auto& stageOutput : resources.stage_outputs)
+    {
         ShaderVariableData var;
         var.location = compiler.get_decoration(stageOutput.id, spv::DecorationLocation);
         var.name = stageOutput.name;

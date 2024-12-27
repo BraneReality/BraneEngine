@@ -5,17 +5,18 @@
 #ifndef BRANEENGINE_ASSETSEARCHWIDGET_H
 #define BRANEENGINE_ASSETSEARCHWIDGET_H
 
-#include "assets/assetID.h"
-#include "assets/assetType.h"
 #include <atomic>
 #include <filesystem>
 #include <mutex>
 #include <string>
 #include <vector>
+#include "assets/assetID.h"
+#include "assets/assetType.h"
 
 class BraneProject;
 
-class AssetSearchWidget {
+class AssetSearchWidget
+{
     std::string _searchText;
     size_t _searchIncrement;
     AssetType _assetType;

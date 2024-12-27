@@ -15,16 +15,19 @@ void Assembly::EntityAsset::serialize(OutputSerializer& message, const Assembly&
 {
     uint32_t size = static_cast<uint32_t>(components.size());
     message << size;
-    for(size_t i = 0; i < size; ++i) {
+    for(size_t i = 0; i < size; ++i)
+    {
         uint32_t componentIDIndex = 0;
-        for(auto& id : assembly.components) {
+        for(auto& id : assembly.components)
+        {
             if(id == components[i].description()->asset->id)
                 break;
             ++componentIDIndex;
         }
-        if(componentIDIndex >= assembly.components.size()) {
-            Runtime::error(
-                "Component: " + components[i].description()->asset->id.string() + " not found in asset components");
+        if(componentIDIndex >= assembly.components.size())
+        {
+            Runtime::error("Component: " + components[i].description()->asset->id.string() +
+                           " not found in asset components");
             throw std::runtime_error("Component assetID not listed in asset components");
         }
 
@@ -34,24 +37,27 @@ void Assembly::EntityAsset::serialize(OutputSerializer& message, const Assembly&
     }
 }
 
-void Assembly::EntityAsset::deserialize(
-    InputSerializer& message, Assembly& assembly, ComponentManager& cm, AssetManager& am)
+void Assembly::EntityAsset::deserialize(InputSerializer& message,
+                                        Assembly& assembly,
+                                        ComponentManager& cm,
+                                        AssetManager& am)
 {
     uint32_t size;
     message.readSafeArraySize(size);
     components.reserve(size);
-    for(uint32_t i = 0; i < size; ++i) {
+    for(uint32_t i = 0; i < size; ++i)
+    {
         uint32_t componentIDIndex, componentSize;
         message >> componentIDIndex >> componentSize;
         if(componentIDIndex >= assembly.components.size())
             throw std::runtime_error("Component ID index invalid");
         const ComponentDescription* description =
             cm.getComponentDef(am.getAsset<ComponentAsset>(assembly.components[componentIDIndex])->componentID);
-        if(componentSize != description->serializationSize()) {
-            Runtime::error(
-                "Component size " + std::to_string(componentSize) + " does not match size of component " +
-                description->name + " which is " + std::to_string(description->serializationSize()) +
-                ".\n attempting to continue deserialization");
+        if(componentSize != description->serializationSize())
+        {
+            Runtime::error("Component size " + std::to_string(componentSize) + " does not match size of component " +
+                           description->name + " which is " + std::to_string(description->serializationSize()) +
+                           ".\n attempting to continue deserialization");
             message.setPos(message.getPos() + componentSize);
             continue;
         }
@@ -82,7 +88,8 @@ std::vector<ComponentID> Assembly::EntityAsset::runtimeComponentIDs()
 {
     std::vector<ComponentID> componentIDs;
     componentIDs.reserve(components.size());
-    for(auto& component : components) {
+    for(auto& component : components)
+    {
         componentIDs.push_back(component.description()->id);
     }
     return componentIDs;
@@ -93,7 +100,8 @@ void Assembly::serialize(OutputSerializer& message) const
     Asset::serialize(message);
     message << components << scripts << meshes << materials << rootIndex;
     message << (uint32_t)entities.size();
-    for(uint32_t i = 0; i < entities.size(); ++i) {
+    for(uint32_t i = 0; i < entities.size(); ++i)
+    {
         entities[i].serialize(message, *this);
     }
 }
@@ -108,7 +116,8 @@ void Assembly::deserialize(InputSerializer& message)
     uint32_t size;
     message.readSafeArraySize(size);
     entities.resize(size);
-    for(uint32_t i = 0; i < entities.size(); ++i) {
+    for(uint32_t i = 0; i < entities.size(); ++i)
+    {
         entities[i].deserialize(message, *this, cm, am);
     }
 }
@@ -118,13 +127,15 @@ Assembly::Assembly() { type.set(AssetType::Type::assembly); }
 EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef)
 {
     std::vector<EntityID> entityMap(entities.size());
-    for(size_t i = 0; i < entities.size(); ++i) {
+    for(size_t i = 0; i < entities.size(); ++i)
+    {
         EntityAsset& entity = entities[i];
         entityMap[i] = em.createEntity(entity.runtimeComponentIDs());
     }
     EntityID rootID = entityMap[rootIndex];
 
-    for(size_t i = 0; i < entities.size(); ++i) {
+    for(size_t i = 0; i < entities.size(); ++i)
+    {
         EntityAsset& entity = entities[i];
         EntityID id = entityMap[i];
         for(auto& component : entity.components)
@@ -134,13 +145,16 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
 #ifdef CLIENT
     auto* am = Runtime::getModule<AssetManager>();
 #endif
-    for(size_t i = 0; i < entities.size(); ++i) {
+    for(size_t i = 0; i < entities.size(); ++i)
+    {
         EntityAsset& entity = entities[i];
         EntityID entityId = entityMap[i];
-        if(entity.hasComponent(Children::def())) {
+        if(entity.hasComponent(Children::def()))
+        {
             auto* cc = em.getComponent<Children>(entityMap[i]);
             auto children = std::move(cc->children);
-            for(auto& child : children) {
+            for(auto& child : children)
+            {
                 EntityID childID = entityMap[child.id];
                 if(entityId == childID)
                     throw std::runtime_error("Cannot parent an entity to itself");
@@ -148,12 +162,15 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
             }
         }
 #ifdef CLIENT
-        if(entity.hasComponent(MeshRendererComponent::def())) {
+        if(entity.hasComponent(MeshRendererComponent::def()))
+        {
             auto* renderer = em.getComponent<MeshRendererComponent>(entityMap[i]);
             auto* mesh = am->getAsset<MeshAsset>(meshes[renderer->mesh].sameOrigin(id));
             renderer->mesh = mesh->runtimeID;
-            for(auto& mID : renderer->materials) {
-                if(materials.size() <= mID || materials[mID].null()) {
+            for(auto& mID : renderer->materials)
+            {
+                if(materials.size() <= mID || materials[mID].null())
+                {
                     mID = -1;
                     continue;
                 }

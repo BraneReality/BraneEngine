@@ -15,15 +15,19 @@ void FileWatcher::addFileWatcher(const std::string& ext, std::function<void(cons
 
 void FileWatcher::scanForChanges(bool callbacks)
 {
-    for(auto& wd : _watchedDirectories) {
-        for(auto& file : std::filesystem::recursive_directory_iterator{wd}) {
+    for(auto& wd : _watchedDirectories)
+    {
+        for(auto& file : std::filesystem::recursive_directory_iterator{wd})
+        {
             if(!file.is_regular_file())
                 continue;
             std::string ext = file.path().extension().string();
-            if(_fileWatchers.count(ext)) {
+            if(_fileWatchers.count(ext))
+            {
                 auto currentUpdate = std::filesystem::last_write_time(file.path());
                 std::string strPath = file.path().string();
-                if(!_lastUpdate.count(strPath) || _lastUpdate.at(strPath) != currentUpdate) {
+                if(!_lastUpdate.count(strPath) || _lastUpdate.at(strPath) != currentUpdate)
+                {
                     if(callbacks)
                         _fileWatchers[ext](file.path());
                     _lastUpdate[strPath] = currentUpdate;
@@ -44,7 +48,8 @@ void FileWatcher::loadCache(std::filesystem::path changeCache)
     InputSerializer s(cacheData);
     uint32_t count = 0;
     s >> count;
-    for(uint32_t i = 0; i < count; ++i) {
+    for(uint32_t i = 0; i < count; ++i)
+    {
         std::string path;
         std::filesystem::file_time_type lastUpdate;
         s >> path >> lastUpdate;

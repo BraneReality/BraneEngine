@@ -9,7 +9,8 @@
 
 typedef unsigned int ImGuiID;
 
-class GUIPopup {
+class GUIPopup
+{
     ImGuiID _id;
     std::string _name;
 

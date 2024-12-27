@@ -10,9 +10,11 @@
 
 #include "ecs/nativeComponent.h"
 
-namespace graphics {
+namespace graphics
+{
 
-    class Camera : public NativeComponent<Camera> {
+    class Camera : public NativeComponent<Camera>
+    {
       public:
         REGISTER_MEMBERS_1("camera", fov, "fov");
         float fov = 45;

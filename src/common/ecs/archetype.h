@@ -1,12 +1,12 @@
 #pragma once
 
-#include "common/utility/sharedRecursiveMutex.h"
-#include "common/utility/stackAllocate.h"
-#include "common/utility/threadPool.h"
 #include <cstdint>
 #include <functional>
 #include <list>
 #include <memory>
+#include "common/utility/sharedRecursiveMutex.h"
+#include "common/utility/stackAllocate.h"
+#include "common/utility/threadPool.h"
 #include <unordered_set>
 
 #include "chunk.h"
@@ -19,12 +19,14 @@ class EntitySet;
 
 class ComponentFilter;
 
-struct ArchetypeEdge {
+struct ArchetypeEdge
+{
     ComponentID component;
     Archetype* archetype;
 };
 
-class Archetype {
+class Archetype
+{
 #ifdef TEST_BUILD
   public:
 #endif

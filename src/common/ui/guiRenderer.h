@@ -9,7 +9,8 @@
 
 class GUI;
 
-class GUIRenderer : public graphics::Renderer {
+class GUIRenderer : public graphics::Renderer
+{
     GUI* _gui;
 
   public:

@@ -5,7 +5,8 @@
 #include "runtime.h"
 #include <utility/threadPool.h>
 
-namespace Runtime {
+namespace Runtime
+{
     std::unordered_map<std::string, std::unique_ptr<Module>> _modules;
     bool _initalized = false;
     Timeline _timeline;
@@ -33,11 +34,13 @@ namespace Runtime {
     void run()
     {
         assert(_initalized);
-        for(auto& m : _modules) {
+        for(auto& m : _modules)
+        {
             m.second->start();
         }
 
-        while(_running) {
+        while(_running)
+        {
             _timeline.run();
             ThreadPool::runMainJobs();
             Logging::callListeners();
@@ -46,7 +49,8 @@ namespace Runtime {
             _deltaTime = (float)updatePeriod.count() / 1000000.0f;
             _lastUpdate = now;
 
-            if(_tickRate != 0 && updatePeriod.count() < 1000000 / _tickRate) {
+            if(_tickRate != 0 && updatePeriod.count() < 1000000 / _tickRate)
+            {
                 std::chrono::microseconds minTime(1000000 / _tickRate);
                 std::this_thread::sleep_for(minTime - updatePeriod);
             }
@@ -57,7 +61,8 @@ namespace Runtime {
     {
         if(!_running)
             return;
-        for(auto& m : _modules) {
+        for(auto& m : _modules)
+        {
             m.second->stop();
         }
 

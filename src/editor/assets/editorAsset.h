@@ -5,8 +5,8 @@
 #ifndef BRANEENGINE_EDITORASSET_H
 #define BRANEENGINE_EDITORASSET_H
 
-#include <assets/assetType.h>
 #include <filesystem>
+#include <assets/assetType.h>
 #include <utility/jsonVersioner.h>
 #include <utility/serializedData.h>
 
@@ -14,7 +14,8 @@ class Asset;
 
 class BraneProject;
 
-class EditorAsset {
+class EditorAsset
+{
   protected:
     // Editable data goes in the json for easy versioning, other things will be serialized in binary format
     BraneProject& _project;

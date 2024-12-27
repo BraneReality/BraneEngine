@@ -12,7 +12,8 @@ EditorImageAsset::EditorImageAsset(const std::filesystem::path& file, BraneProje
     : EditorAsset(file, project)
 {
     // Generate default
-    if(!std::filesystem::exists(_file)) {
+    if(!std::filesystem::exists(_file))
+    {
         _json.data()["imageType"] = 0;
     }
 }
@@ -36,7 +37,8 @@ Asset* EditorImageAsset::buildAsset(const AssetID& id) const
 
     int w, h, texChannels;
     unsigned char* pixels = stbi_load(imagePath.string().c_str(), &w, &h, &texChannels, STBI_rgb_alpha);
-    if(!pixels) {
+    if(!pixels)
+    {
         Runtime::error("Unable to load image");
         return nullptr;
     }

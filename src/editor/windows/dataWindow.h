@@ -5,9 +5,9 @@
 #ifndef BRANEENGINE_DATAWINDOW_H
 #define BRANEENGINE_DATAWINDOW_H
 
+#include <memory>
 #include "editorWindow.h"
 #include "vulkan/vulkan.hpp"
-#include <memory>
 
 #include "ecs/entityID.h"
 
@@ -19,13 +19,19 @@ class ImageAsset;
 
 class EditorMaterialAsset;
 
-class DataWindow : public EditorWindow {
-    enum class FocusMode { asset, entity };
+class DataWindow : public EditorWindow
+{
+    enum class FocusMode
+    {
+        asset,
+        entity
+    };
     FocusMode _focusMode;
     std::shared_ptr<EditorAsset> _focusedAsset;
     uint32_t _focusedAssetEntity = 0;
 
-    struct DraggedComponent {
+    struct DraggedComponent
+    {
         Assembly* asset;
         size_t entity;
         size_t componentIndex;

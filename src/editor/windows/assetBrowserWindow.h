@@ -5,11 +5,12 @@
 #ifndef BRANEENGINE_ASSETBROWSERWINDOW_H
 #define BRANEENGINE_ASSETBROWSERWINDOW_H
 
+#include <string>
 #include "../widgets/assetBrowserWidget.h"
 #include "editorWindow.h"
-#include <string>
 
-class AssetBrowserWindow : public EditorWindow {
+class AssetBrowserWindow : public EditorWindow
+{
     AssetBrowserWidget _browser;
 
     void displayContent() override;

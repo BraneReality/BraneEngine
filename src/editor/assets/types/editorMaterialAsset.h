@@ -9,7 +9,8 @@
 
 class EditorShaderAsset;
 
-class EditorMaterialAsset : public EditorAsset {
+class EditorMaterialAsset : public EditorAsset
+{
   public:
     EditorMaterialAsset(const std::filesystem::path& file, BraneProject& project);
 

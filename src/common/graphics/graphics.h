@@ -3,13 +3,13 @@
 #include "validationLayers.h"
 
 #include <chrono>
+#include <memory>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <runtime/module.h>
 #include <utility/asyncQueue.h>
 #include <utility/staticIndexVector.h>
 #include <vulkan/vulkan.hpp>
-#include <memory>
 
 class EntityManager;
 
@@ -21,7 +21,8 @@ class ShaderAsset;
 
 class MaterialAsset;
 
-namespace graphics {
+namespace graphics
+{
     class Window;
 
     class GraphicsDevice;
@@ -40,7 +41,8 @@ namespace graphics {
 
     class Shader;
 
-    class VulkanRuntime : public Module {
+    class VulkanRuntime : public Module
+    {
         Window* _window;
         VkInstance _instance;
         GraphicsDevice* _device;
@@ -86,20 +88,19 @@ namespace graphics {
 
         void setupDebugMessenger();
 
-        static VkResult CreateDebugUtilsMessengerEXT(
-            VkInstance instance,
-            const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-            const VkAllocationCallbacks* pAllocator,
-            VkDebugUtilsMessengerEXT* pDebugMessenger);
+        static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                     const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkDebugUtilsMessengerEXT* pDebugMessenger);
 
-        static void DestroyDebugUtilsMessengerEXT(
-            VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+        static void DestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                                  VkDebugUtilsMessengerEXT debugMessenger,
+                                                  const VkAllocationCallbacks* pAllocator);
 
-        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-            VkDebugUtilsMessageTypeFlagsEXT messageType,
-            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-            void* pUserData);
+        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                            VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                            void* pUserData);
 
         void processAsset(uint32_t runtimeID, Asset* graphicalAsset);
 
@@ -152,7 +153,8 @@ namespace graphics {
 
         Texture* getTexture(size_t runtimeID);
 
-        template <typename T, typename... Args> T* createRenderer(Args... args)
+        template<typename T, typename... Args>
+        T* createRenderer(Args... args)
         {
             static_assert(std::is_base_of<Renderer, T>());
             _renderers.push_back(std::make_unique<T>(*_swapChain, args...));

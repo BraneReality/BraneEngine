@@ -16,11 +16,14 @@ MemoryManagerWindow::MemoryManagerWindow(GUI& ui, Editor& editor) : EditorWindow
 void MemoryManagerWindow::displayContent()
 {
     size_t ecsMemory = 0;
-    if(ImGui::CollapsingHeader(ICON_FA_TABLE_CELLS "Archetypes")) {
-        for(auto& arch : _em->archetypes()) {
+    if(ImGui::CollapsingHeader(ICON_FA_TABLE_CELLS "Archetypes"))
+    {
+        for(auto& arch : _em->archetypes())
+        {
             ecsMemory += arch.chunks().size() * Chunk::allocationSize();
             std::string name = "| ";
-            for(auto& c : arch.componentDescriptions()) {
+            for(auto& c : arch.componentDescriptions())
+            {
                 if(!c->name.empty())
                     name += c->name + " | ";
                 else
@@ -30,7 +33,8 @@ void MemoryManagerWindow::displayContent()
             ImGui::Selectable(name.c_str());
         }
     }
-    if(ImGui::CollapsingHeader("Scene Entities")) {
+    if(ImGui::CollapsingHeader("Scene Entities"))
+    {
         _em->systems().runUnmanagedSystem("display entities", [this](SystemContext* ctx) {
             ImGui::Indent(16);
             ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
@@ -40,8 +44,8 @@ void MemoryManagerWindow::displayContent()
             _em->getEntities(namedEntities).forEachNative([this](byte** components) {
                 auto* id = EntityIDComponent::fromVirtual(components[0]);
                 auto* name = EntityName::fromVirtual(components[1]);
-                if(ImGui::Selectable(
-                       (name->name.empty()) ? ("##" + std::to_string((size_t)name)).c_str() : name->name.c_str()))
+                if(ImGui::Selectable((name->name.empty()) ? ("##" + std::to_string((size_t)name)).c_str()
+                                                          : name->name.c_str()))
                     _ui.sendEvent(std::make_unique<FocusEntityEvent>(id->id));
             });
             ComponentFilter unnamedEntities(ctx);

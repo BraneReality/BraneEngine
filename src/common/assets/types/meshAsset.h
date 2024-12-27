@@ -1,24 +1,34 @@
 #pragma once
 
-#include "../asset.h"
 #include <cstring>
-#include <glm/glm.hpp>
 #include <vector>
+#include "../asset.h"
+#include <glm/glm.hpp>
 
-class MeshAsset : public IncrementalAsset {
+class MeshAsset : public IncrementalAsset
+{
   public:
     uint32_t _trisPerIncrement = 60;
 
-    struct Primitive {
+    struct Primitive
+    {
         uint32_t indexOffset;
-        enum IndexType : uint8_t { UInt16 = 0, UInt32 = 1 } indexType;
+
+        enum IndexType : uint8_t
+        {
+            UInt16 = 0,
+            UInt32 = 1
+        } indexType;
+
         uint32_t indexCount;
         uint32_t vertexCount;
 
-        struct Attribute {
+        struct Attribute
+        {
             uint32_t offset;
             uint32_t step;
         };
+
         std::unordered_map<std::string, Attribute> attributes;
     };
 
@@ -39,7 +49,8 @@ class MeshAsset : public IncrementalAsset {
 
     size_t addPrimitive(const std::vector<uint32_t>& indices, uint32_t vertexCount);
 
-    template <typename T> void addAttribute(size_t primitive, const std::string& name, std::vector<T>& data)
+    template<typename T>
+    void addAttribute(size_t primitive, const std::string& name, std::vector<T>& data)
     {
         assert(primitive < _primitives.size());
         size_t index = _data.size();

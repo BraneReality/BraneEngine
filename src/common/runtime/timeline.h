@@ -5,15 +5,16 @@
 #ifndef BRANEENGINE_TIMELINE_H
 #define BRANEENGINE_TIMELINE_H
 
-#include "module.h"
-#include <forward_list>
 #include <functional>
 #include <list>
 #include <memory>
 #include <string>
+#include "module.h"
+#include <forward_list>
 #include <utility/staticIndexVector.h>
 
-class ScheduledTask {
+class ScheduledTask
+{
     std::function<void()> _task;
     std::string _name;
 
@@ -25,7 +26,8 @@ class ScheduledTask {
     void run();
 };
 
-class ScheduledBlock {
+class ScheduledBlock
+{
     std::forward_list<ScheduledTask> _tasks;
     std::string _name;
 
@@ -39,7 +41,8 @@ class ScheduledBlock {
     void addTask(const ScheduledTask& runnable);
 };
 
-class Timeline {
+class Timeline
+{
     std::list<ScheduledBlock> _blocks;
 
   public:

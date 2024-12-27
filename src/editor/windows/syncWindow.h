@@ -5,13 +5,14 @@
 #ifndef BRANEENGINE_SYNCWINDOW_H
 #define BRANEENGINE_SYNCWINDOW_H
 
+#include <atomic>
 #include "editorWindow.h"
 #include "networking/connection.h"
-#include <atomic>
 
 class Asset;
 
-class SyncWindow : public EditorWindow {
+class SyncWindow : public EditorWindow
+{
     // Login variables
     static std::atomic_bool _loggedIn;
     static std::atomic_bool _loggingIn;
@@ -30,9 +31,11 @@ class SyncWindow : public EditorWindow {
 
     void displayContent() override;
 
-    struct AssetDiff {
+    struct AssetDiff
+    {
         AssetID id;
     };
+
     std::vector<AssetDiff> _assetDiffs;
     std::atomic_int _assetDiffSynced = -1;
 
@@ -46,12 +49,15 @@ class SyncWindow : public EditorWindow {
 
     std::atomic_int _usersSynced = -1;
     std::string _userFilter;
-    struct UserInfo {
+
+    struct UserInfo
+    {
         uint32_t id;
         std::string name;
         std::set<std::string> permissions;
         bool synced;
     };
+
     std::vector<UserInfo> _users;
     UserInfo _newUser;
     std::string _newUserPassword;

@@ -4,7 +4,8 @@
 #include "swapChain.h"
 #include <ecs/nativeTypes/meshRenderer.h>
 
-namespace graphics {
+namespace graphics
+{
     Renderer::Renderer(SwapChain& swapChain) : _swapChain(swapChain) {}
 
     Renderer::~Renderer()
@@ -12,7 +13,8 @@ namespace graphics {
         if(_onDestroy)
             _onDestroy();
         vkDestroyRenderPass(device->get(), _renderPass, nullptr);
-        for(auto framebuffer : _frameBuffers) {
+        for(auto framebuffer : _frameBuffers)
+        {
             vkDestroyFramebuffer(device->get(), framebuffer, nullptr);
         }
     }
@@ -43,7 +45,8 @@ namespace graphics {
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        if(depthImageFormat) {
+        if(depthImageFormat)
+        {
             VkAttachmentDescription depthAttachment{};
             depthAttachment.format = depthImageFormat;
             depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -89,7 +92,8 @@ namespace graphics {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if(vkCreateRenderPass(device->get(), &renderPassInfo, nullptr, &_renderPass) != VK_SUCCESS) {
+        if(vkCreateRenderPass(device->get(), &renderPassInfo, nullptr, &_renderPass) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create render pass!");
         }
     }
@@ -102,7 +106,8 @@ namespace graphics {
         _frameBuffers.resize(0);
         _frameBuffers.resize(images.size());
 
-        for(size_t i = 0; i < images.size(); i++) {
+        for(size_t i = 0; i < images.size(); i++)
+        {
             std::vector<VkImageView> attachments = {images[i]};
             if(depthTexture)
                 attachments.push_back(depthTexture);
@@ -116,7 +121,8 @@ namespace graphics {
             framebufferInfo.height = size.height;
             framebufferInfo.layers = 1;
 
-            if(vkCreateFramebuffer(device->get(), &framebufferInfo, nullptr, &_frameBuffers[i]) != VK_SUCCESS) {
+            if(vkCreateFramebuffer(device->get(), &framebufferInfo, nullptr, &_frameBuffers[i]) != VK_SUCCESS)
+            {
                 throw std::runtime_error("failed to create framebuffer!");
             }
         }
@@ -147,11 +153,13 @@ namespace graphics {
     void Renderer::setTargetAsSwapChain(bool depthTexture)
     {
         _target = nullptr;
-        if(depthTexture) {
+        if(depthTexture)
+        {
             createRenderPass(_swapChain.imageFormat(), _swapChain.depthImageFormat());
             createFrameBuffers(_swapChain.extent(), _swapChain.getImages(), _swapChain.depthTexture());
         }
-        else {
+        else
+        {
             createRenderPass(_swapChain.imageFormat());
             createFrameBuffers(_swapChain.extent(), _swapChain.getImages());
         }
@@ -214,7 +222,9 @@ namespace graphics {
     bool RenderObject::operator==(const RenderObject& o) const { return mesh == o.mesh && primitive == o.primitive; }
 
 } // namespace graphics
-namespace std {
+
+namespace std
+{
     size_t hash<graphics::RenderObject>::operator()(const graphics::RenderObject& o) const
     {
         return hash<graphics::Mesh*>()(o.mesh) ^ o.primitive;

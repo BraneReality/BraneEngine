@@ -1,15 +1,17 @@
 #pragma once
 
-#include "assets/types/shaderAsset.h"
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include "assets/types/shaderAsset.h"
 #include <vulkan/vulkan.h>
 
-namespace graphics {
+namespace graphics
+{
     using ShaderID = uint64_t;
 
-    class Shader {
+    class Shader
+    {
         ShaderAsset* _asset;
         VkShaderModule _shader;
 

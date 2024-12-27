@@ -1,13 +1,14 @@
 #pragma once
 
-#include "../asset.h"
-#include "common/ecs/virtualType.h"
 #include <memory>
 #include <vector>
+#include "../asset.h"
+#include "common/ecs/virtualType.h"
 
 using ComponentID = uint32_t;
 
-class ComponentAsset : public Asset {
+class ComponentAsset : public Asset
+{
   private:
     std::vector<VirtualType::Type> _members;
     std::vector<std::string> _memberNames;
@@ -19,8 +20,9 @@ class ComponentAsset : public Asset {
 
     ComponentAsset(const ComponentAsset&) = delete;
 
-    ComponentAsset(
-        const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID&& id);
+    ComponentAsset(const std::vector<VirtualType::Type>& members,
+                   const std::vector<std::string>& memberNames,
+                   AssetID&& id);
 
     ~ComponentAsset() override;
 

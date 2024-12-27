@@ -2,7 +2,8 @@
 #include "assets/types/shaderAsset.h"
 #include "graphicsDevice.h"
 
-namespace graphics {
+namespace graphics
+{
     Shader::Shader(ShaderAsset* asset) : _asset(asset)
     {
         VkShaderModuleCreateInfo createInfo{};
@@ -10,7 +11,8 @@ namespace graphics {
         createInfo.codeSize = _asset->spirv.size() * sizeof(uint32_t);
         createInfo.pCode = _asset->spirv.data();
 
-        if(vkCreateShaderModule(device->get(), &createInfo, nullptr, &_shader) != VK_SUCCESS) {
+        if(vkCreateShaderModule(device->get(), &createInfo, nullptr, &_shader) != VK_SUCCESS)
+        {
             throw std::runtime_error("Could not create shader module!");
         }
     }

@@ -21,7 +21,8 @@ void WorldChunk::deserialize(InputSerializer& s)
     uint32_t LODCount;
     s >> maxLOD >> LODCount;
     LODs.resize(LODCount);
-    for(uint32_t l = 0; l < LODCount; ++l) {
+    for(uint32_t l = 0; l < LODCount; ++l)
+    {
         auto& lod = LODs[l];
         s >> lod.assembly >> lod.min >> lod.max;
     }

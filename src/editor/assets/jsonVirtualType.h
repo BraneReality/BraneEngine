@@ -8,7 +8,8 @@
 #include <ecs/virtualType.h>
 #include <json/json.h>
 
-class JsonVirtualType {
+class JsonVirtualType
+{
   public:
     static Json::Value fromVirtual(byte* data, VirtualType::Type type);
 

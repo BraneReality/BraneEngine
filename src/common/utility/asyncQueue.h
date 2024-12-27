@@ -5,7 +5,9 @@
 #include <mutex>
 #include <queue>
 
-template <class T> class AsyncQueue {
+template<class T>
+class AsyncQueue
+{
   private:
     std::mutex _m;
     std::deque<T> _queue;
