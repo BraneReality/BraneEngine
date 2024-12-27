@@ -8,7 +8,6 @@
         "sqlite3",
         "shaderc",
         "spirv-cross",
-        "glslang",
         "glm",
         "vulkan",
         "glfw3",
