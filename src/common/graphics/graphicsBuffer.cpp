@@ -4,7 +4,8 @@
 
 #include "graphicsBuffer.h"
 
-namespace graphics {
+namespace graphics
+{
 
     SingleUseCommandBuffer::SingleUseCommandBuffer(VkCommandPool pool)
     {
@@ -95,12 +96,11 @@ namespace graphics {
         vkUnmapMemory(device->get(), _memory);
     }
 
-    void GraphicsBuffer::copy(
-        GraphicsBuffer* src,
-        VkCommandBuffer commandBuffer,
-        VkDeviceSize size,
-        VkDeviceSize srcOffset,
-        VkDeviceSize dstOffset)
+    void GraphicsBuffer::copy(GraphicsBuffer* src,
+                              VkCommandBuffer commandBuffer,
+                              VkDeviceSize size,
+                              VkDeviceSize srcOffset,
+                              VkDeviceSize dstOffset)
     {
         assert(_memory);
         VkBufferCopy copyRegion{};
@@ -125,7 +125,8 @@ namespace graphics {
         bufferInfo.usage = _usageFlags;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if(vkCreateBuffer(device->get(), &bufferInfo, nullptr, &_buffer) != VK_SUCCESS) {
+        if(vkCreateBuffer(device->get(), &bufferInfo, nullptr, &_buffer) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create vertex buffer!");
         }
 
@@ -137,7 +138,8 @@ namespace graphics {
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = device->findMemoryType(memRequirements.memoryTypeBits, _memFlags);
 
-        if(vkAllocateMemory(device->get(), &allocInfo, nullptr, &_memory) != VK_SUCCESS) {
+        if(vkAllocateMemory(device->get(), &allocInfo, nullptr, &_memory) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to allocate vertex buffer memory!");
         }
         vkBindBufferMemory(device->get(), _buffer, _memory, 0);

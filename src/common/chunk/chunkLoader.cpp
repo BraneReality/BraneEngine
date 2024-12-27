@@ -48,7 +48,8 @@ void ChunkLoader::setChunkLOD(const AssetID& chunk, uint32_t lod)
     cctx.lod = lod;
 
     std::vector<WorldChunk::LOD*> LODsToLoad;
-    for(auto& l : cctx.chunk->LODs) {
+    for(auto& l : cctx.chunk->LODs)
+    {
         if(l.min <= lod && lod <= l.max)
             LODsToLoad.push_back(&l);
     }
@@ -57,19 +58,21 @@ void ChunkLoader::setChunkLOD(const AssetID& chunk, uint32_t lod)
 
     auto cJob = ThreadPool::conditionalEnqueue(
         [this, chunkPtr, oldLod, lod]() {
-            for(auto& callback : _onLODChange)
-                callback(chunkPtr, oldLod, lod);
+        for(auto& callback : _onLODChange)
+            callback(chunkPtr, oldLod, lod);
         },
         LODsToLoad.size());
 
     auto* am = Runtime::getModule<AssetManager>();
-    for(auto& l : LODsToLoad) {
+    for(auto& l : LODsToLoad)
+    {
         AssetID id = l->assembly;
         if(id.address().empty())
             id.setAddress(chunkPtr->id.address());
-        am->fetchAsset<Assembly>(id)
-            .then([cJob](Assembly* asset) { cJob->signal(); })
-            .onError([](const std::string& error) { Runtime::error("Could not load chunk lod: " + error); });
+        am->fetchAsset<Assembly>(id).then(
+                                        [cJob](Assembly* asset) {
+            cJob->signal();
+        }).onError([](const std::string& error) { Runtime::error("Could not load chunk lod: " + error); });
     }
 }
 

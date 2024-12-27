@@ -5,20 +5,23 @@
 #ifndef BRANEENGINE_ASSETSERVER_H
 #define BRANEENGINE_ASSETSERVER_H
 
-#include "assets/asset.h"
-#include "database/database.h"
 #include <filesystem>
 #include <list>
+#include "assets/asset.h"
+#include "database/database.h"
 #include <utility/asyncData.h>
 
 class AssetManager;
 
 class NetworkManager;
-namespace net {
+
+namespace net
+{
     class Connection;
 }
 
-struct IncrementalAssetSender {
+struct IncrementalAssetSender
+{
     std::unique_ptr<IncrementalAsset::SerializationContext> iteratorData;
     IncrementalAsset* asset = nullptr;
     uint32_t streamID;
@@ -27,13 +30,15 @@ struct IncrementalAssetSender {
 
 class FileManager;
 
-class AssetServer : public Module {
+class AssetServer : public Module
+{
     NetworkManager& _nm;
     AssetManager& _am;
     FileManager& _fm;
     Database& _db;
 
-    struct ConnectionContext {
+    struct ConnectionContext
+    {
         bool authenticated = false;
         std::string username;
         int64_t userID;

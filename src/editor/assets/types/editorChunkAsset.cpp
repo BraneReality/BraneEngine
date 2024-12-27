@@ -9,7 +9,8 @@ EditorChunkAsset::EditorChunkAsset(const std::filesystem::path& file, BraneProje
     : EditorAsset(file, project)
 {
     // Generate default
-    if(!std::filesystem::exists(_file)) {
+    if(!std::filesystem::exists(_file))
+    {
         Json::Value defaultLOD;
         defaultLOD["assembly"] = "null";
         defaultLOD["min"] = 0;
@@ -32,7 +33,8 @@ Asset* EditorChunkAsset::buildAsset(const AssetID& id) const
     chunk->name = name();
     chunk->id = _json["id"].asString();
     chunk->maxLOD = 0;
-    for(auto& lod : _json["LODs"]) {
+    for(auto& lod : _json["LODs"])
+    {
         WorldChunk::LOD newLOD;
         newLOD.assembly = lod["assembly"].asString();
         newLOD.min = lod["min"].asUInt();

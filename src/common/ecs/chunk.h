@@ -1,13 +1,14 @@
 #pragma once
 
-#include "virtualType.h"
 #include <array>
 #include <vector>
+#include "virtualType.h"
 
 #include "component.h"
 #include "utility/sharedRecursiveMutex.h"
 
-class ChunkComponentView {
+class ChunkComponentView
+{
     const ComponentDescription* _description = nullptr;
     byte* _data = nullptr;
     size_t _maxSize = 0;
@@ -59,7 +60,9 @@ class ChunkComponentView {
     const ComponentDescription* def();
 };
 
-template <size_t N> class ChunkBase {
+template<size_t N>
+class ChunkBase
+{
 #ifdef TEST_BUILD
   public:
 #endif
@@ -85,7 +88,8 @@ template <size_t N> class ChunkBase {
             entitySize += c->size();
         _maxCapacity = N / entitySize;
 
-        for(auto& c : components) {
+        for(auto& c : components)
+        {
             _components.insert({c->id, ChunkComponentView{componentDataStart, _maxCapacity, c}});
             componentDataStart += c->size() * _maxCapacity;
         }
@@ -115,7 +119,8 @@ template <size_t N> class ChunkBase {
     size_t createEntity()
     {
         assert(_size < _maxCapacity);
-        for(auto& c : _components) {
+        for(auto& c : _components)
+        {
             c.second.createComponent();
             c.second.version++;
         }
@@ -126,9 +131,11 @@ template <size_t N> class ChunkBase {
     {
         assert(sIndex < _size);
         assert(dIndex < dest->_size);
-        for(auto& c : _components) {
+        for(auto& c : _components)
+        {
             ChunkComponentView* oc = nullptr;
-            if(dest->tryGetComponent(c.second.compID(), oc)) {
+            if(dest->tryGetComponent(c.second.compID(), oc))
+            {
                 c.second.def()->move(c.second[sIndex].data(), (*oc)[dIndex].data());
                 oc->version = std::max(oc->version, c.second.version);
             }
@@ -139,7 +146,8 @@ template <size_t N> class ChunkBase {
     {
         assert(index < _size);
         --_size;
-        for(auto& c : _components) {
+        for(auto& c : _components)
+        {
             c.second.erase(index);
             assert(_size == c.second.size());
         }
@@ -161,11 +169,13 @@ template <size_t N> class ChunkBase {
     static size_t allocationSize() { return N; }
 };
 
-template <size_t> class ChunkBase;
+template<size_t>
+class ChunkBase;
 
 using Chunk = ChunkBase<16384>;
 
-class ChunkPool {
+class ChunkPool
+{
 #ifdef TEST_BUILD
   public:
 #endif

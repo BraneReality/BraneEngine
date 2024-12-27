@@ -5,16 +5,23 @@
 #ifndef BRANEENGINE_DATABASEASSET_H
 #define BRANEENGINE_DATABASEASSET_H
 
-#include "assets/assetType.h"
 #include <string>
+#include "assets/assetType.h"
 
 class AssetType;
 
 class Database;
 
-enum class AssetPermissionLevel { none = 0, view = 1, edit = 2, owner = 3 };
+enum class AssetPermissionLevel
+{
+    none = 0,
+    view = 1,
+    edit = 2,
+    owner = 3
+};
 
-struct AssetInfo {
+struct AssetInfo
+{
     uint32_t id;
     std::string name;
     AssetType type;

@@ -5,15 +5,17 @@
 #ifndef BRANEENGINE_RENDERWINDOW_H
 #define BRANEENGINE_RENDERWINDOW_H
 
+#include <memory>
+#include <vector>
 #include "ecs/entityID.h"
 #include "editorWindow.h"
 #include "glm/gtx/quaternion.hpp"
+#include "Imgui.h"
+#include "ImGuizmo.h"
 #include "vulkan/vulkan.h"
-#include <ImGuizmo.h>
-#include <memory>
-#include <vector>
 
-namespace graphics {
+namespace graphics
+{
     class RenderTexture;
 
     class SceneRenderer;
@@ -25,7 +27,8 @@ class Assembly;
 
 class EditorAsset;
 
-class RenderWindow : public EditorWindow {
+class RenderWindow : public EditorWindow
+{
     graphics::RenderTexture* _texture = nullptr;
     graphics::SceneRenderer* _renderer;
     std::vector<VkDescriptorSet> _imGuiBindings;
@@ -40,10 +43,13 @@ class RenderWindow : public EditorWindow {
     ImGuizmo::MODE _gizmoMode = ImGuizmo::MODE::WORLD;
 
     std::shared_ptr<EditorAsset> _focusedAsset;
-    struct AssemblyContex {
+
+    struct AssemblyContex
+    {
         Assembly* assembly;
         EntityID root;
     };
+
     std::vector<AssemblyContex> _assemblies;
     size_t _focusedAssetEntity;
     EntityID _focusedEntity;

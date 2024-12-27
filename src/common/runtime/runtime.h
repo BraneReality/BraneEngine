@@ -14,14 +14,16 @@
 
 class Module;
 
-namespace Runtime {
+namespace Runtime
+{
     void init();
 
     void cleanup();
 
     void addModule(const std::string& name, Module* m);
 
-    template <typename T> void addModule()
+    template<typename T>
+    void addModule()
     {
         static_assert(std::is_base_of<Module, T>());
         addModule(T::name(), new T());
@@ -29,7 +31,8 @@ namespace Runtime {
 
     bool hasModule(const std::string& name);
 
-    template <typename T> bool hasModule()
+    template<typename T>
+    bool hasModule()
     {
         static_assert(std::is_base_of<Module, T>());
         return hasModule(T::name());
@@ -37,7 +40,8 @@ namespace Runtime {
 
     Module* getModule(const std::string& name);
 
-    template <typename T> T* getModule()
+    template<typename T>
+    T* getModule()
     {
         static_assert(std::is_base_of<Module, T>());
         return (T*)getModule(T::name());

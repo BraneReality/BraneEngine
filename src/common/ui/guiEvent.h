@@ -10,7 +10,8 @@
 
 class GUIWindow;
 
-class GUIEvent {
+class GUIEvent
+{
     std::string _name;
 
   public:
@@ -21,7 +22,8 @@ class GUIEvent {
     const std::string& name() const;
 };
 
-struct GUIEventListener {
+struct GUIEventListener
+{
     GUIWindow* window;
     std::function<void(const GUIEvent*)> callback;
 };

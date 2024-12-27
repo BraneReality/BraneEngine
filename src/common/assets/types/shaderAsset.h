@@ -1,14 +1,23 @@
 #pragma once
 
+#include <vector>
 #include "../asset.h"
 #include "utility/enumNameMap.h"
 #include "vulkan/vulkan_core.h"
-#include <vector>
 
-enum class ShaderType : uint8_t { null = 0, vertex = 1, fragment = 2, geometry = 3, compute = 4 };
+enum class ShaderType : uint8_t
+{
+    null = 0,
+    vertex = 1,
+    fragment = 2,
+    geometry = 3,
+    compute = 4
+};
 
-struct ShaderVariableData {
-    enum Type {
+struct ShaderVariableData
+{
+    enum Type
+    {
         None,
         Boolean,
         Byte,
@@ -27,7 +36,17 @@ struct ShaderVariableData {
         SampledImage,
         Sampler,
     };
-    enum Layout { scalar, vec2, vec3, vec4, mat3, mat4 };
+
+    enum Layout
+    {
+        scalar,
+        vec2,
+        vec3,
+        vec4,
+        mat3,
+        mat4
+    };
+
     uint32_t location;
     std::string name;
     Type type;
@@ -41,14 +60,16 @@ struct ShaderVariableData {
     static const EnumNameMap<Layout> layoutNames;
 };
 
-struct UniformBufferData {
+struct UniformBufferData
+{
     uint32_t binding;
     std::string name;
     uint32_t size;
     std::vector<ShaderVariableData> members;
 };
 
-class ShaderAsset : public Asset {
+class ShaderAsset : public Asset
+{
   public:
     ShaderType shaderType;
     std::vector<uint32_t> spirv;

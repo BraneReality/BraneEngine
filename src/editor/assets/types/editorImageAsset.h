@@ -7,7 +7,8 @@
 
 #include "../editorAsset.h"
 
-class EditorImageAsset : public EditorAsset {
+class EditorImageAsset : public EditorAsset
+{
   public:
     EditorImageAsset(const std::filesystem::path& file, BraneProject& project);
 

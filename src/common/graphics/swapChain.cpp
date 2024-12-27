@@ -2,7 +2,8 @@
 
 #include "graphicsDevice.h"
 
-namespace graphics {
+namespace graphics
+{
 
     void SwapChain::createSwapChain()
     {
@@ -32,12 +33,14 @@ namespace graphics {
         auto indices = device->queueFamilyIndices();
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-        if(indices.graphicsFamily != indices.presentFamily) {
+        if(indices.graphicsFamily != indices.presentFamily)
+        {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
             createInfo.pQueueFamilyIndices = queueFamilyIndices;
         }
-        else {
+        else
+        {
             createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
             createInfo.queueFamilyIndexCount = 0;     // Optional
             createInfo.pQueueFamilyIndices = nullptr; // Optional
@@ -51,7 +54,8 @@ namespace graphics {
 
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        if(vkCreateSwapchainKHR(device->get(), &createInfo, nullptr, &_swapChain) != VK_SUCCESS) {
+        if(vkCreateSwapchainKHR(device->get(), &createInfo, nullptr, &_swapChain) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create swap chain!");
         }
         vkGetSwapchainImagesKHR(device->get(), _swapChain, &imageCount, nullptr);
@@ -64,7 +68,8 @@ namespace graphics {
     void SwapChain::createImageViews()
     {
         _imageViews.resize(_images.size());
-        for(size_t i = 0; i < _images.size(); i++) {
+        for(size_t i = 0; i < _images.size(); i++)
+        {
             VkImageViewCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             createInfo.image = _images[i];
@@ -83,7 +88,8 @@ namespace graphics {
             createInfo.subresourceRange.baseArrayLayer = 0;
             createInfo.subresourceRange.layerCount = 1;
 
-            if(vkCreateImageView(device->get(), &createInfo, nullptr, &_imageViews[i]) != VK_SUCCESS) {
+            if(vkCreateImageView(device->get(), &createInfo, nullptr, &_imageViews[i]) != VK_SUCCESS)
+            {
                 throw std::runtime_error("failed to create image views!");
             }
         }
@@ -110,7 +116,8 @@ namespace graphics {
         createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         createInfo.flags = 0;
 
-        if(vkCreateImage(device->get(), &createInfo, nullptr, &_depthImage) != VK_SUCCESS) {
+        if(vkCreateImage(device->get(), &createInfo, nullptr, &_depthImage) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create image!");
         }
 
@@ -123,7 +130,8 @@ namespace graphics {
         allocInfo.memoryTypeIndex =
             device->findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        if(vkAllocateMemory(device->get(), &allocInfo, nullptr, &_depthImageMemory) != VK_SUCCESS) {
+        if(vkAllocateMemory(device->get(), &allocInfo, nullptr, &_depthImageMemory) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to allocate image memory!");
         }
 
@@ -141,17 +149,20 @@ namespace graphics {
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        if(vkCreateImageView(device->get(), &viewInfo, nullptr, &_depthImageView) != VK_SUCCESS) {
+        if(vkCreateImageView(device->get(), &viewInfo, nullptr, &_depthImageView) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create texture image view!");
         }
     }
 
     VkExtent2D SwapChain::chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     {
-        if(capabilities.currentExtent.width != UINT32_MAX) {
+        if(capabilities.currentExtent.width != UINT32_MAX)
+        {
             return capabilities.currentExtent;
         }
-        else {
+        else
+        {
             glm::vec2 size = _window->size();
 
             VkExtent2D actualExtent = {static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y)};
@@ -168,9 +179,11 @@ namespace graphics {
     VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
     {
         // Find the best format
-        for(const auto& availableFormat : availableFormats) {
+        for(const auto& availableFormat : availableFormats)
+        {
             if(availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
-               availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+               availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
                 return availableFormat;
             }
         }
@@ -180,25 +193,31 @@ namespace graphics {
 
     VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
     {
-        for(const auto& availablePresentMode : availablePresentModes) {
-            if(availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+        for(const auto& availablePresentMode : availablePresentModes)
+        {
+            if(availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            {
                 return availablePresentMode;
             }
         }
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkFormat SwapChain::findSupportedFormat(
-        const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+    VkFormat SwapChain::findSupportedFormat(const std::vector<VkFormat>& candidates,
+                                            VkImageTiling tiling,
+                                            VkFormatFeatureFlags features)
     {
-        for(VkFormat format : candidates) {
+        for(VkFormat format : candidates)
+        {
             VkFormatProperties props;
             vkGetPhysicalDeviceFormatProperties(device->physicalDevice(), format, &props);
 
-            if(tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+            if(tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+            {
                 return format;
             }
-            else if(tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+            else if(tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+            {
                 return format;
             }
         }
@@ -207,10 +226,9 @@ namespace graphics {
 
     VkFormat SwapChain::findDepthFormat()
     {
-        return findSupportedFormat(
-            {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT},
-            VK_IMAGE_TILING_OPTIMAL,
-            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        return findSupportedFormat({VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT},
+                                   VK_IMAGE_TILING_OPTIMAL,
+                                   VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 
     SwapChain::SwapChain(Window* window)
@@ -226,8 +244,10 @@ namespace graphics {
         VkFenceCreateInfo fenceInfo{};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-        for(size_t i = 0; i < _size; i++) {
-            if(vkCreateSemaphore(device->get(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS) {
+        for(size_t i = 0; i < _size; i++)
+        {
+            if(vkCreateSemaphore(device->get(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS)
+            {
                 throw std::runtime_error("failed to create semaphores for a frame!");
             }
         }
@@ -242,7 +262,8 @@ namespace graphics {
         vkDestroyImage(device->get(), _depthImage, nullptr);
         vkFreeMemory(device->get(), _depthImageMemory, nullptr);
 
-        for(auto imageView : _imageViews) {
+        for(auto imageView : _imageViews)
+        {
             vkDestroyImageView(device->get(), imageView, nullptr);
         }
 
@@ -254,13 +275,12 @@ namespace graphics {
     VkResult SwapChain::acquireNextImage()
     {
         _currentSemaphore = (_currentSemaphore + 1) % _imageAvailableSemaphores.size();
-        return vkAcquireNextImageKHR(
-            device->get(),
-            _swapChain,
-            UINT64_MAX,
-            _imageAvailableSemaphores[_currentSemaphore],
-            VK_NULL_HANDLE,
-            &_currentFrame);
+        return vkAcquireNextImageKHR(device->get(),
+                                     _swapChain,
+                                     UINT64_MAX,
+                                     _imageAvailableSemaphores[_currentSemaphore],
+                                     VK_NULL_HANDLE,
+                                     &_currentFrame);
     }
 
     size_t SwapChain::size() { return _size; }
@@ -287,7 +307,8 @@ namespace graphics {
         vkDestroyImage(device->get(), _depthImage, nullptr);
         vkFreeMemory(device->get(), _depthImageMemory, nullptr);
 
-        for(auto imageView : _imageViews) {
+        for(auto imageView : _imageViews)
+        {
             vkDestroyImageView(device->get(), imageView, nullptr);
         }
 

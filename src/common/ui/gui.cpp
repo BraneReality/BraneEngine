@@ -16,9 +16,9 @@
 #include "common/runtime/runtime.h"
 
 #include "IconsFontAwesome6.h"
+#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
-#include "imgui.h"
 
 GUI::GUI()
 {
@@ -26,34 +26,33 @@ GUI::GUI()
     Runtime::timeline().addTask(
         "updateUI",
         [&] {
-            _windows.erase(
-                std::remove_if(
-                    _windows.begin(),
-                    _windows.end(),
-                    [this](auto& window) {
-                        if(window->isOpen())
-                            return false;
-                        // Remove listeners first
-                        auto la = _eventListeners.begin();
-                        while(la != _eventListeners.end()) {
-                            // Remove listeners tied to windows
-                            la->second.erase(
-                                std::remove_if(
-                                    la->second.begin(),
-                                    la->second.end(),
-                                    [&window](auto& l) { return l.window == window.get(); }),
-                                la->second.end());
-                            if(la->second.empty())
-                                la = _eventListeners.erase(la);
-                            else
-                                ++la;
-                        }
-                        return true;
-                    }),
-                _windows.end());
-            for(auto& w : _windows) {
-                w->update();
+        _windows.erase(std::remove_if(
+                           _windows.begin(),
+                           _windows.end(),
+                           [this](auto& window) {
+            if(window->isOpen())
+                return false;
+            // Remove listeners first
+            auto la = _eventListeners.begin();
+            while(la != _eventListeners.end())
+            {
+                // Remove listeners tied to windows
+                la->second.erase(std::remove_if(la->second.begin(),
+                                                la->second.end(),
+                                                [&window](auto& l) { return l.window == window.get(); }),
+                                 la->second.end());
+                if(la->second.empty())
+                    la = _eventListeners.erase(la);
+                else
+                    ++la;
             }
+            return true;
+                           }),
+                       _windows.end());
+        for(auto& w : _windows)
+        {
+            w->update();
+        }
         },
         "gui");
 }
@@ -71,11 +70,12 @@ void GUI::drawUI()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    if(ImGui::Begin(
-           "RootWindow",
-           nullptr,
-           ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-               ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoCollapse)) {
+    if(ImGui::Begin("RootWindow",
+                    nullptr,
+                    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                        ImGuiWindowFlags_NoCollapse))
+    {
         ImGui::PopStyleVar(3);
         ImGui::DockSpace(ImGui::GetID("DockingRoot"), {0, 0}, ImGuiDockNodeFlags_None);
 
@@ -87,7 +87,8 @@ void GUI::drawUI()
     }
     ImGui::End();
 
-    for(auto& w : _windows) {
+    for(auto& w : _windows)
+    {
         w->draw();
     }
 }
@@ -107,9 +108,12 @@ void GUI::callEvents()
     assert(_queuedEvents.empty());
     _queueLock.unlock();
 
-    for(auto& event : events) {
-        if(_eventListeners.count(event->name())) {
-            for(auto& listener : _eventListeners.at(event->name())) {
+    for(auto& event : events)
+    {
+        if(_eventListeners.count(event->name()))
+        {
+            for(auto& listener : _eventListeners.at(event->name()))
+            {
                 listener.callback(event.get());
             }
         }
@@ -206,25 +210,25 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 
     // Create a descriptor pool
     {
-        VkDescriptorPoolSize pool_sizes[] = {
-            {VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
-            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
-            {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
-            {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
-            {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
-            {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
-            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
-            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
-            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
-            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
-            {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
+        VkDescriptorPoolSize pool_sizes[] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+                                             {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+                                             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+                                             {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+                                             {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
         pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;
-        if(vkCreateDescriptorPool(graphics::device->get(), &pool_info, nullptr, &_imGuiDescriptorPool) != VK_SUCCESS) {
+        if(vkCreateDescriptorPool(graphics::device->get(), &pool_info, nullptr, &_imGuiDescriptorPool) != VK_SUCCESS)
+        {
             throw std::runtime_error("Could not create Dear ImGui's descriptor pool");
         }
     }
@@ -292,10 +296,11 @@ void GUI::clearWindows()
 {
     _windows.clear();
     auto la = _eventListeners.begin();
-    while(la != _eventListeners.end()) {
+    while(la != _eventListeners.end())
+    {
         // Remove listeners tied to windows
-        la->second.erase(
-            std::remove_if(la->second.begin(), la->second.end(), [](auto& la) { return la.window; }), la->second.end());
+        la->second.erase(std::remove_if(la->second.begin(), la->second.end(), [](auto& la) { return la.window; }),
+                         la->second.end());
         if(la->second.empty())
             la = _eventListeners.erase(la);
         else

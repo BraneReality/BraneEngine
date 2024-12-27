@@ -16,21 +16,23 @@ AssetServer::AssetServer()
     _nm.configureServer();
     std::filesystem::create_directory(Config::json()["data"]["asset_path"].asString());
 
-    if(!Config::json()["network"]["use_ssl"].asBool()) {
+    if(!Config::json()["network"]["use_ssl"].asBool())
+    {
         std::cout << "Started listening for asset requests on port: " << Config::json()["network"]["tcp_port"].asUInt()
                   << std::endl;
-        _nm.openClientAcceptor<net::tcp_socket>(
-            Config::json()["network"]["tcp_port"].asUInt(), [this](const std::unique_ptr<net::Connection>& connection) {
-                std::cout << "User connected to tcp" << std::endl;
-            });
+        _nm.openClientAcceptor<net::tcp_socket>(Config::json()["network"]["tcp_port"].asUInt(),
+                                                [this](const std::unique_ptr<net::Connection>& connection) {
+            std::cout << "User connected to tcp" << std::endl;
+        });
     }
-    else {
+    else
+    {
         std::cout << "Started listening for asset requests on port: " << Config::json()["network"]["ssl_port"].asUInt()
                   << std::endl;
-        _nm.openClientAcceptor<net::ssl_socket>(
-            Config::json()["network"]["ssl_port"].asUInt(), [this](const std::unique_ptr<net::Connection>& connection) {
-                std::cout << "User connected to ssl" << std::endl;
-            });
+        _nm.openClientAcceptor<net::ssl_socket>(Config::json()["network"]["ssl_port"].asUInt(),
+                                                [this](const std::unique_ptr<net::Connection>& connection) {
+            std::cout << "User connected to ssl" << std::endl;
+        });
     }
 
     createListeners();
@@ -60,7 +62,8 @@ void AssetServer::createListeners()
         rc.code = net::ResponseCode::denied;
         std::string username, password;
         rc.req >> username >> password;
-        if(_db.authenticate(username, password)) {
+        if(_db.authenticate(username, password))
+        {
             ctx.authenticated = true;
             ctx.username = username;
             ctx.userID = _db.getUserID(username);
@@ -77,7 +80,8 @@ void AssetServer::createAssetListeners()
 {
     _nm.addRequestListener("asset", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!ctx.authenticated) {
+        if(!ctx.authenticated)
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -89,7 +93,8 @@ void AssetServer::createAssetListeners()
 
     _nm.addRequestListener("incrementalAsset", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!ctx.authenticated) {
+        if(!ctx.authenticated)
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -101,7 +106,8 @@ void AssetServer::createAssetListeners()
         auto ctxPtr = std::make_shared<RequestCTX>(std::move(rc));
         auto f = [this, ctxPtr, streamID](Asset* asset) mutable {
             auto* ia = dynamic_cast<IncrementalAsset*>(asset);
-            if(ia) {
+            if(ia)
+            {
                 std::cout << "Sending header for: " << ia->id << std::endl;
                 ia->serializeHeader(ctxPtr->res);
 
@@ -129,7 +135,8 @@ void AssetServer::createAssetListeners()
 
     _nm.addRequestListener("defaultChunk", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!ctx.authenticated) {
+        if(!ctx.authenticated)
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -148,7 +155,8 @@ void AssetServer::createEditorListeners()
     /** Asset syncing **/
     _nm.addRequestListener("getAssetDiff", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"edit assets"})) {
+        if(!validatePermissions(ctx, {"edit assets"}))
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -159,7 +167,8 @@ void AssetServer::createEditorListeners()
             rc.req >> hashes[h].first >> hashes[h].second;
 
         std::vector<AssetID> assetsWithDiff;
-        for(auto& h : hashes) {
+        for(auto& h : hashes)
+        {
             if(!h.first.address().empty())
                 continue;
             auto info = _db.getAssetInfo(h.first.id());
@@ -172,7 +181,8 @@ void AssetServer::createEditorListeners()
 
     _nm.addRequestListener("updateAsset", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"edit assets"})) {
+        if(!validatePermissions(ctx, {"edit assets"}))
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -182,7 +192,8 @@ void AssetServer::createEditorListeners()
 
         auto path = assetPath(asset->id);
         bool assetExists = true;
-        if(assetInfo.hash.empty()) {
+        if(assetInfo.hash.empty())
+        {
             assetExists = false;
         }
 
@@ -203,7 +214,8 @@ void AssetServer::createEditorListeners()
     /** User management **/
     _nm.addRequestListener("searchUsers", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"view users"})) {
+        if(!validatePermissions(ctx, {"view users"}))
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -217,7 +229,8 @@ void AssetServer::createEditorListeners()
 
     _nm.addRequestListener("adminChangePassword", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"manage users"})) {
+        if(!validatePermissions(ctx, {"manage users"}))
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -229,7 +242,8 @@ void AssetServer::createEditorListeners()
 
     _nm.addRequestListener("adminDeleteUser", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"manage users"})) {
+        if(!validatePermissions(ctx, {"manage users"}))
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -241,7 +255,8 @@ void AssetServer::createEditorListeners()
 
     _nm.addRequestListener("getServerSettings", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"manage server"})) {
+        if(!validatePermissions(ctx, {"manage server"}))
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -251,7 +266,8 @@ void AssetServer::createEditorListeners()
 
     _nm.addRequestListener("setServerSettings", [this](auto& rc) {
         auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"manage server"})) {
+        if(!validatePermissions(ctx, {"manage server"}))
+        {
             rc.code = net::ResponseCode::denied;
             return;
         }
@@ -266,7 +282,8 @@ void AssetServer::processMessages()
     // parallel
     _sendersLock.lock();
     _senders.remove_if([&](IncrementalAssetSender& sender) {
-        try {
+        try
+        {
             SerializedData data;
             OutputSerializer s(data);
             bool moreData = sender.asset->serializeIncrement(s, sender.iteratorData.get());
@@ -275,7 +292,8 @@ void AssetServer::processMessages()
                 sender.connection->endStream(sender.streamID);
             return !moreData;
         }
-        catch(const std::exception& e) {
+        catch(const std::exception& e)
+        {
             std::cerr << "Asset sender error: " << e.what() << std::endl;
             return true;
         }
@@ -292,7 +310,8 @@ AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool increm
     std::filesystem::path path = assetPath(id);
     if(!std::filesystem::exists(path))
         asset.setError("Asset not found");
-    else {
+    else
+    {
         _fm.async_readUnknownAsset(path).then([this, asset](Asset* data) {
             if(data)
                 asset.setData(data);
@@ -306,7 +325,8 @@ AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool increm
 
 AssetServer::ConnectionContext& AssetServer::getContext(net::Connection* connection)
 {
-    if(!_connectionCtx.count(connection)) {
+    if(!_connectionCtx.count(connection))
+    {
         _connectionCtx.insert({connection, ConnectionContext{}});
         connection->onDisconnect([this, connection] {
             _connectionCtx.erase(connection);
@@ -323,7 +343,8 @@ bool AssetServer::validatePermissions(AssetServer::ConnectionContext& ctx, const
 {
     if(ctx.userID == 1)
         return true; // Admin has all permissions;
-    for(auto& p : permissions) {
+    for(auto& p : permissions)
+    {
         if(!ctx.permissions.count(p))
             return false;
     }
@@ -345,7 +366,8 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 
     auto path = std::filesystem::current_path() / Config::json()["data"]["asset_path"].asString() /
                 ((std::string)id.idStr() + ".bin");
-    if(std::filesystem::exists(path)) {
+    if(std::filesystem::exists(path))
+    {
         fm->async_readUnknownAsset(path)
             .then([this, asset](Asset* ptr) {
                 ptr->id.setAddress(Config::json()["network"]["domain"].asString());
@@ -353,7 +375,8 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
                 auto& d = _assets.at(ptr->id);
                 d->loadState = LoadState::awaitingDependencies;
                 _assetLock.unlock();
-                if(dependenciesLoaded(ptr)) {
+                if(dependenciesLoaded(ptr))
+                {
                     asset.setData(ptr);
                     return;
                 }
@@ -369,7 +392,8 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
             .onError([asset](auto& err) { asset.setError(err); });
         return asset;
     }
-    else {
+    else
+    {
         asset.setError("Asset not found");
     }
     return asset;

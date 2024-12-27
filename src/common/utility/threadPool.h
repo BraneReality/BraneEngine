@@ -2,20 +2,21 @@
 
 #include <atomic>
 #include <cassert>
-#include <condition_variable>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <system_error>
 #include <thread>
 #include <vector>
+#include <condition_variable>
+#include <system_error>
 
 #include <iostream>
 
 // Eventually I might want to move this into the runtime class
 
-class JobHandle {
+class JobHandle
+{
     std::atomic<size_t> _instances;
     std::function<void()> _next;
     std::shared_ptr<JobHandle> _nextHandle;
@@ -34,7 +35,8 @@ class JobHandle {
     JobHandle();
 };
 
-struct BraneJob {
+struct BraneJob
+{
     std::function<void()> f;
     std::shared_ptr<JobHandle> handle;
 
@@ -49,14 +51,16 @@ struct BraneJob {
     BraneJob(std::function<void()> f, std::shared_ptr<JobHandle> handle);
 };
 
-struct ConditionJob {
+struct ConditionJob
+{
     std::function<void()> f;
     size_t conditionCount;
 
     void signal();
 };
 
-class ThreadPool {
+class ThreadPool
+{
     static size_t _instances;
     static std::vector<std::thread> _threads;
     static size_t _staticThreads;

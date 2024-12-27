@@ -13,24 +13,21 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 TEST(assets, AssetIDTest)
 {
     AssetID aa("server.ip.goes.here/1234A");
-    EXPECT_EQ(
-        aa.
+    EXPECT_EQ(aa.
 
-        address(),
+              address(),
 
-        "server.ip.goes.here");
-    EXPECT_EQ(
-        aa.
+              "server.ip.goes.here");
+    EXPECT_EQ(aa.
 
-        id(),
+              id(),
 
-        0x1234A);
-    EXPECT_EQ(
-        aa.
+              0x1234A);
+    EXPECT_EQ(aa.
 
-        string(),
+              string(),
 
-        "server.ip.goes.here/1234A");
+              "server.ip.goes.here/1234A");
     EXPECT_TRUE(aa == aa);
     EXPECT_FALSE(aa.
 

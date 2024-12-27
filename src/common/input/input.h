@@ -8,7 +8,8 @@
 #include "graphics/window.h"
 #include "runtime/module.h"
 
-class InputManager : public Module {
+class InputManager : public Module
+{
     graphics::Window* _window;
 
   public:

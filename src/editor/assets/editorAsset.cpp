@@ -3,6 +3,7 @@
 //
 
 #include "editorAsset.h"
+#include <sstream>
 #include "assets/asset.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
 #include "editor/assets/types/editorChunkAsset.h"
@@ -12,7 +13,6 @@
 #include "editor/editor.h"
 #include "fileManager/fileManager.h"
 #include "types/editorShaderAsset.h"
-#include <sstream>
 
 EditorAsset::EditorAsset(const std::filesystem::path& file, BraneProject& project)
     : _file(file), _project(project), _json(project.editor().jsonTracker())
@@ -28,18 +28,22 @@ bool EditorAsset::unsavedChanges() const { return _json.dirty(); }
 
 bool EditorAsset::load()
 {
-    try {
-        if(!FileManager::readFile(_file, _json.data())) {
+    try
+    {
+        if(!FileManager::readFile(_file, _json.data()))
+        {
             Runtime::log("Creating " + _file.string());
             _json.data()["id"] = _project.newAssetID(_file, _type).string();
             return false;
         }
-        if(_json.data().get("id", "null").asString() == "null") {
+        if(_json.data().get("id", "null").asString() == "null")
+        {
             _json.data()["id"] = _project.newAssetID(_file, _type).string();
             _json.markDirty();
         }
     }
-    catch(const std::exception& e) {
+    catch(const std::exception& e)
+    {
         Runtime::error("Could not parse " + _file.string() + "!\n" + e.what());
         _json.data()["failedLoad"] = true;
         return false;
@@ -49,7 +53,8 @@ bool EditorAsset::load()
 
 void EditorAsset::save()
 {
-    if(_json.data().isMember("failedLoad")) {
+    if(_json.data().isMember("failedLoad"))
+    {
         Runtime::warn("Tried to save file that did not load correctly! \nAborting to prevent overwrite with further "
                       "invalid data");
         return;

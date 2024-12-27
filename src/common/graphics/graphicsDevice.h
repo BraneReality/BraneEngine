@@ -12,9 +12,11 @@
 
 #include "validationLayers.h"
 
-namespace graphics {
+namespace graphics
+{
 
-    class GraphicsDevice {
+    class GraphicsDevice
+    {
 
         VkDevice _device;
         VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
@@ -29,7 +31,8 @@ namespace graphics {
         const std::vector<const char*> _deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
       public:
-        struct QueueFamilyIndices {
+        struct QueueFamilyIndices
+        {
             std::optional<uint32_t> graphicsFamily;
             std::optional<uint32_t> presentFamily;
             std::optional<uint32_t> transferFamily;
@@ -40,7 +43,8 @@ namespace graphics {
             }
         };
 
-        struct SwapChainSupportDetails {
+        struct SwapChainSupportDetails
+        {
             VkSurfaceCapabilitiesKHR capabilities;
             std::vector<VkSurfaceFormatKHR> formats;
             std::vector<VkPresentModeKHR> presentModes;

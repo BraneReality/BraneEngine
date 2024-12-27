@@ -5,13 +5,14 @@
 
 size_t Archetype::chunkIndex(size_t entity) const { return entity / (Chunk::allocationSize() / _entitySize); }
 
-Archetype::Archetype(
-    const std::vector<const ComponentDescription*>& components, std::shared_ptr<ChunkPool>& chunkAllocator)
+Archetype::Archetype(const std::vector<const ComponentDescription*>& components,
+                     std::shared_ptr<ChunkPool>& chunkAllocator)
 {
     _chunkAllocator = chunkAllocator;
     _entitySize = 0;
     _componentDescriptions = components;
-    for(auto component : components) {
+    for(auto component : components)
+    {
         _components.add(component->id);
         _entitySize += component->size();
     }
@@ -19,7 +20,8 @@ Archetype::Archetype(
 
 Archetype::~Archetype()
 {
-    while(!_chunks.empty()) {
+    while(!_chunks.empty())
+    {
         *_chunkAllocator << _chunks[_chunks.size() - 1];
         _chunks.erase(_chunks.end() - 1);
     }
@@ -83,8 +85,10 @@ bool Archetype::isChildOf(const Archetype* parent, ComponentID& connectingCompon
     connectingComponent = -1;
     assert(_components.size() + 1 == parent->_components.size()); // Make sure this is a valid comparison
     byte missCount = 0;
-    for(auto& c : parent->_components) {
-        if(!_components.contains(c)) {
+    for(auto& c : parent->_components)
+    {
+        if(!_components.contains(c))
+        {
             if(++missCount == 2)
                 return false;
             connectingComponent = c;
@@ -106,7 +110,8 @@ size_t Archetype::size() const { return _size; }
 size_t Archetype::createEntity()
 {
     size_t chunk = chunkIndex(_size);
-    if(chunk >= _chunks.size()) {
+    if(chunk >= _chunks.size())
+    {
         _chunks.resize(_chunks.size() + 1);
         *_chunkAllocator >> _chunks[_chunks.size() - 1];
         _chunks[_chunks.size() - 1]->setComponents(_componentDescriptions);
@@ -150,14 +155,16 @@ void Archetype::removeEntity(size_t index)
 
     if(chunk == lastChunk)
         chunk->removeEntity(entityIndex);
-    else {
+    else
+    {
         lastChunk->moveEntity(chunk, lastChunk->size() - 1, entityIndex);
         lastChunk->removeEntity(lastChunk->size() - 1);
     }
     --_size;
     assert(lastChunk->size() % lastChunk->maxCapacity() == _size % lastChunk->maxCapacity());
 
-    if(lastChunk->size() == 0) {
+    if(lastChunk->size() == 0)
+    {
         *_chunkAllocator << _chunks[_chunks.size() - 1];
         _chunks.resize(_chunks.size() - 1);
     }

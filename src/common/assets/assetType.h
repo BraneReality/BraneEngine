@@ -6,9 +6,11 @@
 #include <string_view>
 #include <unordered_map>
 
-class AssetType {
+class AssetType
+{
   public:
-    enum Type {
+    enum Type
+    {
         none = 0,
         component = 1,
         system = 2,

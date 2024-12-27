@@ -10,9 +10,9 @@
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
 #include "networking/networking.h"
-#include "ui/IconsFontAwesome6.h"
 #include "ui/gui.h"
 #include "ui/guiPopup.h"
+#include "ui/IconsFontAwesome6.h"
 #include "utility/threadPool.h"
 
 std::atomic_bool SyncWindow::_loggedIn = false;
@@ -54,12 +54,14 @@ void SyncWindow::drawSetupConnection()
     bool disableButton = _loggingIn;
     if(disableButton)
         ImGui::BeginDisabled();
-    if((ImGui::Button("Submit") || enterPressed) && !_loggingIn && !_loggedIn) {
+    if((ImGui::Button("Submit") || enterPressed) && !_loggingIn && !_loggedIn)
+    {
         _loggingIn = true;
         _feedbackMessage = "Connecting...";
         NetworkManager* nm = Runtime::getModule<NetworkManager>();
         nm->async_connectToAssetServer(_serverAddress, std::stoi(_port), [this, nm](bool success) {
-            if(success) {
+            if(success)
+            {
                 _feedbackMessage = "Connected, logging in...";
                 SerializedData req;
                 OutputSerializer s(req);
@@ -68,7 +70,8 @@ void SyncWindow::drawSetupConnection()
                 auto* server = nm->getServer(_serverAddress);
                 server->sendRequest(
                     "login", std::move(req), [this, server](net::ResponseCode code, InputSerializer sData) {
-                        if(code != net::ResponseCode::success) {
+                        if(code != net::ResponseCode::success)
+                        {
                             _loggingIn = false;
                             if(code == net::ResponseCode::denied)
                                 _feedbackMessage = "invalid username/password";
@@ -96,7 +99,8 @@ void SyncWindow::drawSetupConnection()
                         });
                     });
             }
-            else {
+            else
+            {
                 _loggedIn = false;
                 _loggingIn = false;
                 _feedbackMessage = "Unable to connect to server";
@@ -112,16 +116,20 @@ net::Connection* SyncWindow::syncServer() { return _syncServer; }
 
 void SyncWindow::drawConnected()
 {
-    if(ImGui::BeginTabBar("SubWindows")) {
-        if(ImGui::BeginTabItem("Sync Assets")) {
+    if(ImGui::BeginTabBar("SubWindows"))
+    {
+        if(ImGui::BeginTabItem("Sync Assets"))
+        {
             syncAssets();
             ImGui::EndTabItem();
         }
-        if(ImGui::BeginTabItem("Server Settings")) {
+        if(ImGui::BeginTabItem("Server Settings"))
+        {
             serverSettings();
             ImGui::EndTabItem();
         }
-        if(ImGui::BeginTabItem("Users")) {
+        if(ImGui::BeginTabItem("Users"))
+        {
             drawUsers();
             ImGui::EndTabItem();
         }
@@ -131,7 +139,8 @@ void SyncWindow::drawConnected()
 
 void SyncWindow::syncAssets()
 {
-    if(_assetDiffSynced == -1) {
+    if(_assetDiffSynced == -1)
+    {
         ThreadPool::enqueue([this] {
             SerializedData assetHashes;
             OutputSerializer s(assetHashes);
@@ -143,11 +152,14 @@ void SyncWindow::syncAssets()
                 s << h.first << h.second;
 
             _syncServer->sendRequest("getAssetDiff", std::move(assetHashes), [this](auto code, InputSerializer res) {
-                if(code != net::ResponseCode::success) {
-                    if(code == net::ResponseCode::denied) {
+                if(code != net::ResponseCode::success)
+                {
+                    if(code == net::ResponseCode::denied)
+                    {
                         Runtime::error("Could not retrieve asset differences! (Invalid Permissions)");
                     }
-                    else {
+                    else
+                    {
                         Runtime::error("Could not retrieve asset differences!");
                     }
                     return;
@@ -162,23 +174,27 @@ void SyncWindow::syncAssets()
         });
         _assetDiffSynced = 0;
     }
-    if(_assetDiffSynced == 0) {
+    if(_assetDiffSynced == 0)
+    {
         displayLoadingAnim();
         return;
     }
 
     ImGui::Text("Changed Assets: ");
     ImGui::SameLine(ImGui::GetContentRegionMax().x - 68);
-    if(ImGui::Button("Upload All " ICON_FA_CLOUD_ARROW_UP)) {
+    if(ImGui::Button("Upload All " ICON_FA_CLOUD_ARROW_UP))
+    {
         for(auto& asset : _assetDiffs)
             updateAsset(asset.id);
         _assetDiffSynced = -1;
     }
-    for(auto& asset : _assetDiffs) {
+    for(auto& asset : _assetDiffs)
+    {
         ImGui::PushID(asset.id.id());
         ImGui::Text("%s: %s", _editor.project().getAssetName(asset.id).c_str(), asset.id.string().c_str());
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 20);
-        if(ImGui::Button(ICON_FA_CLOUD_ARROW_UP)) {
+        if(ImGui::Button(ICON_FA_CLOUD_ARROW_UP))
+        {
             updateAsset(asset.id);
             _assetDiffSynced = -1;
         }
@@ -197,7 +213,8 @@ void SyncWindow::updateAsset(const AssetID& asset)
 
     if(_editor.cache().hasAsset(asset))
         _editor.cache().getAsset(asset)->serialize(s);
-    else {
+    else
+    {
         Asset* a = _editor.project().getEditorAsset(asset)->buildAsset(asset);
         a->serialize(s);
         _editor.cache().cacheAsset(a);
@@ -212,24 +229,30 @@ void SyncWindow::updateAsset(const AssetID& asset)
 
 void SyncWindow::serverSettings()
 {
-    if(_serverSettings.empty()) {
+    if(_serverSettings.empty())
+    {
         _serverSettings["loading"] = true;
         _syncServer->sendRequest("getServerSettings", {}, [this](auto ec, InputSerializer res) {
-            if(ec != net::ResponseCode::success) {
-                if(ec == net::ResponseCode::denied) {
+            if(ec != net::ResponseCode::success)
+            {
+                if(ec == net::ResponseCode::denied)
+                {
                     Runtime::error("Could not load server settings! (Invalid Permissions)");
                 }
-                else {
+                else
+                {
                     Runtime::error("Could not load server settings!");
                 }
             }
-            else {
+            else
+            {
                 res >> _serverSettings;
             }
         });
     }
 
-    if(_serverSettings.isMember("loading")) {
+    if(_serverSettings.isMember("loading"))
+    {
         displayLoadingAnim();
         return;
     }
@@ -238,7 +261,8 @@ void SyncWindow::serverSettings()
     if(AssetSelectWidget::draw(defaultChunk, AssetType::chunk))
         _serverSettings["default_assets"]["chunk"] = defaultChunk.string();
 
-    if(ImGui::Button("Save " ICON_FA_CLOUD_ARROW_UP)) {
+    if(ImGui::Button("Save " ICON_FA_CLOUD_ARROW_UP))
+    {
         SerializedData data;
         OutputSerializer s(data);
         s << _serverSettings;
@@ -252,7 +276,8 @@ void SyncWindow::serverSettings()
     }
 }
 
-class DeleteUserPopup : public GUIPopup {
+class DeleteUserPopup : public GUIPopup
+{
     std::string _username;
     uint32_t _userID;
     uint32_t _clicks = 4;
@@ -267,7 +292,8 @@ class DeleteUserPopup : public GUIPopup {
         if(ImGui::Button("No"))
             ImGui::CloseCurrentPopup();
         ImGui::TextDisabled("%u clicks remaining", _clicks);
-        if(_clicks == 0) {
+        if(_clicks == 0)
+        {
             SerializedData data;
             OutputSerializer s(data);
             s << _userID;
@@ -285,10 +311,11 @@ class DeleteUserPopup : public GUIPopup {
 
   public:
     DeleteUserPopup(std::string username, uint32_t userID, SyncWindow& window)
-        : _username(std::move(username)), _userID(userID), _window(window), GUIPopup("Delete User") {};
+        : _username(std::move(username)), _userID(userID), _window(window), GUIPopup("Delete User"){};
 };
 
-class EditPasswordPopup : public GUIPopup {
+class EditPasswordPopup : public GUIPopup
+{
     net::Connection* _server;
     uint32_t _userID;
     std::string _newPassword1;
@@ -302,30 +329,34 @@ class EditPasswordPopup : public GUIPopup {
         ImGui::InputText("New password", &_newPassword1, ImGuiInputTextFlags_Password);
         ImGui::InputText("Repeat password", &_newPassword2, ImGuiInputTextFlags_Password);
         bool valid = true;
-        if(_newPassword1.size() < 8) {
+        if(_newPassword1.size() < 8)
+        {
             ImGui::TextDisabled("Password must be at least 8 characters long");
             valid = false;
         }
-        else if(_newPassword1 != _newPassword2) {
+        else if(_newPassword1 != _newPassword2)
+        {
             ImGui::TextDisabled("Passwords do not match");
             valid = false;
         }
         ImGui::BeginDisabled(!valid);
-        if(ImGui::Button("Save")) {
+        if(ImGui::Button("Save"))
+        {
             SerializedData data;
             OutputSerializer s(data);
             s << _userID << _newPassword1;
             _result = "saving";
             _server->sendRequest("adminChangePassword", std::move(data), [this](auto rc, InputSerializer s) {
-                switch(rc) {
-                case net::ResponseCode::success:
-                    _result = "success!";
-                    break;
-                case net::ResponseCode::denied:
-                    _result = "access denied";
-                    break;
-                default:
-                    _result = "error";
+                switch(rc)
+                {
+                    case net::ResponseCode::success:
+                        _result = "success!";
+                        break;
+                    case net::ResponseCode::denied:
+                        _result = "access denied";
+                        break;
+                    default:
+                        _result = "error";
                 }
             });
         }
@@ -336,7 +367,7 @@ class EditPasswordPopup : public GUIPopup {
 
   public:
     EditPasswordPopup(uint32_t userID, net::Connection* server)
-        : _userID(userID), _server(server), GUIPopup("Edit Password") {};
+        : _userID(userID), _server(server), GUIPopup("Edit Password"){};
 };
 
 void SyncWindow::drawUsers()
@@ -344,25 +375,31 @@ void SyncWindow::drawUsers()
     _ui.pushHeaderFont();
     ImGui::Text("Users");
     ImGui::PopFont();
-    if(ImGui::InputText("Search", &_userFilter)) {
+    if(ImGui::InputText("Search", &_userFilter))
+    {
         _usersSynced = -1;
     }
 
-    if(_usersSynced == -1) {
+    if(_usersSynced == -1)
+    {
         getUsers(_userFilter);
     }
 
     ImGui::BeginChild("Users", {0, std::max(400.0f, ImGui::GetContentRegionAvail().y / 2.0f)});
-    if(_usersSynced == 1) {
-        for(auto& user : _users) {
-            if(ImGui::CollapsingHeader(user.name.c_str())) {
+    if(_usersSynced == 1)
+    {
+        for(auto& user : _users)
+        {
+            if(ImGui::CollapsingHeader(user.name.c_str()))
+            {
                 ImGui::Indent();
                 ImGui::PushID(user.id);
                 ImGui::TextDisabled("id: %u", user.id);
                 ImGui::InputText("username", &user.name);
                 if(ImGui::Button("Change Password"))
                     _ui.openPopup(std::make_unique<EditPasswordPopup>(user.id, _syncServer));
-                if(ImGui::Button("Save")) {
+                if(ImGui::Button("Save"))
+                {
                     Runtime::warn("Changing user data not supported yet");
                 }
                 ImGui::SameLine();
@@ -380,13 +417,15 @@ void SyncWindow::drawUsers()
     ImGui::PopFont();
     ImGui::InputText("Username", &_newUser.name);
     ImGui::InputText("Password", &_newUserPassword);
-    if(ImGui::Button("Create")) {
+    if(ImGui::Button("Create"))
+    {
         SerializedData data;
         OutputSerializer s(data);
         s << _newUser.name;
         s << _newUserPassword;
         _syncServer->sendRequest("newUser", std::move(data), [this](auto ec, InputSerializer s) {
-            if(ec == net::ResponseCode::success) {
+            if(ec == net::ResponseCode::success)
+            {
                 Runtime::log("User " + _newUser.name + " created!");
                 _usersSynced = -1;
             }
@@ -400,7 +439,8 @@ void SyncWindow::getUsers(const std::string& filter)
     OutputSerializer s(data);
     s << filter;
     _syncServer->sendRequest("searchUsers", std::move(data), [this](auto ec, InputSerializer res) {
-        if(ec != net::ResponseCode::success) {
+        if(ec != net::ResponseCode::success)
+        {
             Runtime::error("Couldn't search users, error: " + std::to_string((uint8_t)ec));
             return;
         }

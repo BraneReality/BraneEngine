@@ -1,6 +1,7 @@
 #include "graphicsDevice.h"
 
-namespace graphics {
+namespace graphics
+{
     GraphicsDevice* device;
 
     void GraphicsDevice::pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface)
@@ -16,12 +17,14 @@ namespace graphics {
 
         std::multimap<int, VkPhysicalDevice> candidates;
 
-        for(const auto& device : devices) {
+        for(const auto& device : devices)
+        {
             int devVal = deviceValue(device, surface);
             candidates.insert(std::make_pair(devVal, device));
         }
 
-        if(candidates.rbegin()->first > 0) {
+        if(candidates.rbegin()->first > 0)
+        {
             _physicalDevice = candidates.rbegin()->second;
         }
         else
@@ -37,7 +40,8 @@ namespace graphics {
             indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value()};
 
         float queuePriority = 1.0f;
-        for(uint32_t queueFamily : uniqueQueueFamilies) {
+        for(uint32_t queueFamily : uniqueQueueFamilies)
+        {
             VkDeviceQueueCreateInfo queueCreateInfo{};
             queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             queueCreateInfo.queueFamilyIndex = queueFamily;
@@ -67,15 +71,18 @@ namespace graphics {
         features.shaderDrawParameters = true;
         createInfo.pNext = &features;
 
-        if(_validationLayersEnabled) {
+        if(_validationLayersEnabled)
+        {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
         }
-        else {
+        else
+        {
             createInfo.enabledLayerCount = 0;
         }
 
-        if(vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device) != VK_SUCCESS) {
+        if(vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create vulkan logical device!");
         }
 
@@ -94,7 +101,8 @@ namespace graphics {
 
         std::set<std::string> requiredExtensions(_deviceExtensions.begin(), _deviceExtensions.end());
 
-        for(const auto& extension : availableExtensions) {
+        for(const auto& extension : availableExtensions)
+        {
             requiredExtensions.erase(extension.extensionName);
         }
 
@@ -127,7 +135,8 @@ namespace graphics {
         int score = 0;
 
         // Discrete GPUs have a significant performance advantage
-        if(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        if(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        {
             score += 1;
         }
 
@@ -146,16 +155,20 @@ namespace graphics {
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-        for(int i = 0; i < queueFamilies.size(); i++) {
+        for(int i = 0; i < queueFamilies.size(); i++)
+        {
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-            if(presentSupport) {
+            if(presentSupport)
+            {
                 indices.presentFamily = i;
             }
-            if(queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            if(queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
                 indices.graphicsFamily = i;
             }
-            else if(queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            else if(queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT)
+            {
                 indices.transferFamily = i;
             }
             if(indices.isComplete())
@@ -165,8 +178,8 @@ namespace graphics {
         return indices;
     }
 
-    GraphicsDevice::SwapChainSupportDetails
-    GraphicsDevice::querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+    GraphicsDevice::SwapChainSupportDetails GraphicsDevice::querySwapChainSupport(VkPhysicalDevice device,
+                                                                                  VkSurfaceKHR surface)
     {
         SwapChainSupportDetails details;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
@@ -174,7 +187,8 @@ namespace graphics {
         uint32_t formatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
-        if(formatCount != 0) {
+        if(formatCount != 0)
+        {
             details.formats.resize(formatCount);
             vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
         }
@@ -182,7 +196,8 @@ namespace graphics {
         uint32_t presentModeCount;
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
-        if(presentModeCount != 0) {
+        if(presentModeCount != 0)
+        {
             details.presentModes.resize(presentModeCount);
             vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
         }
@@ -217,7 +232,8 @@ namespace graphics {
         graphicsPoolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
         graphicsPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        if(vkCreateCommandPool(_device, &graphicsPoolInfo, nullptr, &_graphicsCommandPool) != VK_SUCCESS) {
+        if(vkCreateCommandPool(_device, &graphicsPoolInfo, nullptr, &_graphicsCommandPool) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create graphics command pool!");
         }
 
@@ -226,7 +242,8 @@ namespace graphics {
         transferPoolInfo.queueFamilyIndex = queueFamilyIndices.transferFamily.value();
         transferPoolInfo.flags = 0; // Optional
 
-        if(vkCreateCommandPool(_device, &transferPoolInfo, nullptr, &_transferCommandPool) != VK_SUCCESS) {
+        if(vkCreateCommandPool(_device, &transferPoolInfo, nullptr, &_transferCommandPool) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create transfer command pool!");
         }
     }
@@ -236,8 +253,10 @@ namespace graphics {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &memProperties);
 
-        for(uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-            if(typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+        for(uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+        {
+            if(typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
                 return i;
             }
         }

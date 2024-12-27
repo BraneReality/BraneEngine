@@ -7,7 +7,8 @@
 
 #include <cstdint>
 
-struct EntityID {
+struct EntityID
+{
     uint32_t id = 0;
     uint32_t version = -1;
 

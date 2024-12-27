@@ -3,34 +3,62 @@ Language: Cpp
 
 # Limits
 ColumnLimit: 120
+MaxEmptyLinesToKeep: 2
 
 # Indents
 IndentWidth: 4
 PPIndentWidth: 4
 NamespaceIndentation: All
+LambdaBodyIndentation: OuterScope
+IndentCaseLabels: true
 
 # Breaking
-BreakBeforeBraces: Stroustrup
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterStruct: true
+  AfterClass: true
+  AfterEnum: true
+  AfterUnion: true
+  AfterFunction: true
+  AfterCaseLabel: true
+  AfterControlStatement: Always
+  SplitEmptyFunction: false
+  BeforeLambdaBody: false
+  BeforeCatch: true
+  BeforeWhile: true
+  BeforeElse: true
+  AfterNamespace: true
+  AfterExternBlock: false
+  SplitEmptyNamespace: true
+
 AlwaysBreakAfterReturnType: None
 AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakTemplateDeclarations: Yes
 
 # Alignments
 PointerAlignment: Left
 ReferenceAlignment: Left
 
 # Break parameters to each line
-AlignAfterOpenBracket: AlwaysBreak
+AlignAfterOpenBracket: Align
 BinPackArguments: false
 BinPackParameters: false
+SeparateDefinitionBlocks: Always
 
 # Spaces
 SpaceBeforeParens: Never
+SpaceAfterTemplateKeyword: false
+SpaceAfterCStyleCast: false
 
 # Tabs
 UseTab: Never
 
-# Includes
-SortIncludes: Never
-
----
-Language: CSharp
+#sorting
+SortIncludes: CaseInsensitive
+IncludeCategories:
+  - Regex:           '<[[:alnum:].]+>'
+    Priority:        0
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    3
+SortUsingDeclarations: true

@@ -7,7 +7,8 @@
 
 #include "component.h"
 
-class ComponentManager {
+class ComponentManager
+{
   public:
     staticIndexVector<std::unique_ptr<ComponentDescription>> _components;
     std::unordered_set<uint16_t> _externalComponents;

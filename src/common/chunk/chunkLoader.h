@@ -13,11 +13,14 @@ using ChunkCallbackID = uint32_t;
 using ChunkLODCallback = std::function<void(const WorldChunk* chunk, uint32_t oldLOD, uint32_t newLOD)>;
 #define NullLOD uint32_t(-1)
 
-class ChunkLoader : public Module {
-    struct ChunkContext {
+class ChunkLoader : public Module
+{
+    struct ChunkContext
+    {
         WorldChunk* chunk;
         uint32_t lod = NullLOD;
     };
+
     std::shared_mutex _chunkLock;
     std::unordered_map<HashedAssetID, ChunkContext> _chunks;
 

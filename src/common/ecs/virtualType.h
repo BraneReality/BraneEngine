@@ -14,16 +14,34 @@ class OutputSerializer;
 
 class AssetID;
 
-template <class T> constexpr inline T* getVirtual(const byte* var) { return (T*)var; }
+template<class T>
+constexpr inline T* getVirtual(const byte* var)
+{
+    return (T*)var;
+}
 
-template <class T> constexpr inline T readVirtual(byte* var) { return *(T*)var; }
+template<class T>
+constexpr inline T readVirtual(byte* var)
+{
+    return *(T*)var;
+}
 
-template <class T> constexpr inline T readVirtual(const byte* var) { return *(T*)var; }
+template<class T>
+constexpr inline T readVirtual(const byte* var)
+{
+    return *(T*)var;
+}
 
-template <class T> constexpr inline void setVirtual(const byte* var, T value) { *(T*)var = value; }
+template<class T>
+constexpr inline void setVirtual(const byte* var, T value)
+{
+    *(T*)var = value;
+}
 
-namespace VirtualType {
-    enum Type {
+namespace VirtualType
+{
+    enum Type
+    {
         virtualUnknown = 0,
         virtualBool,
         virtualEntityID,
@@ -44,7 +62,8 @@ namespace VirtualType {
         virtualEntityIDArray
     };
 
-    template <typename T> Type type();
+    template<typename T>
+    Type type();
 
     std::string typeToString(Type type);
 
@@ -64,20 +83,45 @@ namespace VirtualType {
 
     void move(Type type, byte* dest, byte* source);
 
-    template <typename T> void serialize(OutputSerializer& data, const byte* source) { data << *getVirtual<T>(source); }
+    template<typename T>
+    void serialize(OutputSerializer& data, const byte* source)
+    {
+        data << *getVirtual<T>(source);
+    }
 
-    template <typename T> void deserialize(InputSerializer& data, byte* source) { data >> *getVirtual<T>(source); }
+    template<typename T>
+    void deserialize(InputSerializer& data, byte* source)
+    {
+        data >> *getVirtual<T>(source);
+    }
 
-    template <typename T> void construct(byte* var) { new(var) T(); }
+    template<typename T>
+    void construct(byte* var)
+    {
+        new(var) T();
+    }
 
-    template <typename T> void deconstruct(byte* var) { ((T*)var)->~T(); }
+    template<typename T>
+    void deconstruct(byte* var)
+    {
+        ((T*)var)->~T();
+    }
 
-    template <typename T> void copy(byte* dest, const byte* source) { *((T*)dest) = *((T*)source); }
+    template<typename T>
+    void copy(byte* dest, const byte* source)
+    {
+        *((T*)dest) = *((T*)source);
+    }
 
-    template <typename T> void move(byte* dest, byte* source) { *((T*)dest) = std::move(*((T*)source)); }
+    template<typename T>
+    void move(byte* dest, byte* source)
+    {
+        *((T*)dest) = std::move(*((T*)source));
+    }
 }; // namespace VirtualType
 
-template <typename T> VirtualType::Type VirtualType::type()
+template<typename T>
+VirtualType::Type VirtualType::type()
 {
     if constexpr(std::is_same<T, bool>().value)
         return Type::virtualBool;

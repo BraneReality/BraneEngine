@@ -5,12 +5,12 @@
 #ifndef BRANEENGINE_BRANEPROJECT_H
 #define BRANEENGINE_BRANEPROJECT_H
 
+#include <filesystem>
+#include <string>
 #include "assets/assetID.h"
 #include "assets/assetType.h"
 #include "utility/jsonVersioner.h"
-#include <filesystem>
 #include <json/json.h>
-#include <string>
 #include <unordered_map>
 
 class FileWatcher;
@@ -20,7 +20,8 @@ class EditorAsset;
 class Editor;
 
 // This file stores everything to do with our connection to the server
-class BraneProject {
+class BraneProject
+{
     Editor& _editor;
     bool _loaded = false;
     std::filesystem::path _filepath;
@@ -61,8 +62,8 @@ class BraneProject {
 
     void registerAssetLocation(const EditorAsset* asset);
 
-    std::vector<std::pair<AssetID, std::filesystem::path>>
-    searchAssets(const std::string& query, AssetType type = AssetType::none);
+    std::vector<std::pair<AssetID, std::filesystem::path>> searchAssets(const std::string& query,
+                                                                        AssetType type = AssetType::none);
 
     std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
 

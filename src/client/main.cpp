@@ -1,11 +1,11 @@
 
+#include <iostream>
 #include "assets/assetManager.h"
 #include "chunk/chunkLoader.h"
 #include "client.h"
 #include "ecs/entity.h"
 #include "graphics/graphics.h"
 #include "systems/transforms.h"
-#include <iostream>
 
 int main()
 {

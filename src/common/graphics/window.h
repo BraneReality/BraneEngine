@@ -1,13 +1,15 @@
 #pragma once
 
+#include <functional>
+#include <stdexcept>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-#include <stdexcept>
 #include <vulkan/vulkan.hpp>
-#include <functional>
 
-namespace graphics {
-    class Window {
+namespace graphics
+{
+    class Window
+    {
       private:
         GLFWwindow* _window;
         glm::ivec2 _size;

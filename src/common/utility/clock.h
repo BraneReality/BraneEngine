@@ -2,7 +2,8 @@
 
 #include <chrono>
 
-class Timer {
+class Timer
+{
   public:
     static std::chrono::high_resolution_clock::time_point lastFrame;
     static uint64_t lastFrameDuration;
@@ -14,13 +15,15 @@ class Timer {
     static void updateTimer();
 };
 
-class Stopwatch {
+class Stopwatch
+{
     static std::chrono::high_resolution_clock::time_point _start;
 
   public:
     Stopwatch();
 
-    template <typename TimeType> uint64_t time()
+    template<typename TimeType>
+    uint64_t time()
     {
         auto now = std::chrono::high_resolution_clock::now();
         return std::chrono::duration_cast<TimeType>(now - _start).count();

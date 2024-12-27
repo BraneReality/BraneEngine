@@ -37,7 +37,8 @@ InputSerializer operator>>(InputSerializer s, std::vector<ShaderVariableData>& a
 OutputSerializer operator<<(OutputSerializer s, const std::unordered_map<std::string, UniformBufferData>& buffers)
 {
     s << static_cast<uint16_t>(buffers.size());
-    for(auto& buffer : buffers) {
+    for(auto& buffer : buffers)
+    {
         auto& b = buffer.second;
         s << b.binding << b.name << b.size << static_cast<uint16_t>(b.members.size());
         for(auto& m : b.members)
@@ -50,7 +51,8 @@ InputSerializer operator>>(InputSerializer s, std::unordered_map<std::string, Un
 {
     uint16_t size;
     s >> size;
-    for(uint16_t b = 0; b < size; ++b) {
+    for(uint16_t b = 0; b < size; ++b)
+    {
         UniformBufferData buffer;
         uint16_t memberCount;
         s >> buffer.binding >> buffer.name >> buffer.size >> memberCount;
@@ -86,16 +88,17 @@ void ShaderAsset::onDependenciesLoaded()
 
 VkShaderStageFlagBits ShaderAsset::vulkanShaderType() const
 {
-    switch(shaderType) {
+    switch(shaderType)
+    {
 
-    case ShaderType::vertex:
-        return VK_SHADER_STAGE_VERTEX_BIT;
-    case ShaderType::fragment:
-        return VK_SHADER_STAGE_FRAGMENT_BIT;
-    case ShaderType::geometry:
-        return VK_SHADER_STAGE_GEOMETRY_BIT;
-    case ShaderType::compute:
-        return VK_SHADER_STAGE_COMPUTE_BIT;
+        case ShaderType::vertex:
+            return VK_SHADER_STAGE_VERTEX_BIT;
+        case ShaderType::fragment:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case ShaderType::geometry:
+            return VK_SHADER_STAGE_GEOMETRY_BIT;
+        case ShaderType::compute:
+            return VK_SHADER_STAGE_COMPUTE_BIT;
     }
     assert(false && "Unreachable");
     return (VkShaderStageFlagBits)0;
@@ -105,7 +108,8 @@ ShaderVariableData::Layout ShaderVariableData::layout() const
 {
     if(vecSize == 1)
         return scalar;
-    if(columns == 1) {
+    if(columns == 1)
+    {
         if(vecSize == 3)
             return vec3;
         if(vecSize == 4)

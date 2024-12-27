@@ -20,36 +20,43 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
     assembly->name = name;
 
     std::vector<MeshAsset*> meshes = loader.extractAllMeshes();
-    for(auto mesh : meshes) {
+    for(auto mesh : meshes)
+    {
         assets.meshes.push_back(std::unique_ptr<MeshAsset>(mesh));
     }
 
     std::vector<Assembly::EntityAsset> entities;
-    for(Json::Value& node : loader.nodes()) {
+    for(Json::Value& node : loader.nodes())
+    {
         Assembly::EntityAsset entity;
 
-        if(node.isMember("name")) {
+        if(node.isMember("name"))
+        {
             EntityName nameComponent;
             nameComponent.name = node["name"].asString();
             entity.components.emplace_back(nameComponent.toVirtual());
         }
 
         glm::mat4 transform = glm::mat4(1);
-        if(node.isMember("matrix")) {
+        if(node.isMember("matrix"))
+        {
 
-            for(uint8_t i = 0; i < node["matrix"].size(); ++i) {
+            for(uint8_t i = 0; i < node["matrix"].size(); ++i)
+            {
                 transform[i / 4][i % 4] = node["matrix"][i].asFloat();
             }
             VirtualComponent tc(Transform::def());
             tc.setVar(0, transform);
             entity.components.push_back(tc);
         }
-        else {
+        else
+        {
             TRS trs;
             glm::mat4 translation(1);
             glm::mat4 rotation(1);
             glm::mat4 scale(1);
-            if(node.isMember("rotation")) {
+            if(node.isMember("rotation"))
+            {
                 glm::quat value = glm::quat();
                 value.w = node["rotation"][3].asFloat();
                 value.x = node["rotation"][0].asFloat();
@@ -58,17 +65,21 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
                 trs.rotation = value;
                 rotation = glm::mat4_cast(value);
             }
-            if(node.isMember("scale")) {
+            if(node.isMember("scale"))
+            {
                 glm::vec3 value;
-                for(uint8_t i = 0; i < 3; ++i) {
+                for(uint8_t i = 0; i < 3; ++i)
+                {
                     value[i] = node["scale"][i].asFloat();
                 }
                 trs.scale = value;
                 scale = glm::scale(glm::mat4(1), value);
             }
-            if(node.isMember("translation")) {
+            if(node.isMember("translation"))
+            {
                 glm::vec3 value;
-                for(uint8_t i = 0; i < node["translation"].size(); ++i) {
+                for(uint8_t i = 0; i < node["translation"].size(); ++i)
+                {
                     value[i] = node["translation"][i].asFloat();
                 }
                 trs.translation = value;
@@ -81,7 +92,8 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
             entity.components.emplace_back(trs.toVirtual());
         }
 
-        if(node.isMember("mesh")) {
+        if(node.isMember("mesh"))
+        {
             uint32_t meshIndex = node["mesh"].asUInt();
 
             VirtualComponent mc(MeshRendererComponent::def());
@@ -97,10 +109,13 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
 
     // Link up children
     uint32_t pIndex = 0;
-    for(Json::Value& node : loader.nodes()) {
-        if(node.isMember("children")) {
+    for(Json::Value& node : loader.nodes())
+    {
+        if(node.isMember("children"))
+        {
             Children cc;
-            for(auto& child : node["children"]) {
+            for(auto& child : node["children"])
+            {
                 if(child.asUInt() == pIndex)
                     throw std::runtime_error("Cannot parent entity to itself");
                 Assembly::EntityAsset& childEnt = entities[child.asUInt()];

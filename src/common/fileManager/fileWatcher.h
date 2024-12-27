@@ -7,10 +7,11 @@
 
 #include <filesystem>
 #include <functional>
-#include <unordered_map>
 #include <vector>
+#include <unordered_map>
 
-class FileWatcher {
+class FileWatcher
+{
     std::unordered_map<std::string, const std::function<void(const std::filesystem::path& file)>> _fileWatchers;
     std::vector<std::filesystem::path> _watchedDirectories;
     std::unordered_map<std::string, std::filesystem::file_time_type> _lastUpdate;

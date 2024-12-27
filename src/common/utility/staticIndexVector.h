@@ -10,11 +10,15 @@
 #include <stack>
 #include <vector>
 
-template <typename T> class staticIndexVector {
-    struct Element {
+template<typename T>
+class staticIndexVector
+{
+    struct Element
+    {
         T object;
         bool isUsed = false;
     };
+
     std::vector<Element> _data;
     std::stack<size_t> _unused;
     size_t _size = 0;
@@ -23,13 +27,15 @@ template <typename T> class staticIndexVector {
     size_t push(const T& element)
     {
         size_t index;
-        if(!_unused.empty()) {
+        if(!_unused.empty())
+        {
             index = _unused.top();
             _data[index].object = element;
             _data[index].isUsed = true;
             _unused.pop();
         }
-        else {
+        else
+        {
             index = _data.size();
             _data.push_back({element, true});
         }
@@ -40,13 +46,15 @@ template <typename T> class staticIndexVector {
     size_t push(T&& element)
     {
         size_t index;
-        if(!_unused.empty()) {
+        if(!_unused.empty())
+        {
             index = _unused.top();
             _data[index].object = std::move(element);
             _data[index].isUsed = true;
             _unused.pop();
         }
-        else {
+        else
+        {
             index = _data.size();
             _data.push_back({std::move(element), true});
         }
@@ -90,7 +98,8 @@ template <typename T> class staticIndexVector {
         return _data[index].object;
     }
 
-    class iterator {
+    class iterator
+    {
         staticIndexVector<T>& _ref;
         size_t _index;
 
@@ -127,7 +136,8 @@ template <typename T> class staticIndexVector {
 
     iterator end() { return {*this, _data.size()}; }
 
-    class const_iterator {
+    class const_iterator
+    {
         const staticIndexVector<T>& _ref;
         size_t _index;
 

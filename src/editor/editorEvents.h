@@ -5,18 +5,20 @@
 #ifndef BRANEENGINE_EDITOREVENTS_H
 #define BRANEENGINE_EDITOREVENTS_H
 
+#include <cstdint>
+#include <memory>
 #include "assets/assetID.h"
 #include "common/ui/guiEvent.h"
 #include "ecs/entityID.h"
-#include <cstdint>
-#include <memory>
 
-namespace net {
+namespace net
+{
     class Connection;
 }
 class ServerDirectory;
 
-class LoginEvent : public GUIEvent {
+class LoginEvent : public GUIEvent
+{
     net::Connection* _server;
 
   public:
@@ -25,7 +27,8 @@ class LoginEvent : public GUIEvent {
     inline net::Connection* server() const { return _server; }
 };
 
-class DirectoryUpdateEvent : public GUIEvent {
+class DirectoryUpdateEvent : public GUIEvent
+{
     ServerDirectory* _dir;
 
   public:
@@ -34,12 +37,14 @@ class DirectoryUpdateEvent : public GUIEvent {
     ServerDirectory* directory() const;
 };
 
-class AssetReloadEvent : public GUIEvent {
+class AssetReloadEvent : public GUIEvent
+{
   public:
     AssetReloadEvent();
 };
 
-class EntityAssetReloadEvent : public GUIEvent {
+class EntityAssetReloadEvent : public GUIEvent
+{
     size_t _entity;
 
   public:
@@ -50,7 +55,8 @@ class EntityAssetReloadEvent : public GUIEvent {
 
 class EditorAsset;
 
-class FocusAssetEvent : public GUIEvent {
+class FocusAssetEvent : public GUIEvent
+{
     std::shared_ptr<EditorAsset> _asset;
 
   public:
@@ -59,7 +65,8 @@ class FocusAssetEvent : public GUIEvent {
     std::shared_ptr<EditorAsset> asset() const;
 };
 
-class FocusEntityAssetEvent : public GUIEvent {
+class FocusEntityAssetEvent : public GUIEvent
+{
     int _index;
 
   public:
@@ -68,7 +75,8 @@ class FocusEntityAssetEvent : public GUIEvent {
     int entity() const;
 };
 
-class FocusEntityEvent : public GUIEvent {
+class FocusEntityEvent : public GUIEvent
+{
     EntityID _id;
 
   public:

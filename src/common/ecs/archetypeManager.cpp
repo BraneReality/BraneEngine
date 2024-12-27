@@ -19,7 +19,8 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
     if(numComps > _archetypes.size())
         return makeArchetype(components);
     std::vector<std::unordered_set<Archetype*>*> archesWithComponent;
-    for(ComponentID c : components) {
+    for(ComponentID c : components)
+    {
         if(_compToArch.count(c))
             archesWithComponent.push_back(&_compToArch[c]);
         else
@@ -33,19 +34,23 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
             smallest = i;
 
     Archetype* foundArch = nullptr;
-    for(auto* arch : *archesWithComponent[smallest]) {
+    for(auto* arch : *archesWithComponent[smallest])
+    {
         if(arch->components().size() != components.size())
             continue;
         bool isFound = true;
-        for(size_t i = 0; i < archesWithComponent.size(); ++i) {
+        for(size_t i = 0; i < archesWithComponent.size(); ++i)
+        {
             if(i == smallest)
                 continue;
-            if(!archesWithComponent[i]->contains(arch)) {
+            if(!archesWithComponent[i]->contains(arch))
+            {
                 isFound = false;
                 break;
             }
         }
-        if(isFound) {
+        if(isFound)
+        {
             foundArch = arch;
             break;
         }
@@ -81,10 +86,13 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
     Archetype* newArch = _archetypes[numComps - 1][newIndex].get();
 
     // find edges to other archetypes lower than this one
-    if(numComps > 1) {
+    if(numComps > 1)
+    {
         ComponentID connectingComponent;
-        for(size_t i = 0; i < _archetypes[numComps - 2].size(); i++) {
-            if(_archetypes[numComps - 2][i]->isChildOf(newArch, connectingComponent)) {
+        for(size_t i = 0; i < _archetypes[numComps - 2].size(); i++)
+        {
+            if(_archetypes[numComps - 2][i]->isChildOf(newArch, connectingComponent))
+            {
                 Archetype* otherArch = _archetypes[numComps - 2][i].get();
                 otherArch->addEdges().insert({connectingComponent, newArch});
                 newArch->removeEdges().insert({connectingComponent, otherArch});
@@ -93,10 +101,13 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
     }
 
     // find edges to other archetypes higher than this one
-    if(_archetypes.size() > numComps) {
-        for(size_t i = 0; i < _archetypes[numComps].size(); i++) {
+    if(_archetypes.size() > numComps)
+    {
+        for(size_t i = 0; i < _archetypes[numComps].size(); i++)
+        {
             ComponentID connectingComponent;
-            if(newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent)) {
+            if(newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent))
+            {
                 Archetype* otherArch = _archetypes[numComps][i].get();
                 newArch->addEdges().insert({connectingComponent, otherArch});
                 otherArch->removeEdges().insert({connectingComponent, newArch});
@@ -124,8 +135,10 @@ void ArchetypeManager::destroyArchetype(Archetype* archetype)
     auto& archesOfSameSize = _archetypes[archetype->components().size() - 1];
     auto i = archesOfSameSize.begin();
     auto end = archesOfSameSize.end();
-    while(i != end) {
-        if(i->get() == archetype) {
+    while(i != end)
+    {
+        if(i->get() == archetype)
+        {
             archesOfSameSize.erase(i);
             return;
         }
@@ -149,7 +162,8 @@ std::vector<Archetype*> ArchetypeManager::getArchetypes(const ComponentFilter& f
     std::vector<std::unordered_set<Archetype*>*> archesWithDesiredComponents;
     archesWithDesiredComponents.reserve(filter.components().size());
     std::vector<std::unordered_set<Archetype*>*> archesWithExcludedComponents;
-    for(auto c : filter.components()) {
+    for(auto c : filter.components())
+    {
         if(c.flags & ComponentFilterFlags_Exclude)
             archesWithExcludedComponents.push_back(&_compToArch[c.id]);
         else
@@ -164,7 +178,8 @@ std::vector<Archetype*> ArchetypeManager::getArchetypes(const ComponentFilter& f
     auto& smallestSet = *archesWithDesiredComponents[s];
     archesWithDesiredComponents.erase(archesWithDesiredComponents.begin() + s);
 
-    for(auto arch : smallestSet) {
+    for(auto arch : smallestSet)
+    {
         for(auto& cSet : archesWithDesiredComponents)
             if(!cSet->contains(arch))
                 goto nextArch;
@@ -186,7 +201,8 @@ ArchetypeManager::iterator ArchetypeManager::end() { return {_archetypes.size(),
 ArchetypeManager::iterator::iterator(size_t size, size_t archetype, ArchetypeManager& ref)
     : _size{size}, _archetype{archetype}, _ref(ref)
 {
-    while(_size < _ref._archetypes.size() && _archetype == _ref._archetypes[_size].size()) {
+    while(_size < _ref._archetypes.size() && _archetype == _ref._archetypes[_size].size())
+    {
         _archetype = 0;
         _size++;
     }
@@ -195,7 +211,8 @@ ArchetypeManager::iterator::iterator(size_t size, size_t archetype, ArchetypeMan
 void ArchetypeManager::iterator::operator++()
 {
     _archetype++;
-    while(_size < _ref._archetypes.size() && _archetype == _ref._archetypes[_size].size()) {
+    while(_size < _ref._archetypes.size() && _archetype == _ref._archetypes[_size].size())
+    {
         _archetype = 0;
         _size++;
     }

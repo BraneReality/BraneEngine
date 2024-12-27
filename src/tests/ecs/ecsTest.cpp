@@ -1,6 +1,6 @@
+#include <testing.h>
 #include <ecs/entity.h>
 #include <ecs/structMembers.h>
-#include <testing.h>
 #include <utility/clock.h>
 
 TEST(ECS, VirtualComponentTest)
@@ -51,16 +51,16 @@ TEST(ECS, ArchetypeTest)
     std::shared_ptr<ChunkPool> cp = std::make_shared<ChunkPool>();
     Archetype arch(components, cp);
 
-    EXPECT_EQ(
-        arch.
+    EXPECT_EQ(arch.
 
-        entitySize(),
+              entitySize(),
 
-        sizeof(std::string) * 6);
+              sizeof(std::string) * 6);
 }
 
 // Native component for testing
-class TestNativeComponent : public NativeComponent<TestNativeComponent> {
+class TestNativeComponent : public NativeComponent<TestNativeComponent>
+{
     REGISTER_MEMBERS_3("TestNativeComponent", var1, "var1", var2, "var2", var3, "var3")
   public:
     bool var1;
@@ -69,7 +69,8 @@ class TestNativeComponent : public NativeComponent<TestNativeComponent> {
 };
 
 // Classes for native system test
-class TestNativeComponent2 : public NativeComponent<TestNativeComponent2> {
+class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
+{
     REGISTER_MEMBERS_1("TestNativeComponent2", var1, "var1")
   public:
     bool var1;
@@ -120,28 +121,26 @@ TEST(ECS, ChunkTest)
     std::vector<const ComponentDescription*> components = {TestNativeComponent::def(), TestNativeComponent2::def()};
     c->setComponents(components);
 
-    EXPECT_EQ(
-        c->
+    EXPECT_EQ(c->
 
-        maxCapacity(),
-        c
+              maxCapacity(),
+              c
 
-                ->_data.
+                      ->_data.
 
-            size()
+                  size()
 
-            / (TestNativeComponent::def()->size() + TestNativeComponent2::def()->size()));
+                  / (TestNativeComponent::def()->size() + TestNativeComponent2::def()->size()));
 }
 
 TEST(ECS, StructMembersTypesTest)
 {
     std::vector<VirtualType::Type> members = STRUCT_MEMBER_TYPES_3(TestNativeComponent, var1, "", var2, "", var3, "");
-    EXPECT_EQ(
-        members.
+    EXPECT_EQ(members.
 
-        size(),
+              size(),
 
-        3);
+              3);
 
     EXPECT_EQ(members[0], VirtualType::virtualBool);
     EXPECT_EQ(members[1], VirtualType::virtualInt64);
@@ -151,12 +150,11 @@ TEST(ECS, StructMembersTypesTest)
 TEST(ECS, StructMembersOffsetsTest)
 {
     std::vector<size_t> members = STRUCT_MEMBER_OFFSETS_3(TestNativeComponent, var1, "", var2, "", var3, "");
-    EXPECT_EQ(
-        members.
+    EXPECT_EQ(members.
 
-        size(),
+              size(),
 
-        3);
+              3);
 
     EXPECT_EQ(members[0], offsetof(TestNativeComponent, var1));
     EXPECT_EQ(members[1], offsetof(TestNativeComponent, var2));
@@ -244,44 +242,38 @@ TEST(ECS, EntityManagerTest)
     em.removeComponent(entity, vcd1.id);
 
     // Make sure edges and automatic cleanup are working
-    EXPECT_EQ(
-        em._archetypes._archetypes.
+    EXPECT_EQ(em._archetypes._archetypes.
 
-        size(),
+              size(),
 
-        4);
-    EXPECT_EQ(
-        em._archetypes._archetypes[0].
+              4);
+    EXPECT_EQ(em._archetypes._archetypes[0].
 
-        size(),
+              size(),
 
-        1);
-    EXPECT_EQ(
-        em._archetypes._archetypes[1].
+              1);
+    EXPECT_EQ(em._archetypes._archetypes[1].
 
-        size(),
+              size(),
 
-        0);
-    EXPECT_EQ(
-        em._archetypes._archetypes[2].
+              0);
+    EXPECT_EQ(em._archetypes._archetypes[2].
 
-        size(),
+              size(),
 
-        0);
-    EXPECT_EQ(
-        em._archetypes._archetypes[3].
+              0);
+    EXPECT_EQ(em._archetypes._archetypes[3].
 
-        size(),
+              size(),
 
-        0);
+              0);
 
     em.destroyEntity(entity);
-    EXPECT_EQ(
-        em._archetypes._archetypes[0].
+    EXPECT_EQ(em._archetypes._archetypes[0].
 
-        size(),
+              size(),
 
-        0);
+              0);
 
     Runtime::cleanup();
 }
@@ -322,7 +314,8 @@ TEST(ECS, ForEachTest)
 
     std::array<EntityID, 100> entities;
     // Create 50 entities with one component, and 50 with two
-    for(size_t i = 0; i < 100; i++) {
+    for(size_t i = 0; i < 100; i++)
+    {
         EntityID e = em.createEntity();
         em.addComponent(e, TestNativeComponent::def()->id);
         // Create a new archetype
@@ -331,18 +324,16 @@ TEST(ECS, ForEachTest)
         entities[i] = e;
     }
 
-    EXPECT_EQ(
-        em._archetypes._archetypes[0].
+    EXPECT_EQ(em._archetypes._archetypes[0].
 
-        size(),
+              size(),
 
-        0);
-    EXPECT_EQ(
-        em._archetypes._archetypes[1].
+              0);
+    EXPECT_EQ(em._archetypes._archetypes[1].
 
-        size(),
+              size(),
 
-        1);
+              1);
 
     // Set the variables on all the entities with the first component
     SystemContext ctx;
@@ -396,8 +387,10 @@ TEST(ECS, ForEachTest)
     std::cout << "For Each on 50 entities took: " << time << std::endl;
 
     std::cout << "Test done, checking values..." << std::endl;
-    for(size_t i = 0; i < 100; i++) {
-        if(i > 49) {
+    for(size_t i = 0; i < 100; i++)
+    {
+        if(i > 49)
+        {
             // Entities with two
             TestNativeComponent* ts1 = em.getComponent<TestNativeComponent>(entities[i]);
             TestNativeComponent2* ts2 = em.getComponent<TestNativeComponent2>(entities[i]);
@@ -407,7 +400,8 @@ TEST(ECS, ForEachTest)
             EXPECT_EQ(74, ts1->var3) << "entity: " << i;
             EXPECT_EQ(true, ts2->var1) << "entity: " << i;
         }
-        else {
+        else
+        {
             // Entites with one
             TestNativeComponent* ts1 = em.getComponent<TestNativeComponent>(entities[i]);
             EXPECT_EQ(false, ts1->var1) << "entity: " << i;

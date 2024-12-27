@@ -9,14 +9,16 @@ class MaterialAsset;
 
 class ComponentDescription;
 
-namespace graphics {
+namespace graphics
+{
     class Shader;
 
     class VulkanRuntime;
 
     class SceneRenderer;
 
-    class Material {
+    class Material
+    {
         MaterialAsset* _asset;
         Shader* _geometryShader = nullptr;
         Shader* _vertexShader = nullptr;
@@ -24,10 +26,12 @@ namespace graphics {
         VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
 
         // Descriptors
-        struct TextureBinding {
+        struct TextureBinding
+        {
             Texture* texture;
             uint32_t binding;
         };
+
         std::vector<TextureBinding> _textures;
         std::vector<VkVertexInputBindingDescription> _bindings;
         std::vector<VkVertexInputAttributeDescription> _attributes;

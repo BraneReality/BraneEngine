@@ -76,7 +76,8 @@ std::string_view AssetID::address() const
 
 void AssetID::setID(uint32_t newID)
 {
-    if(null()) {
+    if(null())
+    {
         _string = "/";
         _delimiter = 0;
     }
@@ -86,7 +87,8 @@ void AssetID::setID(uint32_t newID)
 
 void AssetID::setAddress(std::string_view newAddress)
 {
-    if(null()) {
+    if(null())
+    {
         _string = "/";
         _delimiter = 0;
     }

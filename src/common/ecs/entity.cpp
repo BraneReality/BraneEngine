@@ -40,7 +40,8 @@ void EntityManager::createEntities(const ComponentSet& components, size_t count)
 {
     Archetype* arch = getArchetype(components);
 
-    for(size_t i = 0; i < count; i++) {
+    for(size_t i = 0; i < count; i++)
+    {
         EntityIDComponent id{};
         id.id = EntityID{static_cast<uint32_t>(_entities.push(EntityIndex())), ++_globalEntityVersion};
         _entities[id.id.id].archetype = arch;
@@ -59,13 +60,15 @@ void EntityManager::destroyEntity(EntityID entity)
     _entities.remove(entity.id);
 
     // If we just moved an entity's data, update it's index;
-    if(index < archetype->size()) {
+    if(index < archetype->size())
+    {
         EntityID swappedEntity = *archetype->getComponent(index, EntityIDComponent::def()->id).getVar<EntityID>(0);
         assert(_entities[swappedEntity.id].archetype == archetype);
         _entities[swappedEntity.id].index = index;
     }
 
-    for(auto& e : _entities) {
+    for(auto& e : _entities)
+    {
         assert(e.index < e.archetype->size());
     }
 
@@ -120,21 +123,24 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
     assert(entityExists(entity));
     assert(_components._components.hasIndex(component));
     Archetype* destArchetype = nullptr;
-    if(hasArchetype(entity)) {
+    if(hasArchetype(entity))
+    {
         Archetype* currentArchetype = getEntityArchetype(entity);
         assert(!currentArchetype->hasComponent(component)); // can't add a component that we already have
         assert(_entities[entity.id].index < currentArchetype->size());
         // See if there's already an archetype we know about:
         if(currentArchetype->addEdges().count(component))
             destArchetype = currentArchetype->addEdges().at(component);
-        else {
+        else
+        {
             // Otherwise create one
             ComponentSet compDefs = currentArchetype->components();
             compDefs.add(component);
             destArchetype = _archetypes.makeArchetype(compDefs);
         }
     }
-    else {
+    else
+    {
         // the entity has no components, so we need to find or create a new one.
         ComponentSet compDefs;
         compDefs.add(component);
@@ -144,11 +150,13 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
     size_t oldIndex = _entities[entity.id].index;
     EntityID swappedEntity;
     // If this isn't an empty entity we need to copy and remove it
-    if(hasArchetype(entity)) {
+    if(hasArchetype(entity))
+    {
         Archetype* arch = getEntityArchetype(entity);
         newIndex = arch->moveEntity(oldIndex, destArchetype);
         // Check if move entity performed a swap.
-        if(oldIndex < arch->size()) {
+        if(oldIndex < arch->size())
+        {
             swappedEntity = *arch->getComponent(oldIndex, EntityIDComponent::def()->id).getVar<EntityID>(0);
             assert(arch == _entities[swappedEntity.id].archetype);
             _entities[swappedEntity.id].index = oldIndex;
@@ -180,11 +188,13 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 
     assert(currentArchetype->hasComponent(component)); // can't remove a component that isn't there
     // See if there's already an archetype we know about:
-    if(currentArchetype->removeEdges().count(component)) {
+    if(currentArchetype->removeEdges().count(component))
+    {
         assert(_entities[entity.id].archetype->components().size() >= 2); // Must be an archetype level beneath this one
         destArchetype = currentArchetype->removeEdges().at(component);
     }
-    else {
+    else
+    {
         // Otherwise create one
         ComponentSet compDefs = currentArchetype->components();
         // Remove the component definition for the component that we want to remove
@@ -195,9 +205,11 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
     size_t oldIndex = _entities[entity.id].index;
     size_t newIndex = 0;
 
-    if(destArchetype != nullptr) {
+    if(destArchetype != nullptr)
+    {
         newIndex = currentArchetype->moveEntity(oldIndex, destArchetype);
-        if(oldIndex < currentArchetype->size()) {
+        if(oldIndex < currentArchetype->size())
+        {
             EntityID swappedEntity =
                 *currentArchetype->getComponent(oldIndex, EntityIDComponent::def()->id).getVar<EntityID>(0);
             assert(currentArchetype == _entities[swappedEntity.id].archetype);
@@ -232,7 +244,8 @@ bool EntityManager::entityExists(EntityID entity) const
 
 bool EntityManager::tryGetEntity(size_t index, EntityID& id) const
 {
-    if(!_entities.hasIndex(index)) {
+    if(!_entities.hasIndex(index))
+    {
         return false;
     }
     id.id = index;

@@ -11,8 +11,8 @@
 
 #define WIN32_LEAN_AND_MEAN
 
-#include "sqlite3.h"
 #include <iomanip>
+#include "sqlite3.h"
 #include <openssl/err.h>
 #include <openssl/md5.h>
 #include <openssl/ssl.h>
@@ -22,16 +22,16 @@ Database::Database()
 {
     int rc;
     rc = sqlite3_open(Config::json()["data"]["database_path"].asCString(), &_db);
-    if(rc) {
+    if(rc)
+    {
         fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(_db));
         sqlite3_close(_db);
         throw std::runtime_error("Can't open database");
     }
     _getLastInserted.initialize("SELECT seq FROM sqlite_sequence WHERE name = ?1", _db);
-    _loginCall.initialize(
-        "SELECT Logins.Password, Logins.Salt FROM Users "
-        "INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);",
-        _db);
+    _loginCall.initialize("SELECT Logins.Password, Logins.Salt FROM Users "
+                          "INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);",
+                          _db);
     _userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
 
     _createUser.initialize("INSERT INTO Users (Username) VALUES (?1)", _db);
@@ -48,10 +48,9 @@ Database::Database()
     _deleteAsset.initialize("DELETE FROM Assets WHERE AssetID = ?1", _db);
 
     _getAssetPermission.initialize("SELECT Level FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
-    _updateAssetPermission.initialize(
-        "INSERT INTO AssetPermissions (AssetID, UserID, Level) VALUES (?1, ?2, ?3) "
-        " ON CONFLICT DO UPDATE SET Level = ?3 WHERE AssetID = ?1 AND UserID = ?2",
-        _db);
+    _updateAssetPermission.initialize("INSERT INTO AssetPermissions (AssetID, UserID, Level) VALUES (?1, ?2, ?3) "
+                                      " ON CONFLICT DO UPDATE SET Level = ?3 WHERE AssetID = ?1 AND UserID = ?2",
+                                      _db);
     _deleteAssetPermission.initialize("DELETE FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
     _searchAssets.initialize(
         "SELECT AssetID, Name, Type FROM Assets WHERE Name LIKE ?3 AND Type LIKE ?4 ORDER BY Name LIMIT ?2 OFFSET ?1",
@@ -69,7 +68,8 @@ Database::~Database() { sqlite3_close(_db); }
 int Database::sqliteCallback(void* callback, int argc, char** argv, char** azColName)
 {
     std::vector<sqlColumn> columns(argc);
-    for(int i = 0; i < argc; ++i) {
+    for(int i = 0; i < argc; ++i)
+    {
         columns[i].name = azColName[i];
         columns[i].value = argv[i];
     }
@@ -82,7 +82,8 @@ void Database::rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f)
     char* zErrMsg = 0;
     int rc;
     rc = sqlite3_exec(_db, cmd.c_str(), sqliteCallback, (void*)&f, &zErrMsg);
-    if(rc != SQLITE_OK) {
+    if(rc != SQLITE_OK)
+    {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }
@@ -99,11 +100,10 @@ std::unordered_set<std::string> Database::userPermissions(int64_t userID)
 {
     std::unordered_set<std::string> pems;
     // TODO change this to prepared call
-    rawSQLCall(
-        "SELECT PermissionID FROM UserPermissions WHERE UserID=" + std::to_string(userID) + ";",
-        [&pems, this](const std::vector<Database::sqlColumn>& columns) {
-            pems.insert(_permissions[std::stoi(columns[0].value)]);
-        });
+    rawSQLCall("SELECT PermissionID FROM UserPermissions WHERE UserID=" + std::to_string(userID) + ";",
+               [&pems, this](const std::vector<Database::sqlColumn>& columns) {
+        pems.insert(_permissions[std::stoi(columns[0].value)]);
+    });
     return pems;
 }
 
@@ -204,7 +204,8 @@ std::string Database::hashPassword(const std::string& password, const std::strin
     SHA256_Update(&sha256, salt.c_str(), salt.size());
     SHA256_Final((unsigned char*)input.data(), &sha256);
 
-    for(int i = 1; i < hashIterations; ++i) {
+    for(int i = 1; i < hashIterations; ++i)
+    {
         SHA256_Init(&sha256);
         SHA256_Update(&sha256, input.c_str(), input.size());
         SHA256_Update(&sha256, salt.c_str(), salt.size());

@@ -5,16 +5,17 @@
 #ifndef BRANEENGINE_EDITOR_H
 #define BRANEENGINE_EDITOR_H
 
+#include <memory>
 #include "assets/assetCache.h"
 #include "assets/assetID.h"
 #include "braneProject.h"
 #include "graphics/shaderCompiler.h"
 #include "utility/jsonVersioner.h"
-#include <memory>
 #include <runtime/module.h>
 #include <unordered_map>
 
-namespace net {
+namespace net
+{
     class Connection;
 }
 
@@ -24,7 +25,8 @@ class GUIWindow;
 
 class EditorAsset;
 
-class Editor : public Module {
+class Editor : public Module
+{
     GUI* _ui;
     GUIWindow* _selectProjectWindow = nullptr;
 

@@ -18,7 +18,8 @@ void MaterialAsset::deserialize(InputSerializer& s)
     s >> serializedProperties >> vertexShader >> fragmentShader;
     uint16_t textureCount;
     s >> textureCount;
-    for(uint16_t i = 0; i < textureCount; ++i) {
+    for(uint16_t i = 0; i < textureCount; ++i)
+    {
         std::pair<uint16_t, AssetID> textureBinding;
         s >> textureBinding.first >> textureBinding.second;
         textures.push_back(textureBinding);

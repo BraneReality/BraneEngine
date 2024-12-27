@@ -27,7 +27,8 @@ AssetManager::AssetManager()
 
 const char* AssetManager::name() { return "assetManager"; }
 
-template <typename T> void AssetManager::addNativeComponent(EntityManager& em)
+template<typename T>
+void AssetManager::addNativeComponent(EntityManager& em)
 {
     static_assert(std::is_base_of<NativeComponent<T>, T>());
     ComponentDescription* description = T::constructDescription();
@@ -62,9 +63,11 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
     assert(!a->id.null());
     std::vector<std::pair<AssetID, bool>> unloadedDeps;
     _assetLock.lock();
-    for(AssetDependency& d : a->dependencies()) {
+    for(AssetDependency& d : a->dependencies())
+    {
         auto dep = _assets.find(d.id);
-        if(dep == _assets.end() || dep->second->loadState < LoadState::usable) {
+        if(dep == _assets.end() || dep->second->loadState < LoadState::usable)
+        {
             std::pair<AssetID, bool> depPair = {d.id, d.streamable};
             // If the server address is empty, it means this asset is from the same origin as the parent.
             if(depPair.first.address().empty())
@@ -74,7 +77,8 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
         }
     }
     _assetLock.unlock();
-    if(unloadedDeps.empty()) {
+    if(unloadedDeps.empty())
+    {
         callback(true);
         return;
     }
@@ -85,12 +89,14 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
     data->unloadedDependencies = unloadedDeps.size();
     _assetLock.unlock();
     AssetID id = a->id;
-    for(auto& d : unloadedDeps) {
+    for(auto& d : unloadedDeps)
+    {
         fetchAsset(d.first, d.second)
             .then([this, id, callbackPtr](Asset* asset) {
                 Runtime::log("Loaded: " + asset->name);
                 _assetLock.lock();
-                if(!_assets.count(id)) {
+                if(!_assets.count(id))
+                {
                     _assetLock.unlock();
                     return;
                 }
@@ -120,7 +126,8 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
 {
     AsyncData<Asset*> asset;
     _assetLock.lock();
-    if(_assets.count(id)) {
+    if(_assets.count(id))
+    {
         AssetData* assetData = _assets.at(id).get();
         if(assetData->loadState >= LoadState::usable)
             asset.setData(assetData->asset.get());
@@ -147,7 +154,8 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
             assetData->loadState = LoadState::loaded;
             assetData->asset = std::unique_ptr<Asset>(a);
             std::vector<std::function<void(Asset*)>> onLoaded;
-            if(_awaitingLoad.count(a->id)) {
+            if(_awaitingLoad.count(a->id))
+            {
                 onLoaded = std::move(_awaitingLoad.at(a->id));
                 _awaitingLoad.erase(a->id);
             }
@@ -161,7 +169,8 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
         .onError([this, asset, id](const std::string& error) {
             _assetLock.lock();
             std::vector<std::function<void(Asset*)>> onLoaded;
-            if(_awaitingLoad.count(id)) {
+            if(_awaitingLoad.count(id))
+            {
                 onLoaded = std::move(_awaitingLoad.at(id));
                 _awaitingLoad.erase(id);
             }
@@ -183,23 +192,23 @@ void AssetManager::reloadAsset(Asset* asset)
     std::scoped_lock lock(_assetLock);
 
     // We move instead of just replacing the pointer to avoid breaking references
-    switch(asset->type.type()) {
-    case AssetType::mesh:
-        *(MeshAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MeshAsset*)(asset));
-        break;
-    case AssetType::shader:
-        *(ShaderAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(ShaderAsset*)(asset));
-        break;
-    case AssetType::material:
-        *(MaterialAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MaterialAsset*)(asset));
-        break;
-    case AssetType::assembly:
-        *(Assembly*)(_assets.at(asset->id)->asset.get()) = std::move(*(Assembly*)(asset));
-        break;
-    default:
-        Runtime::warn(
-            "Assembly manager attempted to reload asset of type " + asset->type.toString() +
-            " but currently it isn't supported");
+    switch(asset->type.type())
+    {
+        case AssetType::mesh:
+            *(MeshAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MeshAsset*)(asset));
+            break;
+        case AssetType::shader:
+            *(ShaderAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(ShaderAsset*)(asset));
+            break;
+        case AssetType::material:
+            *(MaterialAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MaterialAsset*)(asset));
+            break;
+        case AssetType::assembly:
+            *(Assembly*)(_assets.at(asset->id)->asset.get()) = std::move(*(Assembly*)(asset));
+            break;
+        default:
+            Runtime::warn("Assembly manager attempted to reload asset of type " + asset->type.toString() +
+                          " but currently it isn't supported");
     }
 }
 
@@ -207,36 +216,36 @@ std::vector<const Asset*> AssetManager::nativeAssets(AssetType type)
 {
     std::scoped_lock lock(_assetLock);
     std::vector<const Asset*> assets;
-    switch(type.type()) {
-    case AssetType::none:
-        break;
-    case AssetType::component:
-        assets = {
-            EntityIDComponent::def()->asset,
-            EntityName::def()->asset,
-            Transform::def()->asset,
-            LocalTransform::def()->asset,
-            Children::def()->asset,
-            TRS::def()->asset,
-            MeshRendererComponent::def()->asset,
-            PointLightComponent::def()->asset};
-        break;
-    case AssetType::system:
-        break;
-    case AssetType::mesh:
-        break;
-    case AssetType::image:
-        break;
-    case AssetType::shader:
-        break;
-    case AssetType::material:
-        break;
-    case AssetType::assembly:
-        break;
-    case AssetType::chunk:
-        break;
-    case AssetType::player:
-        break;
+    switch(type.type())
+    {
+        case AssetType::none:
+            break;
+        case AssetType::component:
+            assets = {EntityIDComponent::def()->asset,
+                      EntityName::def()->asset,
+                      Transform::def()->asset,
+                      LocalTransform::def()->asset,
+                      Children::def()->asset,
+                      TRS::def()->asset,
+                      MeshRendererComponent::def()->asset,
+                      PointLightComponent::def()->asset};
+            break;
+        case AssetType::system:
+            break;
+        case AssetType::mesh:
+            break;
+        case AssetType::image:
+            break;
+        case AssetType::shader:
+            break;
+        case AssetType::material:
+            break;
+        case AssetType::assembly:
+            break;
+        case AssetType::chunk:
+            break;
+        case AssetType::player:
+            break;
     }
     return assets;
 }

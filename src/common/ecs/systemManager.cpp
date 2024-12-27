@@ -7,7 +7,8 @@
 
 void SystemManager::runSystems(EntityManager& em)
 {
-    for(auto& system : _systems) {
+    for(auto& system : _systems)
+    {
         system.second->hasRun = false;
         system.second->isRunning = false;
     }
@@ -44,7 +45,8 @@ void SystemManager::SystemNode::run(EntityManager& em, uint32_t& version)
 {
     if(hasRun)
         return;
-    if(isRunning) {
+    if(isRunning)
+    {
         Runtime::warn("Circular dependency in systems!");
         return;
     }

@@ -8,17 +8,20 @@
 #include "sceneRenderer.h"
 #include "shader.h"
 
-namespace graphics {
+namespace graphics
+{
     Material::Material(MaterialAsset* asset, VulkanRuntime* vkr) : _asset(asset)
     {
         auto* am = Runtime::getModule<AssetManager>();
-        if(!asset->vertexShader.null()) {
+        if(!asset->vertexShader.null())
+        {
             AssetID id = asset->vertexShader;
             if(id.address().empty())
                 id.setAddress(asset->id.address());
             _vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(id)->runtimeID);
         }
-        if(!asset->fragmentShader.null()) {
+        if(!asset->fragmentShader.null())
+        {
             AssetID id = asset->fragmentShader;
             if(id.address().empty())
                 id.setAddress(asset->id.address());
@@ -26,55 +29,61 @@ namespace graphics {
         }
 
         _materialProperties.setFlags(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-        if(!asset->serializedProperties.empty()) {
+        if(!asset->serializedProperties.empty())
+        {
             _materialProperties.realocate(asset->serializedProperties.size());
             _materialProperties.setData(asset->serializedProperties);
         }
 
         _transformBuffers.resize(vkr->swapChain()->size());
-        for(auto& b : _transformBuffers) {
-            b.setFlags(
-                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        for(auto& b : _transformBuffers)
+        {
+            b.setFlags(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             b.realocate(sizeof(glm::mat4) * 2);
         }
 
         uint32_t inputBindingIndex = 0;
-        if(_vertexShader) {
-            for(auto& input : _vertexShader->inputs()) {
+        if(_vertexShader)
+        {
+            for(auto& input : _vertexShader->inputs())
+            {
                 VkFormat inputFormat = VK_FORMAT_R32_SFLOAT;
-                switch(input.type) {
-                case ShaderVariableData::Float:
-                    switch(input.layout()) {
-                    case ShaderVariableData::scalar:
-                        inputFormat = VK_FORMAT_R32_SFLOAT;
-                        addBinding(inputBindingIndex, sizeof(float));
-                        break;
-                    case ShaderVariableData::vec2:
-                        inputFormat = VK_FORMAT_R32G32_SFLOAT;
-                        addBinding(inputBindingIndex, sizeof(glm::vec2));
-                        break;
-                    case ShaderVariableData::vec3:
-                        inputFormat = VK_FORMAT_R32G32B32_SFLOAT;
-                        addBinding(inputBindingIndex, sizeof(glm::vec3));
-                        break;
-                    case ShaderVariableData::vec4:
-                        inputFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
-                        addBinding(inputBindingIndex, sizeof(glm::vec4));
+                switch(input.type)
+                {
+                    case ShaderVariableData::Float:
+                        switch(input.layout())
+                        {
+                            case ShaderVariableData::scalar:
+                                inputFormat = VK_FORMAT_R32_SFLOAT;
+                                addBinding(inputBindingIndex, sizeof(float));
+                                break;
+                            case ShaderVariableData::vec2:
+                                inputFormat = VK_FORMAT_R32G32_SFLOAT;
+                                addBinding(inputBindingIndex, sizeof(glm::vec2));
+                                break;
+                            case ShaderVariableData::vec3:
+                                inputFormat = VK_FORMAT_R32G32B32_SFLOAT;
+                                addBinding(inputBindingIndex, sizeof(glm::vec3));
+                                break;
+                            case ShaderVariableData::vec4:
+                                inputFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+                                addBinding(inputBindingIndex, sizeof(glm::vec4));
+                                break;
+                            default:
+                                assert(false);
+                        }
                         break;
                     default:
                         assert(false);
-                    }
-                    break;
-                default:
-                    assert(false);
                 }
                 addAttribute(inputBindingIndex++, input.location, inputFormat, 0);
                 _vertexBuffers.push_back(input.name);
             }
         }
 
-        for(auto& textureBinding : asset->textures) {
+        for(auto& textureBinding : asset->textures)
+        {
             auto* image = am->getAsset<ImageAsset>(textureBinding.second);
             Texture* texture = vkr->getTexture(image->runtimeID);
             _textures.push_back({texture, textureBinding.first});
@@ -109,7 +118,8 @@ namespace graphics {
 
     Material::~Material()
     {
-        if(_pipelineLayout) {
+        if(_pipelineLayout)
+        {
             vkDestroyDescriptorSetLayout(device->get(), _descriptorSetLayout, nullptr);
             vkDestroyDescriptorPool(device->get(), _descriptorPool, nullptr);
 
@@ -119,7 +129,8 @@ namespace graphics {
 
     Material& Material::operator=(Material&& o)
     {
-        if(_pipelineLayout) {
+        if(_pipelineLayout)
+        {
             vkDestroyDescriptorSetLayout(device->get(), _descriptorSetLayout, nullptr);
             vkDestroyDescriptorPool(device->get(), _descriptorPool, nullptr);
 
@@ -176,7 +187,8 @@ namespace graphics {
         pointLightDataBinding.descriptorCount = 1;
         bindings.push_back(pointLightDataBinding);
 
-        if(_asset->serializedProperties.size()) {
+        if(_asset->serializedProperties.size())
+        {
             VkDescriptorSetLayoutBinding propertiesDataBinding{};
             propertiesDataBinding.binding = 3;
             propertiesDataBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -185,7 +197,8 @@ namespace graphics {
             bindings.push_back(propertiesDataBinding);
         }
 
-        for(size_t i = 0; i < _textures.size(); i++) {
+        for(size_t i = 0; i < _textures.size(); i++)
+        {
             VkDescriptorSetLayoutBinding samplerLayoutBinding{};
             samplerLayoutBinding.binding = _textures[i].binding;
             samplerLayoutBinding.descriptorCount = 1;
@@ -201,7 +214,8 @@ namespace graphics {
         layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
         layoutInfo.pBindings = bindings.data();
 
-        if(vkCreateDescriptorSetLayout(device->get(), &layoutInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS) {
+        if(vkCreateDescriptorSetLayout(device->get(), &layoutInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create descriptor set layout!");
         }
 
@@ -222,7 +236,8 @@ namespace graphics {
 
         poolInfo.maxSets = static_cast<uint32_t>(swapChain->size());
 
-        if(vkCreateDescriptorPool(device->get(), &poolInfo, nullptr, &_descriptorPool) != VK_SUCCESS) {
+        if(vkCreateDescriptorPool(device->get(), &poolInfo, nullptr, &_descriptorPool) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create descriptor pool!");
         }
     }
@@ -253,7 +268,8 @@ namespace graphics {
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &push_constant;
 
-        if(vkCreatePipelineLayout(device->get(), &pipelineLayoutInfo, nullptr, &_pipelineLayout) != VK_SUCCESS) {
+        if(vkCreatePipelineLayout(device->get(), &pipelineLayoutInfo, nullptr, &_pipelineLayout) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }
@@ -380,8 +396,8 @@ namespace graphics {
         pipelineInfo.basePipelineIndex = -1;              // Optional
 
         VkPipeline pipeline;
-        if(vkCreateGraphicsPipelines(device->get(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
-           VK_SUCCESS) {
+        if(vkCreateGraphicsPipelines(device->get(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
         return pipeline;
@@ -428,7 +444,8 @@ namespace graphics {
     void Material::initialize(size_t swapChainSize)
     {
         // Create sets
-        if(_descriptorSets.size() < swapChainSize) {
+        if(_descriptorSets.size() < swapChainSize)
+        {
             size_t currentSize = _descriptorSets.size();
             std::vector<VkDescriptorSetLayout> layouts(swapChainSize - currentSize, _descriptorSetLayout);
             VkDescriptorSetAllocateInfo allocInfo{};
@@ -438,12 +455,14 @@ namespace graphics {
             allocInfo.pSetLayouts = layouts.data();
 
             _descriptorSets.resize(swapChainSize);
-            if(vkAllocateDescriptorSets(device->get(), &allocInfo, &_descriptorSets[currentSize]) != VK_SUCCESS) {
+            if(vkAllocateDescriptorSets(device->get(), &allocInfo, &_descriptorSets[currentSize]) != VK_SUCCESS)
+            {
                 throw std::runtime_error("failed to allocate descriptor sets!");
             }
         }
 
-        for(size_t i = 0; i < swapChainSize; i++) {
+        for(size_t i = 0; i < swapChainSize; i++)
+        {
             std::vector<VkWriteDescriptorSet> descriptorWrites;
 
             VkDescriptorBufferInfo instanceDataInfo{};
@@ -464,7 +483,8 @@ namespace graphics {
             std::vector<VkDescriptorImageInfo> descriptorImages;
             descriptorImages.reserve(
                 _textures.size()); // This reserve makes it so we don't lose references due to resizes
-            for(size_t image = 0; image < _textures.size(); image++) {
+            for(size_t image = 0; image < _textures.size(); image++)
+            {
                 VkDescriptorImageInfo newImageInfo{};
                 newImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 newImageInfo.imageView = _textures[image].texture->view();

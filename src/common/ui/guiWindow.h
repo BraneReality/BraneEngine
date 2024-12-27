@@ -13,7 +13,8 @@
 
 class GUI;
 
-class GUIWindow {
+class GUIWindow
+{
     static size_t _instanceCounter;
     size_t _instance;
     bool _open = true;

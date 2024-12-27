@@ -5,16 +5,19 @@
 #ifndef BRANEENGINE_CONSOLEWINDOW_H
 #define BRANEENGINE_CONSOLEWINDOW_H
 
+#include <string>
 #include "editorWindow.h"
 #include <runtime/logging.h>
-#include <string>
 
-class ConsoleWindow : public EditorWindow {
-    struct CachedLog {
+class ConsoleWindow : public EditorWindow
+{
+    struct CachedLog
+    {
         std::string text = "";
         Logging::LogLevel level = Logging::LogLevel::log;
         float lineCount;
     };
+
     std::vector<CachedLog> _messages;
     size_t _listenerIndex;
     bool _autoScroll = true;

@@ -3,6 +3,7 @@
 //
 
 #include "editorAssemblyAsset.h"
+#include <regex>
 #include "../gltfLoader.h"
 #include "../jsonVirtualType.h"
 #include "assets/assembly.h"
@@ -14,7 +15,6 @@
 #include "systems/transforms.h"
 #include "ui/gui.h"
 #include "utility/jsonTypeUtilities.h"
-#include <regex>
 
 Json::Value EditorAssemblyAsset::newEntity(uint32_t parent)
 {
@@ -32,7 +32,8 @@ EditorAssemblyAsset::EditorAssemblyAsset(const std::filesystem::path& file, Bran
     : EditorAsset(file, project)
 {
     // Generate default
-    if(!std::filesystem::exists(_file)) {
+    if(!std::filesystem::exists(_file))
+    {
         _json.data()["linked"] = false;
         _json.data()["dependencies"]["meshes"] = Json::arrayValue;
         _json.data()["dependencies"]["materials"] = Json::arrayValue;
@@ -60,7 +61,8 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
     GLTFLoader gltf;
     gltf.loadFromFile(file);
 
-    for(auto& mesh : gltf.json()["meshes"]) {
+    for(auto& mesh : gltf.json()["meshes"])
+    {
         Json::Value meshData;
         meshData["id"] = _project.newAssetID(_file, AssetType::mesh).string();
         meshData["name"] = mesh["name"];
@@ -68,12 +70,14 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
         _json.data()["dependencies"]["meshes"].append(meshData["id"]);
     }
 
-    for(auto& node : gltf.json()["nodes"]) {
+    for(auto& node : gltf.json()["nodes"])
+    {
         Json::Value entity;
         if(node.isMember("name"))
             entity["name"] = node["name"];
         TRS trs;
-        if(node.isMember("matrix")) {
+        if(node.isMember("matrix"))
+        {
             Transform t;
             t.value = fromJson<glm::mat4>(node["matrix"]);
             entity["components"].append(componentToJson(t));
@@ -87,7 +91,8 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
             trs.scale = fromJson<glm::vec3>(node["scale"]);
         entity["components"].append(componentToJson(trs));
 
-        if(node.isMember("mesh")) {
+        if(node.isMember("mesh"))
+        {
             MeshRendererComponent renderer;
             renderer.mesh = node["mesh"].asUInt();
             for(auto& primitive : gltf.json()["meshes"][renderer.mesh]["primitives"])
@@ -102,10 +107,13 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
     _json.data()["rootEntity"] = gltf.json()["scenes"][0]["nodes"].get(Json::ArrayIndex(0), "0");
 
     Json::ArrayIndex index = 0;
-    for(auto& entity : _json.data()["entities"]) {
+    for(auto& entity : _json.data()["entities"])
+    {
         // Set parent value on entities
-        if(entity.isMember("children")) {
-            for(auto& child : entity["children"]) {
+        if(entity.isMember("children"))
+        {
+            for(auto& child : entity["children"])
+            {
                 if(index == child.asUInt())
                     throw std::runtime_error("Cannot parent entity to itself");
                 _json.data()["entities"][child.asUInt()]["parent"] = index;
@@ -136,7 +144,8 @@ Json::Value EditorAssemblyAsset::componentToJson(VirtualComponentView component)
 
     auto& members = component.description()->asset->members();
     auto& names = component.description()->asset->memberNames();
-    for(size_t i = 0; i < members.size(); ++i) {
+    for(size_t i = 0; i < members.size(); ++i)
+    {
         Json::Value member;
         member["name"] = names[i];
         member["value"] = JsonVirtualType::fromVirtual(component.getVar<byte>(i), members[i]);
@@ -168,7 +177,8 @@ std::vector<std::pair<AssetID, AssetType>> EditorAssemblyAsset::containedAssets(
 {
     std::vector<std::pair<AssetID, AssetType>> assets;
     assets.emplace_back(AssetID(_json["id"].asString()), AssetType::assembly);
-    if(_json["linked"].asBool()) {
+    if(_json["linked"].asBool())
+    {
         for(auto& mesh : _json["linkedMeshes"])
             assets.emplace_back(AssetID(mesh["id"].asString()), AssetType::mesh);
     }
@@ -189,16 +199,19 @@ Asset* EditorAssemblyAsset::buildAssembly() const
         assembly->materials.emplace_back(material.asString());
 
     std::unordered_set<const ComponentDescription*> components;
-    for(auto& entity : _json["entities"]) {
+    for(auto& entity : _json["entities"])
+    {
         Assembly::EntityAsset entityAsset;
-        if(entity.isMember("name")) {
+        if(entity.isMember("name"))
+        {
             EntityName name;
             name.name = entity["name"].asString();
             entityAsset.components.emplace_back(name.toVirtual());
         }
 
         bool hasTransform = false;
-        if(entity.isMember("children")) {
+        if(entity.isMember("children"))
+        {
             Children cc;
             for(auto& c : entity["children"])
                 cc.children.push_back({c.asUInt(), 0});
@@ -206,19 +219,22 @@ Asset* EditorAssemblyAsset::buildAssembly() const
             hasTransform = true;
         }
 
-        for(auto& comp : entity["components"]) {
+        for(auto& comp : entity["components"])
+        {
             if(comp["id"] == TRS::def()->asset->id.string())
                 hasTransform = true;
             entityAsset.components.push_back(jsonToComponent(comp));
         }
-        if(hasTransform) {
+        if(hasTransform)
+        {
             Transform transform;
             transform.dirty = true;
             entityAsset.components.emplace_back(transform.toVirtual());
         }
 
         assembly->entities.push_back(entityAsset);
-        for(auto& comp : entityAsset.components) {
+        for(auto& comp : entityAsset.components)
+        {
             if(!components.count(comp.description()))
                 components.insert(comp.description());
         }
@@ -232,15 +248,18 @@ Asset* EditorAssemblyAsset::buildAssembly() const
 Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
 {
     GLTFLoader gltf;
-    if(!gltf.loadFromFile(_file.parent_path() / _json["source"].asString())) {
+    if(!gltf.loadFromFile(_file.parent_path() / _json["source"].asString()))
+    {
         Runtime::error("Could not load " + (_file.parent_path() / _json["source"].asString()).string());
         return nullptr;
     }
 
     Json::Value meshData = Json::nullValue;
     const Json::Value& meshes = _json["linkedMeshes"];
-    for(Json::ArrayIndex index = 0; index < meshes.size(); ++index) {
-        if(meshes[index]["id"] == id.string()) {
+    for(Json::ArrayIndex index = 0; index < meshes.size(); ++index)
+    {
+        if(meshes[index]["id"] == id.string())
+        {
             meshData = gltf.json()["meshes"][index];
             break;
         }
@@ -252,25 +271,29 @@ Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
     mesh->name = meshData["name"].asString();
     mesh->id = id;
 
-    for(auto& primitive : meshData["primitives"]) {
+    for(auto& primitive : meshData["primitives"])
+    {
         auto positions = gltf.readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
-        size_t pIndex = mesh->addPrimitive(
-            gltf.readScalarBuffer(primitive["indices"].asUInt()), static_cast<uint32_t>(positions.size()));
+        size_t pIndex = mesh->addPrimitive(gltf.readScalarBuffer(primitive["indices"].asUInt()),
+                                           static_cast<uint32_t>(positions.size()));
         mesh->addAttribute(pIndex, "POSITION", positions);
 
-        if(primitive["attributes"].isMember("NORMAL")) {
+        if(primitive["attributes"].isMember("NORMAL"))
+        {
             auto v = gltf.readVec3Buffer(primitive["attributes"]["NORMAL"].asUInt());
             mesh->addAttribute(pIndex, "NORMAL", v);
         }
 
-        if(primitive["attributes"].isMember("TANGENT")) {
+        if(primitive["attributes"].isMember("TANGENT"))
+        {
             // TODO account for tangents with bitangent sign stored as Vec4
             auto v = gltf.readVec4Buffer(primitive["attributes"]["TANGENT"].asUInt());
             mesh->addAttribute(pIndex, "TANGENT", v);
         }
 
         // TODO  make it so that we automatically detect all texcoords
-        if(primitive["attributes"].isMember("TEXCOORD_0")) {
+        if(primitive["attributes"].isMember("TEXCOORD_0"))
+        {
             auto v = gltf.readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
             mesh->addAttribute(pIndex, "TEXCOORD_0", v);
         }
@@ -280,7 +303,8 @@ Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
     return mesh;
 }
 
-class CreateEntity : public JsonArrayChange {
+class CreateEntity : public JsonArrayChange
+{
   public:
     CreateEntity(Json::Value entity, VersionedJson* json)
         : JsonArrayChange("entities", (*json)["entities"].size(), std::move(entity), true, json){};
@@ -294,7 +318,8 @@ class CreateEntity : public JsonArrayChange {
 
         auto* am = Runtime::getModule<AssetManager>();
         auto* assembly = am->getAsset<Assembly>(AssetID{(*_json)["id"].asString()});
-        if(assembly) {
+        if(assembly)
+        {
             auto* arm = Runtime::getModule<AssemblyReloadManager>();
             arm->insertEntity(assembly, _index);
             arm->updateEntityParent(assembly, _index, parentIndex);
@@ -312,7 +337,8 @@ class CreateEntity : public JsonArrayChange {
 
         auto* am = Runtime::getModule<AssetManager>();
         auto* assembly = am->getAsset<Assembly>(AssetID{(*_json)["id"].asString()});
-        if(assembly) {
+        if(assembly)
+        {
             auto* arm = Runtime::getModule<AssemblyReloadManager>();
             arm->removeEntity(assembly, _index);
         }
@@ -324,7 +350,8 @@ void EditorAssemblyAsset::createEntity(uint32_t parent)
     _json.tracker().recordChange(std::make_unique<CreateEntity>(newEntity(parent), &_json));
 }
 
-class DeleteEntity : public JsonChangeBase {
+class DeleteEntity : public JsonChangeBase
+{
     uint32_t _entity;
     uint32_t _childIndex;
     std::map<uint32_t, Json::Value> _deletedEntities;
@@ -332,7 +359,8 @@ class DeleteEntity : public JsonChangeBase {
     uint32_t fixIndex(uint32_t index, bool increment)
     {
         uint32_t result = index;
-        for(auto d : _deletedEntities) {
+        for(auto d : _deletedEntities)
+        {
             if(d.first <= index)
                 result += increment ? 1 : -1;
             else
@@ -367,7 +395,8 @@ class DeleteEntity : public JsonChangeBase {
         uint32_t parent = json["entities"][_entity]["parent"].asUInt();
         Json::Value newChildren;
         uint32_t childIndex = 0;
-        for(auto& child : json["entities"][parent]["children"]) {
+        for(auto& child : json["entities"][parent]["children"])
+        {
             if(child.asUInt() != _entity)
                 newChildren.append(child);
             else
@@ -378,15 +407,18 @@ class DeleteEntity : public JsonChangeBase {
 
         Json::Value newEntities;
         uint32_t entityIndex = 0;
-        for(auto& e : json["entities"]) {
+        for(auto& e : json["entities"])
+        {
             if(_deletedEntities.count(entityIndex++))
                 continue;
             Json::Value entity = e;
             if(entity.isMember("parent") && entity["parent"].asUInt() > _entity)
                 entity["parent"] = fixIndex(entity["parent"].asUInt(), false);
 
-            if(entity.isMember("children")) {
-                for(auto& child : entity["children"]) {
+            if(entity.isMember("children"))
+            {
+                for(auto& child : entity["children"])
+                {
                     if(child.asUInt() > _entity)
                         child = fixIndex(child.asUInt(), false);
                 }
@@ -399,7 +431,8 @@ class DeleteEntity : public JsonChangeBase {
 
         auto* am = Runtime::getModule<AssetManager>();
         auto* assembly = am->getAsset<Assembly>(AssetID{json["id"].asString()});
-        if(assembly) {
+        if(assembly)
+        {
             auto* arm = Runtime::getModule<AssemblyReloadManager>();
             for(auto e = _deletedEntities.rbegin(); e != _deletedEntities.rend(); ++e)
                 arm->removeEntity(assembly, e->first);
@@ -415,7 +448,8 @@ class DeleteEntity : public JsonChangeBase {
         uint32_t parent = json["entities"][_entity]["parent"].asUInt();
         Json::Value newChildren;
         uint32_t childIndex = 0;
-        for(auto& child : json["entities"][parent]["children"]) {
+        for(auto& child : json["entities"][parent]["children"])
+        {
             if(childIndex == _childIndex)
                 newChildren.append(_entity);
             newChildren.append(child);
@@ -425,8 +459,10 @@ class DeleteEntity : public JsonChangeBase {
 
         Json::Value newEntities;
         uint32_t entityIndex = 0;
-        for(auto& e : json["entities"]) {
-            while(_deletedEntities.count(entityIndex)) {
+        for(auto& e : json["entities"])
+        {
+            while(_deletedEntities.count(entityIndex))
+            {
                 newEntities.append(_deletedEntities.at(entityIndex));
                 ++entityIndex;
             }
@@ -434,8 +470,10 @@ class DeleteEntity : public JsonChangeBase {
             if(entity.isMember("parent") && entity["parent"].asUInt() > _entity)
                 entity["parent"] = fixIndex(entity["parent"].asUInt(), true);
 
-            if(entity.isMember("children")) {
-                for(auto& child : entity["children"]) {
+            if(entity.isMember("children"))
+            {
+                for(auto& child : entity["children"])
+                {
                     if(child.asUInt() > _entity)
                         child = fixIndex(child.asUInt(), true);
                 }
@@ -443,7 +481,8 @@ class DeleteEntity : public JsonChangeBase {
             newEntities.append(entity);
             ++entityIndex;
         }
-        while(_deletedEntities.count(entityIndex)) {
+        while(_deletedEntities.count(entityIndex))
+        {
             newEntities.append(_deletedEntities.at(entityIndex));
             ++entityIndex;
         }
@@ -452,14 +491,17 @@ class DeleteEntity : public JsonChangeBase {
 
         auto* am = Runtime::getModule<AssetManager>();
         auto* assembly = am->getAsset<Assembly>(AssetID{json["id"].asString()});
-        if(assembly) {
+        if(assembly)
+        {
             auto* arm = Runtime::getModule<AssemblyReloadManager>();
-            for(auto& e : _deletedEntities) {
+            for(auto& e : _deletedEntities)
+            {
                 arm->insertEntity(assembly, e.first);
                 for(auto& component : e.second["components"])
                     arm->addEntityComponent(assembly, e.first, EditorAssemblyAsset::jsonToComponent(component));
             }
-            for(auto& e : _deletedEntities) {
+            for(auto& e : _deletedEntities)
+            {
                 arm->updateEntityParent(assembly, e.first, e.second["parent"].asUInt());
             }
         }
@@ -473,7 +515,8 @@ void EditorAssemblyAsset::deleteEntity(uint32_t entity)
     _json.recordChange(std::make_unique<DeleteEntity>(entity, &_json));
 }
 
-class ParentEntity : public JsonChangeBase {
+class ParentEntity : public JsonChangeBase
+{
     uint32_t _entity;
     uint32_t _oldIndex;
     uint32_t _newIndex;
@@ -489,7 +532,8 @@ class ParentEntity : public JsonChangeBase {
         Json::Value newChildren;
         uint32_t oldIndex = 0;
         uint32_t cIndex = 0;
-        for(auto& child : json["entities"][oldParent]["children"]) {
+        for(auto& child : json["entities"][oldParent]["children"])
+        {
             if(child.asUInt() != entity)
                 newChildren.append(child);
             else
@@ -537,21 +581,20 @@ void EditorAssemblyAsset::parentEntity(uint32_t entity, uint32_t parent, uint32_
     _json.recordChange(std::make_unique<ParentEntity>(entity, parent, index, &_json));
 }
 
-class UpdateEntityComponent : public JsonChange {
+class UpdateEntityComponent : public JsonChange
+{
     uint32_t _entity;
 
   public:
-    UpdateEntityComponent(
-        uint32_t entity,
-        uint32_t componentIndex,
-        Json::Value componentBefore,
-        Json::Value component,
-        VersionedJson* json)
-        : JsonChange(
-              "entities/" + std::to_string(entity) + "/components/" + std::to_string(componentIndex),
-              std::move(componentBefore),
-              std::move(component),
-              json)
+    UpdateEntityComponent(uint32_t entity,
+                          uint32_t componentIndex,
+                          Json::Value componentBefore,
+                          Json::Value component,
+                          VersionedJson* json)
+        : JsonChange("entities/" + std::to_string(entity) + "/components/" + std::to_string(componentIndex),
+                     std::move(componentBefore),
+                     std::move(component),
+                     json)
     {
         _entity = entity;
     }
@@ -581,7 +624,8 @@ class UpdateEntityComponent : public JsonChange {
 void EditorAssemblyAsset::updateEntityComponent(uint32_t entity, VirtualComponentView component, bool continuous)
 {
     uint32_t componentIndex = 0;
-    for(auto& c : _json["entities"][entity]["components"]) {
+    for(auto& c : _json["entities"][entity]["components"])
+    {
         if(c["id"].asString() == component.description()->asset->id.string())
             break;
         ++componentIndex;
@@ -590,7 +634,8 @@ void EditorAssemblyAsset::updateEntityComponent(uint32_t entity, VirtualComponen
         return; // Component was not found
 
     auto newComponent = componentToJson(component);
-    if(continuous) {
+    if(continuous)
+    {
         if(_componentBefore.isNull())
             _componentBefore = newComponent;
 
@@ -600,7 +645,8 @@ void EditorAssemblyAsset::updateEntityComponent(uint32_t entity, VirtualComponen
         if(assembly)
             Runtime::getModule<AssemblyReloadManager>()->updateEntityComponent(assembly, entity, component);
     }
-    else {
+    else
+    {
         _json.recordChange(
             std::make_unique<UpdateEntityComponent>(entity, componentIndex, _componentBefore, newComponent, &_json));
         _componentBefore = Json::nullValue;
@@ -609,7 +655,8 @@ void EditorAssemblyAsset::updateEntityComponent(uint32_t entity, VirtualComponen
 
 void EditorAssemblyAsset::updateEntityComponent(uint32_t entity, uint32_t component, Json::Value value, bool continuous)
 {
-    if(continuous) {
+    if(continuous)
+    {
         if(_componentBefore.isNull())
             _componentBefore = value;
         _json.data()["entities"][entity]["components"][component] = value;
@@ -619,14 +666,16 @@ void EditorAssemblyAsset::updateEntityComponent(uint32_t entity, uint32_t compon
             Runtime::getModule<AssemblyReloadManager>()->updateEntityComponent(
                 assembly, entity, EditorAssemblyAsset::jsonToComponent(value));
     }
-    else {
+    else
+    {
         _json.recordChange(
             std::make_unique<UpdateEntityComponent>(entity, component, _componentBefore, std::move(value), &_json));
         _componentBefore = Json::nullValue;
     }
 }
 
-class AddEntityComponent : public JsonArrayChange {
+class AddEntityComponent : public JsonArrayChange
+{
     uint32_t _entity;
 
   public:
@@ -662,7 +711,8 @@ void EditorAssemblyAsset::addEntityComponent(uint32_t entity, Json::Value compon
     _json.recordChange(std::make_unique<AddEntityComponent>(entity, std::move(component), &_json));
 }
 
-class RemoveEntityComponent : public JsonArrayChange {
+class RemoveEntityComponent : public JsonArrayChange
+{
     uint32_t _entity;
 
   public:
@@ -699,7 +749,8 @@ void EditorAssemblyAsset::removeEntityComponent(uint32_t entity, uint32_t compon
     _json.recordChange(std::make_unique<RemoveEntityComponent>(entity, component, &_json));
 }
 
-class MaterialChange : public JsonChange {
+class MaterialChange : public JsonChange
+{
     uint32_t _materialIndex;
 
     static Json::Value generateAfter(uint32_t materialIndex, const AssetID& materialID, VersionedJson* json)
@@ -724,8 +775,10 @@ class MaterialChange : public JsonChange {
 
         auto* arm = Runtime::getModule<AssemblyReloadManager>();
         uint32_t entityIndex = 0;
-        for(auto& entity : _json->data()["entities"]) {
-            for(auto& component : entity["components"]) {
+        for(auto& entity : _json->data()["entities"])
+        {
+            for(auto& component : entity["components"])
+            {
                 if(component["name"] == MeshRendererComponent::def()->name)
                     arm->updateEntityComponent(assembly, entityIndex, EditorAssemblyAsset::jsonToComponent(component));
             }
@@ -735,10 +788,9 @@ class MaterialChange : public JsonChange {
 
   public:
     MaterialChange(uint32_t materialIndex, const AssetID& materialID, VersionedJson* json)
-        : JsonChange(
-              "dependencies/materials/" + std::to_string(materialIndex),
-              generateAfter(materialIndex, materialID, json),
-              json),
+        : JsonChange("dependencies/materials/" + std::to_string(materialIndex),
+                     generateAfter(materialIndex, materialID, json),
+                     json),
           _materialIndex(materialIndex){};
 
     void redo() override

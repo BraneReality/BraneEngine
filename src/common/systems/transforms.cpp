@@ -47,10 +47,12 @@ void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em, 
     if(!em.hasComponent<Transform>(entity))
         em.addComponent<Transform>(entity);
     auto* t = em.getComponent<Transform>(entity);
-    if(!keepOffset) {
+    if(!keepOffset)
+    {
         localTransform->value = t->value;
     }
-    else {
+    else
+    {
         auto parentTransform = getParentTransform(parent, em);
         localTransform->value = glm::inverse(parentTransform) * t->value;
     }
@@ -71,14 +73,17 @@ void Transforms::removeParent(EntityID entity, EntityManager& em, bool removeLoc
         return;
     Children* children = em.getComponent<Children>(parent);
 
-    if(children->children.size() == 1) {
+    if(children->children.size() == 1)
+    {
         em.removeComponent<Children>(parent);
         return;
     }
 
     size_t eraseIndex = 0;
-    for(auto& child : children->children) {
-        if(child == entity) {
+    for(auto& child : children->children)
+    {
+        if(child == entity)
+        {
             children->children.erase(eraseIndex);
             break;
         }
@@ -100,18 +105,23 @@ const char* Transforms::name() { return "transforms"; }
 void Transforms::destroyRecursive(EntityID entity, bool updateParentChildren)
 {
     assert(_em->entityExists(entity));
-    if(_em->hasComponent<Children>(entity)) {
+    if(_em->hasComponent<Children>(entity))
+    {
         auto* cc = _em->getComponent<Children>(entity);
-        for(auto child : cc->children) {
+        for(auto child : cc->children)
+        {
             destroyRecursive(child, false);
         }
     }
-    if(updateParentChildren && _em->hasComponent(entity, LocalTransform::def()->id)) {
+    if(updateParentChildren && _em->hasComponent(entity, LocalTransform::def()->id))
+    {
         VirtualComponent lt = _em->getComponent(entity, LocalTransform::def()->id);
         VirtualComponent cc = _em->getComponent(*lt.getVar<EntityID>(1), Children::def()->id);
         auto& children = *cc.getVar<inlineEntityIDArray>(0);
-        for(int i = 0; i < children.size(); ++i) {
-            if(children[i] == entity) {
+        for(int i = 0; i < children.size(); ++i)
+        {
+            if(children[i] == entity)
+            {
                 children.erase(i);
                 _em->setComponent(*lt.getVar<EntityID>(1), cc);
                 break;
@@ -125,7 +135,8 @@ glm::mat4 Transforms::getParentTransform(EntityID parent, EntityManager& em)
 {
     if(!em.entityExists(parent))
         return glm::mat4(1);
-    if(!em.hasComponent<LocalTransform>(parent)) {
+    if(!em.hasComponent<LocalTransform>(parent))
+    {
         if(em.hasComponent<Transform>(parent))
             return em.getComponent<Transform>(parent)->value;
         return glm::mat4(1);
@@ -159,19 +170,22 @@ void Transforms::setGlobalTransform(EntityID entity, const glm::mat4& t, EntityM
         em.addComponent<Transform>(entity);
     auto tc = em.getComponent<Transform>(entity);
     tc->value = t;
-    if(em.hasComponent<TRS>(entity)) {
+    if(em.hasComponent<TRS>(entity))
+    {
         auto trs = em.getComponent<TRS>(entity);
 
         if(!em.hasComponent<LocalTransform>(entity))
             trs->fromMat(t);
-        else {
+        else
+        {
             glm::mat4 pt = getParentTransform(em.getComponent<LocalTransform>(entity)->parent, em);
             trs->fromMat(glm::inverse(pt) * t);
         }
         em.markComponentChanged(entity, TRS::def()->id);
         return;
     }
-    if(em.hasComponent<LocalTransform>(entity)) {
+    if(em.hasComponent<LocalTransform>(entity))
+    {
         auto lt = em.getComponent<LocalTransform>(entity);
         glm::mat4 pt = getParentTransform(lt->parent, em);
         lt->value = glm::inverse(pt) * t;
@@ -187,9 +201,12 @@ void Transforms::setDirty(EntityID entity, EntityManager& em)
     if(t->dirty)
         return;
     em.getComponent<Transform>(entity)->dirty = true;
-    if(em.hasComponent<Children>(entity)) {
-        for(auto& c : em.getComponent<Children>(entity)->children) {
-            if(!em.entityExists(c)) {
+    if(em.hasComponent<Children>(entity))
+    {
+        for(auto& c : em.getComponent<Children>(entity)->children)
+        {
+            if(!em.entityExists(c))
+            {
                 Runtime::warn("Invalid child set on entity " + std::to_string(c.id));
                 continue;
             }

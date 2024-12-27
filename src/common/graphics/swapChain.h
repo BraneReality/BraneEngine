@@ -6,8 +6,10 @@
 #include <array>
 #include <vector>
 
-namespace graphics {
-    class SwapChain {
+namespace graphics
+{
+    class SwapChain
+    {
         Window* _window;
         VkSwapchainKHR _swapChain;
 
@@ -39,8 +41,9 @@ namespace graphics {
 
         VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
-        VkFormat findSupportedFormat(
-            const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates,
+                                     VkImageTiling tiling,
+                                     VkFormatFeatureFlags features);
 
         VkFormat findDepthFormat();
 

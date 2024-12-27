@@ -3,6 +3,7 @@
 //
 
 #include "entitiesWindow.h"
+#include <imgui.h>
 #include "assets/assembly.h"
 #include "assets/assetManager.h"
 #include "ecs/entity.h"
@@ -13,7 +14,6 @@
 #include "editor/editorEvents.h"
 #include "systems/transforms.h"
 #include "ui/gui.h"
-#include <imgui.h>
 
 EntitiesWindow::EntitiesWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -30,7 +30,8 @@ EntitiesWindow::EntitiesWindow(GUI& ui, Editor& editor) : EditorWindow(ui, edito
 void EntitiesWindow::displayContent()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
-    if(_asset && _asset->type() == AssetType::assembly) {
+    if(_asset && _asset->type() == AssetType::assembly)
+    {
         _asset->json().beginMultiChange();
         displayAssetEntities(_asset->json()["rootEntity"].asUInt());
         _asset->json().endMultiChange();
@@ -62,12 +63,14 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
         name = "Unnamed " + std::to_string(index);
 
     bool nodeOpen = ImGui::TreeNodeEx(name.c_str(), flags);
-    if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+    if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+    {
         _ui.sendEvent(std::make_unique<FocusEntityAssetEvent>(index));
         _selected = index;
     }
 
-    if(ImGui::BeginPopupContextItem()) {
+    if(ImGui::BeginPopupContextItem())
+    {
         if(ImGui::Selectable(ICON_FA_CIRCLE_PLUS " Create Entity"))
             assembly->createEntity(index);
         if(!isRoot && ImGui::Selectable(ICON_FA_TRASH_CAN " Delete Entity"))
@@ -75,7 +78,8 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
         ImGui::EndPopup();
     }
 
-    if(!isRoot && ImGui::BeginDragDropSource()) {
+    if(!isRoot && ImGui::BeginDragDropSource())
+    {
         ImGui::SetDragDropPayload("assetEntity", &index, sizeof(uint32_t));
         ImGui::Text("%s", name.c_str());
         ImGui::EndDragDropSource();
@@ -86,24 +90,30 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
     if(!nodeOpen)
         dropRectMain.Min.x += indentSpacing;
     dropRectMain.Max = {dropRectMain.Min.x + reorderWidth, ImGui::GetItemRectMax().y};
-    if(ImGui::BeginDragDropTargetCustom(dropRectMain, index * 3 + 1)) {
-        if(const ImGuiPayload* droppedEntityPayload = ImGui::AcceptDragDropPayload("assetEntity")) {
+    if(ImGui::BeginDragDropTargetCustom(dropRectMain, index * 3 + 1))
+    {
+        if(const ImGuiPayload* droppedEntityPayload = ImGui::AcceptDragDropPayload("assetEntity"))
+        {
             uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
             assembly->parentEntity(droppedIndex, index, 0);
         }
         ImGui::EndDragDropTarget();
     }
 
-    if(!isRoot) {
+    if(!isRoot)
+    {
         ImRect dropAboveRect;
         dropAboveRect.Min = {dropRectMain.Min.x, dropRectMain.Min.y - reorderHeight};
         dropAboveRect.Max = {dropAboveRect.Min.x + reorderWidth, dropRectMain.Min.y};
-        if(ImGui::BeginDragDropTargetCustom(dropAboveRect, index * 3)) {
-            if(const ImGuiPayload* droppedEntityPayload = ImGui::AcceptDragDropPayload("assetEntity")) {
+        if(ImGui::BeginDragDropTargetCustom(dropAboveRect, index * 3))
+        {
+            if(const ImGuiPayload* droppedEntityPayload = ImGui::AcceptDragDropPayload("assetEntity"))
+            {
                 uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
                 Json::ArrayIndex parentIndex = entity["parent"].asUInt();
                 Json::ArrayIndex currentIndex = 0;
-                for(auto& child : _asset->json()["entities"][parentIndex]["children"]) {
+                for(auto& child : _asset->json()["entities"][parentIndex]["children"])
+                {
                     if(child.asUInt() == index)
                         break;
                     ++currentIndex;
@@ -113,16 +123,20 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
             ImGui::EndDragDropTarget();
         }
 
-        if(isLastChild) {
+        if(isLastChild)
+        {
             ImRect dropBelowRect;
             dropBelowRect.Min = {dropRectMain.Min.x, dropRectMain.Max.y};
             dropBelowRect.Max = {dropBelowRect.Min.x + reorderWidth, dropBelowRect.Min.y + reorderHeight};
-            if(ImGui::BeginDragDropTargetCustom(dropBelowRect, index * 3 + 2)) {
-                if(const ImGuiPayload* droppedEntityPayload = ImGui::AcceptDragDropPayload("assetEntity")) {
+            if(ImGui::BeginDragDropTargetCustom(dropBelowRect, index * 3 + 2))
+            {
+                if(const ImGuiPayload* droppedEntityPayload = ImGui::AcceptDragDropPayload("assetEntity"))
+                {
                     uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
                     Json::ArrayIndex parentIndex = entity["parent"].asUInt();
                     Json::ArrayIndex currentIndex = 0;
-                    for(auto& child : _asset->json()["entities"][parentIndex]["children"]) {
+                    for(auto& child : _asset->json()["entities"][parentIndex]["children"])
+                    {
                         if(child.asUInt() == index)
                             break;
                         ++currentIndex;
@@ -134,8 +148,10 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
         }
     }
 
-    if(nodeOpen) {
-        if(hasChildren) {
+    if(nodeOpen)
+    {
+        if(hasChildren)
+        {
             size_t childIndex = 0;
             for(auto& child : entity["children"])
                 displayAssetEntities(child.asUInt(), ++childIndex == entity["children"].size());

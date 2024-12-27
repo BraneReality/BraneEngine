@@ -3,11 +3,11 @@
 //
 
 #include "serverFilesystem.h"
+#include <algorithm>
 #include "assets/asset.h"
 #include "editorEvents.h"
 #include "ui/gui.h"
 #include "utility/strCaseCompare.h"
-#include <algorithm>
 /*
 
 std::string ServerDirectory::path() const

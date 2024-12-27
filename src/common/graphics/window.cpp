@@ -2,7 +2,8 @@
 #include <iostream>
 #include <stb_image.h>
 
-namespace graphics {
+namespace graphics
+{
     std::function<void()> Window::_onRefocus;
 
     Window::Window() { init(); }
@@ -11,7 +12,8 @@ namespace graphics {
 
     void Window::createSurface(VkInstance instance, const VkAllocationCallbacks* allocator)
     {
-        if(glfwCreateWindowSurface(instance, _window, nullptr, &_surface) != VK_SUCCESS) {
+        if(glfwCreateWindowSurface(instance, _window, nullptr, &_surface) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create window surface!");
         }
     }
@@ -39,7 +41,8 @@ namespace graphics {
 
         int w, h, texChannels;
         unsigned char* pixels = stbi_load(ICON_IMAGE_PATH, &w, &h, &texChannels, STBI_rgb_alpha);
-        if(pixels == nullptr) {
+        if(pixels == nullptr)
+        {
             throw std::runtime_error("failed to load icon");
         }
         GLFWimage icon{};

@@ -8,7 +8,8 @@
 #include "../editorAsset.h"
 #include "assets/types/shaderAsset.h"
 
-class EditorShaderAsset : public EditorAsset {
+class EditorShaderAsset : public EditorAsset
+{
   public:
     EditorShaderAsset(const std::filesystem::path& file, BraneProject& project);
 

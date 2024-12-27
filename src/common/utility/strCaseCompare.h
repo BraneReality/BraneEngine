@@ -7,9 +7,11 @@
 
 #include <string>
 
-template <typename T> bool strCaseCompare(const T& a, const T& b)
+template<typename T>
+bool strCaseCompare(const T& a, const T& b)
 {
-    for(size_t i = 0; i < a.size() && i < b.size(); i++) {
+    for(size_t i = 0; i < a.size() && i < b.size(); i++)
+    {
         char ac = std::tolower(a[i]);
         char bc = std::tolower(b[i]);
         if(ac != bc)

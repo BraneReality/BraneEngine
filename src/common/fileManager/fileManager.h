@@ -1,18 +1,20 @@
 #pragma once
 
-#include "utility/threadPool.h"
-#include <assets/asset.h>
 #include <filesystem>
 #include <fstream>
+#include <stdio.h>
+#include "utility/threadPool.h"
+#include <assets/asset.h>
 #include <json/json.h>
 #include <runtime/module.h>
-#include <stdio.h>
 #include <utility/asyncData.h>
 #include <utility/serializedData.h>
 
-class FileManager : public Module {
+class FileManager : public Module
+{
   public:
-    struct Directory {
+    struct Directory
+    {
         std::string name;
         bool open = false;
         Directory* parent;
@@ -27,8 +29,8 @@ class FileManager : public Module {
 
     static std::unique_ptr<Directory> getDirectoryTree(const std::filesystem::path& path);
 
-    static void
-    refreshDirectoryTree(Directory* dir, const std::filesystem::path& root = std::filesystem::current_path());
+    static void refreshDirectoryTree(Directory* dir,
+                                     const std::filesystem::path& root = std::filesystem::current_path());
 
     static void createDirectory(const std::filesystem::path& path);
 
@@ -40,7 +42,8 @@ class FileManager : public Module {
 
     FileManager();
 
-    template <typename T> static bool readFile(const std::filesystem::path& filename, std::vector<T>& data)
+    template<typename T>
+    static bool readFile(const std::filesystem::path& filename, std::vector<T>& data)
     {
         std::ifstream f(filename, std::ios::binary | std::ios::ate);
         if(!f.is_open())
@@ -54,7 +57,8 @@ class FileManager : public Module {
         return true;
     }
 
-    template <typename T> static T* readAsset(const std::filesystem::path& filename)
+    template<typename T>
+    static T* readAsset(const std::filesystem::path& filename)
     {
         std::ifstream f(filename, std::ios::binary);
         if(!f.is_open())
@@ -81,7 +85,8 @@ class FileManager : public Module {
         return Asset::deserializeUnknown(s);
     }
 
-    template <typename T> AsyncData<T*> async_readAsset(const std::filesystem::path& filename)
+    template<typename T>
+    AsyncData<T*> async_readAsset(const std::filesystem::path& filename)
     {
         AsyncData<T*> asset;
         ThreadPool::enqueue([this, filename, asset] { asset.setData(readAsset<T>(filename)); });
@@ -96,7 +101,8 @@ class FileManager : public Module {
 
     static bool readFile(const std::filesystem::path& filename, Json::Value& data);
 
-    template <typename T> static void writeFile(const std::filesystem::path& filename, const std::vector<T>& data)
+    template<typename T>
+    static void writeFile(const std::filesystem::path& filename, const std::vector<T>& data)
     {
         std::filesystem::path path{filename};
         std::filesystem::create_directories(path.parent_path());

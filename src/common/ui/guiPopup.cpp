@@ -13,7 +13,8 @@ GUIPopup::GUIPopup(const std::string& name) : _name(name)
 
 void GUIPopup::draw()
 {
-    if(ImGui::BeginPopupEx(_id, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration)) {
+    if(ImGui::BeginPopupEx(_id, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration))
+    {
         drawBody();
         ImGui::EndPopup();
     }

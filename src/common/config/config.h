@@ -5,7 +5,8 @@
 #include <iostream>
 #include <json/json.h>
 
-class Config {
+class Config
+{
     const static char* configFileName;
     static Json::Value root;
 

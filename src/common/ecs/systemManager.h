@@ -5,12 +5,14 @@
 #ifndef BRANEENGINE_SYSTEMMANAGER_H
 #define BRANEENGINE_SYSTEMMANAGER_H
 
-#include "system.h"
 #include <memory>
 #include <string>
+#include "system.h"
 
-class SystemManager {
-    struct SystemNode {
+class SystemManager
+{
+    struct SystemNode
+    {
         bool hasRun = false;
         bool isRunning = false;
         std::vector<SystemNode*> dependencies;

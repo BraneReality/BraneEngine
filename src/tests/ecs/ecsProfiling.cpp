@@ -2,16 +2,19 @@
 // Created by eli on 8/28/2022.
 //
 
+#include <memory>
+#include <random>
 #include "assets/assetManager.h"
 #include "ecs/entity.h"
 #include "testing.h"
 #include "unordered_set"
 #include "utility/clock.h"
-#include <memory>
-#include <random>
 
-namespace std {
-    template <> struct hash<ComponentSet> {
+namespace std
+{
+    template<>
+    struct hash<ComponentSet>
+    {
         size_t operator()(const ComponentSet& componentSet) const
         {
             size_t h = 17;
@@ -29,7 +32,8 @@ void allPossibleComponentSets(const ComponentSet& set, std::unordered_set<Compon
     results.insert(set);
     if(set.size() == 1)
         return;
-    for(auto cID : set) {
+    for(auto cID : set)
+    {
         ComponentSet remaining = set;
         remaining.remove(cID);
         allPossibleComponentSets(remaining, results);
@@ -42,7 +46,8 @@ std::unordered_set<ComponentSet> selectRandom(std::unordered_set<ComponentSet> s
     ret.reserve(count);
     std::mt19937 gen(seed);
     std::discrete_distribution<> d({5, 10, 25, 60});
-    for(uint32_t i = 0; i < count; ++i) {
+    for(uint32_t i = 0; i < count; ++i)
+    {
         uint32_t index = d(gen) % sets.size();
         auto chosenSet = sets.begin();
         std::advance(chosenSet, index);
@@ -84,7 +89,8 @@ TEST(ECS_Profiling, QueryCreation_WorstCase)
         registerComponent(EntityIDComponent::constructDescription());
 
     ComponentSet allComponents;
-    for(auto& c : components) {
+    for(auto& c : components)
+    {
         em.
 
             components()
@@ -267,7 +273,8 @@ TEST(ECS_Profiling, QueryCreation_PlausableCase)
         registerComponent(EntityIDComponent::constructDescription());
 
     ComponentSet allComponents;
-    for(auto& c : components) {
+    for(auto& c : components)
+    {
         em.
 
             components()

@@ -9,7 +9,6 @@ find_package(spirv_cross_msl CONFIG REQUIRED)
 find_package(spirv_cross_reflect CONFIG REQUIRED)
 find_package(spirv_cross_c CONFIG REQUIRED)
 
-find_package(glslang CONFIG REQUIRED)
 
 add_library(shaderCompiler STATIC shaderCompiler.cpp)
 target_link_libraries(shaderCompiler PUBLIC  
@@ -19,6 +18,5 @@ target_link_libraries(shaderCompiler PUBLIC
     spirv-cross-core
     spirv-cross-cpp 
     spirv-cross-glsl
-    glslang::glslang
     glslang::SPIRV 
     glslang::SPVRemapper)

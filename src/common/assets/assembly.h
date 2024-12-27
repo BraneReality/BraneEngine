@@ -14,13 +14,17 @@ class EntityManager;
 class ComponentManager;
 
 class AssetManager;
-namespace graphics {
+
+namespace graphics
+{
     class VulkanRuntime;
 }
 
-class Assembly : public Asset {
+class Assembly : public Asset
+{
   public:
-    struct EntityAsset {
+    struct EntityAsset
+    {
         std::vector<VirtualComponent> components;
 
         std::vector<ComponentID> runtimeComponentIDs();

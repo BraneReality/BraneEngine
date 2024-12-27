@@ -7,6 +7,8 @@
 
 #include "../asset.h"
 
-class ScriptAsset : public Asset {};
+class ScriptAsset : public Asset
+{
+};
 
 #endif // BRANEENGINE_SCRIPTASSET_H

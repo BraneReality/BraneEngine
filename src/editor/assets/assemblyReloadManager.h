@@ -13,11 +13,14 @@ class Assembly;
 
 class EntityManager;
 
-class AssemblyReloadManager : public Module {
-    struct AssemblyInstance {
+class AssemblyReloadManager : public Module
+{
+    struct AssemblyInstance
+    {
         EntityID root;
         std::vector<EntityID> entities;
     };
+
     std::unordered_map<Assembly*, std::vector<AssemblyInstance>> _instances;
     std::mutex m;
     EntityManager* _em;

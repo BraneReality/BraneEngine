@@ -16,18 +16,19 @@
 
 #include "assets/assetManager.h"
 #include "assets/types/meshAsset.h"
-#include "imgui_impl_vulkan.h"
 #include "ecs/nativeComponent.h"
 #include "ecs/nativeTypes/assetComponents.h"
 #include "editor/assets/assemblyReloadManager.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
+#include "imgui_impl_vulkan.h"
 #include <systems/transforms.h>
 
-class RenderWindowAssetReady : public GUIEvent {
+class RenderWindowAssetReady : public GUIEvent
+{
     AssetID _id;
 
   public:
-    RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready") {};
+    RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready"){};
 
     const AssetID& id() const { return _id; }
 };
@@ -43,7 +44,8 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
     _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event) {
         if(event->asset()->type() != AssetType::assembly)
             return;
-        if(!_assemblies.empty()) {
+        if(!_assemblies.empty())
+        {
             auto* arm = Runtime::getModule<AssemblyReloadManager>();
             for(auto& e : _assemblies)
                 arm->destroy(e.assembly, e.root);
@@ -52,7 +54,8 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         auto* am = Runtime::getModule<AssetManager>();
         _focusedAsset = event->asset();
         _focusedAssetEntity = -1;
-        if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())) {
+        if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
+        {
             am->fetchAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString()))
                 .then([this](Assembly* assembly) {
                     _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
@@ -80,7 +83,8 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         auto* am = Runtime::getModule<AssetManager>();
         auto* arm = Runtime::getModule<AssemblyReloadManager>();
         auto* assembly = am->getAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString()));
-        if(assembly) {
+        if(assembly)
+        {
             _focusedAssetEntity = event->entity();
             if(event->entity() >= 0)
                 _focusedEntity = arm->getEntity(assembly, 0, event->entity());
@@ -119,7 +123,8 @@ void RenderWindow::update()
 {
     _frameCount++;
 
-    if(_queueReload) {
+    if(_queueReload)
+    {
         vkDeviceWaitIdle(graphics::device->get());
         _renderer->clearTarget();
         if(!_imGuiBindings.empty())
@@ -131,7 +136,8 @@ void RenderWindow::update()
         _queueReload = false;
     }
 
-    if(!_texture && (_windowSize.width != 0 && _windowSize.height != 0)) {
+    if(!_texture && (_windowSize.width != 0 && _windowSize.height != 0))
+    {
         _texture = new graphics::RenderTexture(_windowSize, true, *_swapChain);
         auto& images = _texture->images();
         _imGuiBindings.resize(0);
@@ -168,17 +174,20 @@ void RenderWindow::displayContent()
         _gizmoMode = _gizmoMode == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD;
 
     ImGui::SameLine(0, 13);
-    if(ImGui::Button(ICON_FA_LIGHTBULB)) {
+    if(ImGui::Button(ICON_FA_LIGHTBULB))
+    {
         _focusedEntity = _lightEntity;
         _focusedAssetEntity = -1;
     }
     ImGui::SameLine();
     auto* em = Runtime::getModule<EntityManager>();
     auto* light = em->getComponent<PointLightComponent>(_lightEntity);
-    if(ImGui::ColorButton("##ColorButton", *(ImVec4*)&light->color)) {
+    if(ImGui::ColorButton("##ColorButton", *(ImVec4*)&light->color))
+    {
         ImGui::OpenPopup("picker");
     }
-    if(ImGui::BeginPopup("picker")) {
+    if(ImGui::BeginPopup("picker"))
+    {
         ImGui::ColorPicker3("##picker", (float*)&light->color);
         ImGui::EndPopup();
     }
@@ -189,17 +198,19 @@ void RenderWindow::displayContent()
     auto* camera = em->getComponent<graphics::Camera>(_cameraEntity);
 
     auto window = ImGui::GetContentRegionAvail();
-    _windowSize = {
-        static_cast<uint32_t>(glm::floor(glm::max((float)0, window.x))),
-        static_cast<uint32_t>(glm::floor(glm::max((float)0, window.y)))};
-    if(_windowSize.width != 0 && _windowSize.height != 0) {
-        if(_texture && (_windowSize.width != _texture->size().width || _windowSize.height != _texture->size().height)) {
+    _windowSize = {static_cast<uint32_t>(glm::floor(glm::max((float)0, window.x))),
+                   static_cast<uint32_t>(glm::floor(glm::max((float)0, window.y)))};
+    if(_windowSize.width != 0 && _windowSize.height != 0)
+    {
+        if(_texture && (_windowSize.width != _texture->size().width || _windowSize.height != _texture->size().height))
+        {
             _queueReload = true;
         }
 
         ImGuizmo::SetDrawlist();
 
-        if(_texture) {
+        if(_texture)
+        {
 
             ImGui::Image((ImTextureID)_imGuiBindings[_swapChain->currentFrame()], window);
             auto imgPos = ImGui::GetItemRectMin();
@@ -207,7 +218,8 @@ void RenderWindow::displayContent()
             ImGuizmo::SetRect(imgPos.x, imgPos.y, imgSize.x, imgSize.y);
         }
 
-        if(ImGui::IsWindowHovered() || _panning) {
+        if(ImGui::IsWindowHovered() || _panning)
+        {
             // TODO add in sensitivity settings for all these
             zoom = glm::max<float>(0, zoom - ImGui::GetIO().MouseWheel);
 
@@ -215,10 +227,12 @@ void RenderWindow::displayContent()
             if(!_panning && mouseDown)
                 _lastMousePos = ImGui::GetMousePos();
             _panning = mouseDown;
-            if(_panning) {
+            if(_panning)
+            {
                 ImVec2 mousePos = ImGui::GetMousePos();
                 auto rq = rotationQuat();
-                if(!ImGui::IsKeyDown(ImGuiKey_ModShift)) {
+                if(!ImGui::IsKeyDown(ImGuiKey_ModShift))
+                {
                     rotation.x += (mousePos.y - _lastMousePos.y);
                     rotation.y += (mousePos.x - _lastMousePos.x);
                     glm::vec3 movementVec{};
@@ -237,7 +251,8 @@ void RenderWindow::displayContent()
                     // TODO use delta time
                     position += rq * movementVec * (1.0f / 144.0f);
                 }
-                else {
+                else
+                {
                     float mpp = (std::tan((3.14159f / 180.0f * camera->fov) / 2) * zoom * 2) / _windowSize.height;
                     position += rq * glm::vec3{0.0f, (mousePos.y - _lastMousePos.y) * mpp, 0.0f};
                     position += rq * glm::vec3{-(mousePos.x - _lastMousePos.x) * mpp, 0.0f, 0.0f};
@@ -246,12 +261,14 @@ void RenderWindow::displayContent()
             }
         }
 
-        if(ImGui::IsWindowHovered()) {
+        if(ImGui::IsWindowHovered())
+        {
             if(ImGui::IsKeyPressed(ImGuiKey_F) && (em->entityExists(_focusedEntity)))
                 position = em->getComponent<Transform>(_focusedEntity)->value[3];
         }
         auto* em = Runtime::getModule<EntityManager>();
-        if(em->entityExists(_focusedEntity) && em->hasComponent<Transform>(_focusedEntity)) {
+        if(em->entityExists(_focusedEntity) && em->hasComponent<Transform>(_focusedEntity))
+        {
             glm::mat4 pt = camera->perspectiveMatrix({_windowSize.width, _windowSize.height});
             // Undo inversion since ImGuizmo won't expect it
             pt[1][1] *= -1;
@@ -259,28 +276,32 @@ void RenderWindow::displayContent()
 
             auto objectTransform = Transforms::getGlobalTransform(_focusedEntity, *em);
 
-            ImGuizmo::Manipulate(
-                (float*)&ct,
-                (float*)&pt,
-                _gizmoOperation,
-                (_gizmoOperation != ImGuizmo::OPERATION::SCALE) ? _gizmoMode : ImGuizmo::MODE::LOCAL,
-                (float*)&objectTransform);
-            if(ImGuizmo::IsUsing()) {
+            ImGuizmo::Manipulate((float*)&ct,
+                                 (float*)&pt,
+                                 _gizmoOperation,
+                                 (_gizmoOperation != ImGuizmo::OPERATION::SCALE) ? _gizmoMode : ImGuizmo::MODE::LOCAL,
+                                 (float*)&objectTransform);
+            if(ImGuizmo::IsUsing())
+            {
                 _manipulating = true;
                 Transforms::setGlobalTransform(_focusedEntity, objectTransform, *em);
             }
-            else if(_manipulating) {
+            else if(_manipulating)
+            {
                 _manipulating = false;
-                if(_focusedAsset && _focusedAssetEntity != -1) {
+                if(_focusedAsset && _focusedAssetEntity != -1)
+                {
                     auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get());
                     assembly->json().beginMultiChange();
-                    if(em->hasComponent<TRS>(_focusedEntity)) {
-                        assembly->updateEntityComponent(
-                            _focusedAssetEntity, em->getComponent<TRS>(_focusedEntity)->toVirtual());
+                    if(em->hasComponent<TRS>(_focusedEntity))
+                    {
+                        assembly->updateEntityComponent(_focusedAssetEntity,
+                                                        em->getComponent<TRS>(_focusedEntity)->toVirtual());
                     }
-                    if(em->hasComponent<Transform>(_focusedEntity)) {
-                        assembly->updateEntityComponent(
-                            _focusedAssetEntity, em->getComponent<Transform>(_focusedEntity)->toVirtual());
+                    if(em->hasComponent<Transform>(_focusedEntity))
+                    {
+                        assembly->updateEntityComponent(_focusedAssetEntity,
+                                                        em->getComponent<Transform>(_focusedEntity)->toVirtual());
                     }
                     assembly->json().endMultiChange();
                 }

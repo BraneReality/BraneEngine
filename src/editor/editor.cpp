@@ -34,7 +34,8 @@ void Editor::start()
 
     _ui->setMainMenuCallback([this]() { drawMenu(); });
     _ui->addEventListener<GUIEvent>("projectLoaded", nullptr, [this](auto evt) {
-        if(_selectProjectWindow) {
+        if(_selectProjectWindow)
+        {
             _selectProjectWindow = nullptr;
             _ui->clearWindows();
             addMainWindows();
@@ -91,12 +92,15 @@ void Editor::addMainWindows()
 
 void Editor::drawMenu()
 {
-    if(ImGui::BeginMainMenuBar()) {
-        if(ImGui::BeginMenu("File")) {
+    if(ImGui::BeginMainMenuBar())
+    {
+        if(ImGui::BeginMenu("File"))
+        {
             ImGui::Selectable("Create Asset");
             ImGui::EndMenu();
         }
-        if(ImGui::BeginMenu("Window")) {
+        if(ImGui::BeginMenu("Window"))
+        {
             if(ImGui::Selectable("Entities"))
                 _ui->addWindow<EntitiesWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Asset Browser"))
@@ -116,8 +120,10 @@ void Editor::drawMenu()
         ImGui::EndMainMenuBar();
     }
 
-    if(ImGui::IsKeyDown(ImGuiKey_ModCtrl)) {
-        if(ImGui::IsKeyPressed(ImGuiKey_Z)) {
+    if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+    {
+        if(ImGui::IsKeyPressed(ImGuiKey_Z))
+        {
             if(!ImGui::IsKeyDown(ImGuiKey_ModShift))
                 _jsonTracker.undo();
             else
@@ -168,26 +174,28 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
     if(!am->hasAsset(id))
         return;
     Asset* newAsset = asset->buildAsset(id);
-    if(!newAsset) {
+    if(!newAsset)
+    {
         Runtime::error("Could not reload asset " + id.string() + "!");
         return;
     }
     am->reloadAsset(newAsset);
     delete newAsset;
 
-    switch(asset->type().type()) {
-    case AssetType::material:
-    case AssetType::shader:
-        am->fetchAsset<Asset>(id).then([&am](Asset* asset) {
-            // Manually fetch dependencies, since it skips that step if an asset is already fully loaded
-            am->fetchDependencies(asset, [asset](bool success) {
-                if(success)
-                    Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
-                else
-                    Runtime::warn("Could not reload " + asset->name);
+    switch(asset->type().type())
+    {
+        case AssetType::material:
+        case AssetType::shader:
+            am->fetchAsset<Asset>(id).then([&am](Asset* asset) {
+                // Manually fetch dependencies, since it skips that step if an asset is already fully loaded
+                am->fetchDependencies(asset, [asset](bool success) {
+                    if(success)
+                        Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
+                    else
+                        Runtime::warn("Could not reload " + asset->name);
+                });
             });
-        });
-        break;
+            break;
     }
 }
 
@@ -199,7 +207,8 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 
     Editor* editor = Runtime::getModule<Editor>();
 
-    if(editor->cache().hasAsset(id)) {
+    if(editor->cache().hasAsset(id))
+    {
         ThreadPool::enqueue([this, editor, asset, id]() {
             Asset* cachedAsset = editor->cache().getAsset(id);
             fetchDependencies(cachedAsset, [asset, cachedAsset](bool success) mutable {
@@ -213,10 +222,12 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
     }
 
     std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
-    if(editorAsset) {
+    if(editorAsset)
+    {
         ThreadPool::enqueue([this, editorAsset, editor, asset, id]() {
             Asset* a = editorAsset->buildAsset(id);
-            if(!a) {
+            if(!a)
+            {
                 asset.setError("Could not build " + id.string() + " from " + editorAsset->name());
                 return;
             }
@@ -224,7 +235,8 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
             _assets.at(id)->loadState = LoadState::awaitingDependencies;
             _assetLock.unlock();
             fetchDependencies(a, [editor, asset, a](bool success) mutable {
-                if(success) {
+                if(success)
+                {
                     editor->cache().cacheAsset(a);
                     asset.setData(a);
                 }
@@ -235,22 +247,25 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
         return asset;
     }
 
-    if(id.address().empty()) {
-        asset.setError(
-            "Asset with id " + std::string(id.idStr()) +
-            " was not found and can not be remotely fetched since it lacks a server address");
+    if(id.address().empty())
+    {
+        asset.setError("Asset with id " + std::string(id.idStr()) +
+                       " was not found and can not be remotely fetched since it lacks a server address");
         return asset;
     }
     auto* nm = Runtime::getModule<NetworkManager>();
-    if(incremental) {
+    if(incremental)
+    {
         nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr) { asset.setData(ptr); });
     }
-    else {
+    else
+    {
         nm->async_requestAsset(id).then([this, asset](Asset* ptr) {
             _assetLock.lock();
             _assets.at(ptr->id)->loadState = LoadState::awaitingDependencies;
             _assetLock.unlock();
-            if(dependenciesLoaded(ptr)) {
+            if(dependenciesLoaded(ptr))
+            {
                 asset.setData(ptr);
                 return;
             }

@@ -7,7 +7,8 @@
 #include "ecs/nativeComponent.h"
 #include <utility/inlineArray.h>
 
-class MeshRendererComponent : public NativeComponent<MeshRendererComponent> {
+class MeshRendererComponent : public NativeComponent<MeshRendererComponent>
+{
     REGISTER_MEMBERS_2("Mesh Renderer", mesh, "mesh", materials, "materials");
 
   public:

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <string_view>
-#include <cstdint>
 
-class AssetID {
+class AssetID
+{
     std::string _string = "null";
     std::string::size_type _delimiter = std::string::npos;
     uint32_t _idCache = -1;
@@ -56,7 +57,8 @@ class AssetID {
     friend std::ostream& operator<<(std::ostream& os, const AssetID& id);
 };
 
-class HashedAssetID {
+class HashedAssetID
+{
     size_t _hash;
     uint32_t _id;
     std::string _address;
@@ -71,6 +73,8 @@ class HashedAssetID {
     size_t hash() const;
 };
 
-template <> struct std::hash<HashedAssetID> {
+template<>
+struct std::hash<HashedAssetID>
+{
     size_t operator()(const HashedAssetID& k) const;
 };

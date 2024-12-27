@@ -2,7 +2,6 @@
 
 #include "virtualType.h"
 
-#include "common/utility/staticIndexVector.h"
 #include <cassert>
 #include <cstdlib>
 #include <iterator>
@@ -10,8 +9,9 @@
 #include <mutex>
 #include <set>
 #include <string>
-#include <unordered_set>
 #include <vector>
+#include "common/utility/staticIndexVector.h"
+#include <unordered_set>
 
 #ifdef _64BIT
 #define WORD_SIZE 8
@@ -24,8 +24,10 @@ class ComponentAsset;
 
 using ComponentID = uint32_t;
 
-class ComponentDescription {
-    struct Member {
+class ComponentDescription
+{
+    struct Member
+    {
         VirtualType::Type type;
         size_t offset;
     };
@@ -46,8 +48,9 @@ class ComponentDescription {
 
     ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets);
 
-    ComponentDescription(
-        const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets, size_t size);
+    ComponentDescription(const std::vector<VirtualType::Type>& members,
+                         const std::vector<size_t>& offsets,
+                         size_t size);
 
     void construct(byte* component) const;
 
@@ -70,7 +73,8 @@ class ComponentDescription {
 
 class VirtualComponentView;
 
-class VirtualComponent {
+class VirtualComponent
+{
   protected:
     byte* _data;
     const ComponentDescription* _description;
@@ -92,21 +96,24 @@ class VirtualComponent {
 
     VirtualComponent& operator=(const VirtualComponentView& source);
 
-    template <class T> T* getVar(size_t index) const
+    template<class T>
+    T* getVar(size_t index) const
     {
         assert(index < _description->members().size());
         assert(_description->members()[index].offset + sizeof(T) <= _description->size());
         return getVirtual<T>(&_data[_description->members()[index].offset]);
     }
 
-    template <class T> void setVar(size_t index, T value)
+    template<class T>
+    void setVar(size_t index, T value)
     {
         assert(index < _description->members().size());
         assert(_description->members()[index].offset + sizeof(T) <= _description->size());
         *(T*)&_data[_description->members()[index].offset] = value;
     }
 
-    template <class T> T readVar(size_t index) const
+    template<class T>
+    T readVar(size_t index) const
     {
         assert(index < _description->members().size());
         assert(_description->members()[index].offset + sizeof(T) <= _description->size());
@@ -118,7 +125,8 @@ class VirtualComponent {
     const ComponentDescription* description() const;
 };
 
-class VirtualComponentView {
+class VirtualComponentView
+{
   protected:
     byte* _data;
     const ComponentDescription* _description;
@@ -128,21 +136,24 @@ class VirtualComponentView {
 
     VirtualComponentView(const ComponentDescription* description, byte* data);
 
-    template <class T> T* getVar(size_t index) const
+    template<class T>
+    T* getVar(size_t index) const
     {
         assert(index < _description->members().size());
         assert(_description->members()[index].offset + sizeof(T) <= _description->size());
         return getVirtual<T>(&_data[_description->members()[index].offset]);
     }
 
-    template <class T> void setVar(size_t index, T value)
+    template<class T>
+    void setVar(size_t index, T value)
     {
         assert(index < _description->members().size());
         assert(_description->members()[index].offset + sizeof(T) <= _description->size());
         *(T*)&_data[_description->members()[index].offset] = value;
     }
 
-    template <class T> T readVar(size_t index) const
+    template<class T>
+    T readVar(size_t index) const
     {
         assert(index < _description->members().size());
         assert(_description->members()[index].offset + sizeof(T) <= _description->size());

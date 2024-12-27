@@ -1,7 +1,8 @@
 #include "texture.h"
 #include "graphicsDevice.h"
 
-namespace graphics {
+namespace graphics
+{
     void Texture::createTextureImageView()
     {
         VkImageViewCreateInfo viewInfo{};
@@ -15,7 +16,8 @@ namespace graphics {
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        if(vkCreateImageView(device->get(), &viewInfo, nullptr, &_textureImageView) != VK_SUCCESS) {
+        if(vkCreateImageView(device->get(), &viewInfo, nullptr, &_textureImageView) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create texture image view!");
         }
     }
@@ -42,23 +44,25 @@ namespace graphics {
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;
 
-        if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
             barrier.srcAccessMask = 0;
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
-        else if(
-            oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
-            newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        else if(oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+                newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         }
-        else {
+        else
+        {
             throw std::invalid_argument("unsupported layout transition!");
         }
 
@@ -95,10 +99,9 @@ namespace graphics {
         _asset = asset;
         VkDeviceSize imageSize = _asset->size.x * _asset->size.y * 4;
 
-        GraphicsBuffer stagingBuffer(
-            imageSize,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        GraphicsBuffer stagingBuffer(imageSize,
+                                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         stagingBuffer.setData(_asset->data);
 
@@ -134,7 +137,8 @@ namespace graphics {
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = 0;
 
-        if(vkCreateImage(device->get(), &imageInfo, nullptr, &_textureImage) != VK_SUCCESS) {
+        if(vkCreateImage(device->get(), &imageInfo, nullptr, &_textureImage) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create texture!");
         }
 
@@ -147,7 +151,8 @@ namespace graphics {
         allocInfo.memoryTypeIndex =
             device->findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        if(vkAllocateMemory(device->get(), &allocInfo, nullptr, &_textureImageMemory) != VK_SUCCESS) {
+        if(vkAllocateMemory(device->get(), &allocInfo, nullptr, &_textureImageMemory) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to allocate texture memory!");
         }
 
@@ -175,7 +180,8 @@ namespace graphics {
 
     VkSampler Texture::sampler()
     {
-        if(_sampler == VK_NULL_HANDLE) {
+        if(_sampler == VK_NULL_HANDLE)
+        {
             VkSamplerCreateInfo samplerInfo{};
             samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
             samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -195,7 +201,8 @@ namespace graphics {
             samplerInfo.minLod = 0.0f;
             samplerInfo.maxLod = 0.0f;
 
-            if(vkCreateSampler(device->get(), &samplerInfo, nullptr, &_sampler) != VK_SUCCESS) {
+            if(vkCreateSampler(device->get(), &samplerInfo, nullptr, &_sampler) != VK_SUCCESS)
+            {
                 throw std::runtime_error("failed to create texture sampler!");
             }
         }
@@ -209,10 +216,9 @@ namespace graphics {
         _asset->imageUpdated = false;
 
         VkDeviceSize imageSize = _asset->size.x * _asset->size.y * 4;
-        GraphicsBuffer stagingBuffer(
-            imageSize,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        GraphicsBuffer stagingBuffer(imageSize,
+                                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         stagingBuffer.setData(_asset->data);
 
         transitionImageLayout(_format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);

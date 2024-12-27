@@ -20,7 +20,8 @@ std::string GUIWindow::name() const { return _name + "##" + std::to_string(_inst
 
 void GUIWindow::draw()
 {
-    if(_resetSize) {
+    if(_resetSize)
+    {
         ImGui::SetNextWindowSize({500, 800});
         _resetSize = false;
     }

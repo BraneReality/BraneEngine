@@ -6,14 +6,16 @@
 #include <thread>
 #include <unordered_map>
 
-class SharedRecursiveMutex {
+class SharedRecursiveMutex
+{
     std::mutex _m;
     std::thread::id _owner;
     size_t _ownerLockCount = 0;
     size_t _sharedOwners = 0;
 
   public:
-    class ScopedLock {
+    class ScopedLock
+    {
         SharedRecursiveMutex* _m;
 
       public:
@@ -26,7 +28,8 @@ class SharedRecursiveMutex {
         ~ScopedLock();
     };
 
-    class SharedScopedLock {
+    class SharedScopedLock
+    {
         SharedRecursiveMutex* _m;
 
       public:

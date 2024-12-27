@@ -24,7 +24,8 @@ bool ComponentFilter::checkChunk(Chunk* chunk) const
 {
     if(!_chunkFlags)
         return true;
-    for(auto& comp : _components) {
+    for(auto& comp : _components)
+    {
         if(comp.flags & ComponentFilterFlags_Exclude || !(comp.flags & ComponentFilterFlags_Changed))
             continue;
         assert(chunk->hasComponent(comp.id));
@@ -36,7 +37,8 @@ bool ComponentFilter::checkChunk(Chunk* chunk) const
 
 bool ComponentFilter::checkArchetype(Archetype* arch) const
 {
-    for(auto& c : _components) {
+    for(auto& c : _components)
+    {
         bool hasComponent = arch->hasComponent(c.id);
         bool exclude = c.flags & ComponentFilterFlags_Exclude;
         if(hasComponent == exclude)
@@ -47,8 +49,7 @@ bool ComponentFilter::checkArchetype(Archetype* arch) const
 
 EntitySet::EntitySet(std::vector<Archetype*> archetypes, ComponentFilter filter)
     : _archetypes(std::move(archetypes)), _filter(std::move(filter))
-{
-}
+{}
 
 void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
 {
@@ -60,21 +61,26 @@ void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
     std::vector<ChunkComponentView*> componentViews(itrComponents.size());
     std::vector<byte*> data(itrComponents.size());
 
-    for(auto* arch : _archetypes) {
-        for(auto& chunk : arch->chunks()) {
+    for(auto* arch : _archetypes)
+    {
+        for(auto& chunk : arch->chunks())
+        {
             if(!_filter.checkChunk(chunk.get()))
                 continue;
 
-            for(size_t i = 0; i < itrComponents.size(); ++i) {
+            for(size_t i = 0; i < itrComponents.size(); ++i)
+            {
                 componentViews[i] = &chunk->getComponent(itrComponents[i]);
                 componentViews[i]->lock();
             }
-            for(size_t i = 0; i < chunk->size(); ++i) {
+            for(size_t i = 0; i < chunk->size(); ++i)
+            {
                 for(size_t d = 0; d < itrComponents.size(); ++d)
                     data[d] = componentViews[d]->getComponentData(i);
                 f(data.data());
             }
-            for(auto c : componentViews) {
+            for(auto c : componentViews)
+            {
                 c->version = _filter.system()->version;
                 c->unlock();
             }

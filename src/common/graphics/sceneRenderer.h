@@ -10,10 +10,13 @@
 #include "renderer.h"
 
 class EntityManager;
-namespace graphics {
+
+namespace graphics
+{
     class VulkanRuntime;
 
-    class SceneRenderer : public Renderer {
+    class SceneRenderer : public Renderer
+    {
         VulkanRuntime& _vkr;
         EntityManager& _em;
         std::unordered_map<const Material*, VkPipeline> _cachedPipelines;
@@ -25,12 +28,14 @@ namespace graphics {
         std::vector<GraphicsBuffer> _renderDataBuffers;
         std::vector<GraphicsBuffer> _pointLights;
 
-        struct alignas(16) PointLightData {
+        struct alignas(16) PointLightData
+        {
             alignas(16) glm::vec3 position;
             alignas(16) glm::vec4 color;
         };
 
-        struct alignas(16) RenderInfo {
+        struct alignas(16) RenderInfo
+        {
             glm::mat4 render_matrix;
             glm::vec3 camera_pos;
         };

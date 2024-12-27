@@ -8,11 +8,13 @@
 #include <array>
 #include <string>
 
-namespace graphics {
+namespace graphics
+{
     using TextureID = uint32_t;
     extern const std::array<const char*, 1> textureFileExtensions;
 
-    class Texture {
+    class Texture
+    {
         ImageAsset* _asset;
 
         VkImage _textureImage;

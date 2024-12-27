@@ -8,10 +8,12 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-namespace graphics {
+namespace graphics
+{
     class SwapChain;
 
-    class RenderTexture {
+    class RenderTexture
+    {
         SwapChain& _sc;
 
         VkDeviceMemory _imageMemory;

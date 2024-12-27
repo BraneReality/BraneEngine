@@ -15,13 +15,12 @@ TEST(VersionedJSON, Path)
     Json::Value root;
     initJson >> root;
 
-    EXPECT_STREQ(
-        Json::resolvePath("array/1/contained value", root)
-            .
+    EXPECT_STREQ(Json::resolvePath("array/1/contained value", root)
+                     .
 
-        asCString(),
+                 asCString(),
 
-        "hello world");
+                 "hello world");
 }
 
 TEST(VersionedJSON, Change)
@@ -34,54 +33,49 @@ TEST(VersionedJSON, Change)
 
                 data();
 
-    EXPECT_STREQ(
-        json["value"].
+    EXPECT_STREQ(json["value"].
 
-        asCString(),
+                 asCString(),
 
-        "hello");
+                 "hello");
 
     json.changeValue("value", "world");
-    EXPECT_STREQ(
-        json["value"].
+    EXPECT_STREQ(json["value"].
 
-        asCString(),
+                 asCString(),
 
-        "world");
+                 "world");
 
     tracker.
 
         undo();
 
-    EXPECT_STREQ(
-        json["value"].
+    EXPECT_STREQ(json["value"].
 
-        asCString(),
+                 asCString(),
 
-        "hello");
+                 "hello");
 
     tracker.
 
         redo();
 
-    EXPECT_STREQ(
-        json["value"].
+    EXPECT_STREQ(json["value"].
 
-        asCString(),
+                 asCString(),
 
-        "world");
+                 "world");
 
     tracker.
 
         undo();
 
     json.changeValue("value", "there"); // Test overwrite
-    EXPECT_STREQ(
-        json["value"].
+    EXPECT_STREQ(json["value"].
 
-        asCString(),
+                 asCString(),
 
-        "there");
+                 "there");
 
     tracker.
 
@@ -94,16 +88,11 @@ TEST(VersionedJSON, Change)
 
         redo();
 
-    EXPECT_STREQ(
-        json["value"].
+    EXPECT_STREQ(json["value"].
 
-        asCString(),
+                 asCString(),
 
-        "there");
-
-    tracker.
-
-        undo();
+                 "there");
 
     tracker.
 
@@ -113,10 +102,13 @@ TEST(VersionedJSON, Change)
 
         undo();
 
-    EXPECT_STREQ(
-        json["value"].
+    tracker.
 
-        asCString(),
+        undo();
 
-        "hello");
+    EXPECT_STREQ(json["value"].
+
+                 asCString(),
+
+                 "hello");
 }

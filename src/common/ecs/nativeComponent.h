@@ -8,7 +8,9 @@
 #include "component.h"
 #include "structMembers.h"
 
-template <class T> class NativeComponent {
+template<class T>
+class NativeComponent
+{
   protected:
     using ComponentType = T;
     static ComponentDescription* _description;
@@ -41,6 +43,7 @@ template <class T> class NativeComponent {
     static ComponentDescription* def() { return _description; }
 };
 
-template <class T> ComponentDescription* NativeComponent<T>::_description = nullptr;
+template<class T>
+ComponentDescription* NativeComponent<T>::_description = nullptr;
 
 #endif // BRANEENGINE_NATIVECOMPONENT_H

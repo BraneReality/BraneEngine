@@ -8,12 +8,18 @@
 #include "../asset.h"
 #include "glm/vec2.hpp"
 
-class ImageAsset : public IncrementalAsset {
+class ImageAsset : public IncrementalAsset
+{
   public:
     std::vector<uint8_t> data;
     glm::uvec2 size;
 
-    enum ImageType : uint8_t { color = 0, normal = 1, linear = 2 } imageType;
+    enum ImageType : uint8_t
+    {
+        color = 0,
+        normal = 1,
+        linear = 2
+    } imageType;
 
     ImageAsset();
 

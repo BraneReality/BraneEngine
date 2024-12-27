@@ -9,7 +9,8 @@
 
 class EntityManager;
 
-class MemoryManagerWindow : public EditorWindow {
+class MemoryManagerWindow : public EditorWindow
+{
     EntityManager* _em;
 
     void displayContent() override;

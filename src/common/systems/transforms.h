@@ -8,7 +8,8 @@
 #include "common/ecs/entity.h"
 #include <runtime/module.h>
 
-class Transform : public NativeComponent<Transform> {
+class Transform : public NativeComponent<Transform>
+{
     REGISTER_MEMBERS_2("Transform", value, "value", dirty, "dirty");
 
   public:
@@ -22,7 +23,8 @@ class Transform : public NativeComponent<Transform> {
     glm::vec3 scale() const;
 };
 
-class LocalTransform : public NativeComponent<LocalTransform> {
+class LocalTransform : public NativeComponent<LocalTransform>
+{
     REGISTER_MEMBERS_2("Local Transform", value, "value", parent, "parent id");
 
   public:
@@ -30,7 +32,8 @@ class LocalTransform : public NativeComponent<LocalTransform> {
     EntityID parent;
 };
 
-class TRS : public NativeComponent<TRS> {
+class TRS : public NativeComponent<TRS>
+{
     REGISTER_MEMBERS_3("TRS", translation, "translation", rotation, "rotation", scale, "scale");
 
   public:
@@ -42,14 +45,16 @@ class TRS : public NativeComponent<TRS> {
     void fromMat(const glm::mat4& t);
 };
 
-class Children : public NativeComponent<Children> {
+class Children : public NativeComponent<Children>
+{
     REGISTER_MEMBERS_1("Children", children, "children");
 
   public:
     inlineEntityIDArray children;
 };
 
-class Transforms : public Module {
+class Transforms : public Module
+{
     EntityManager* _em;
 
     void updateTRSFromMatrix(EntityID entity, glm::mat4 value);
@@ -74,7 +79,8 @@ class Transforms : public Module {
     static const char* name();
 };
 
-class TransformSystem : public System {
+class TransformSystem : public System
+{
   public:
     void run(EntityManager& _em) override;
 };

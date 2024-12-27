@@ -5,7 +5,8 @@
 
 class ComponentAsset;
 
-class MaterialAsset : public Asset {
+class MaterialAsset : public Asset
+{
   public:
     MaterialAsset();
 
