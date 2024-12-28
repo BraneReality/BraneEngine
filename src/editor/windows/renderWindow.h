@@ -10,7 +10,7 @@
 #include "ecs/entityID.h"
 #include "editorWindow.h"
 #include "glm/gtx/quaternion.hpp"
-#include "Imgui.h"
+#include "imgui.h"
 #include "ImGuizmo.h"
 #include "vulkan/vulkan.h"
 
