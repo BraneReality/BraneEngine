@@ -12,6 +12,7 @@
 #include "editor/assets/editorAsset.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
 #include "editor/assets/types/editorMaterialAsset.h"
+#include "editor/assets/types/EditorScriptAsset.h"
 #include "editor/assets/types/editorShaderAsset.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
@@ -30,6 +31,7 @@
 #include "ui/guiPopup.h"
 
 #include "assets/types/imageAsset.h"
+#include "lua.hpp"
 #include "utility/jsonTypeUtilities.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
@@ -40,26 +42,42 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusMode = FocusMode::asset;
         _focusedAssetEntity = -1;
 
-        if(_focusedAsset->type() == AssetType::image)
+        switch(_focusedAsset->type().type())
         {
-            _imagePreview = VK_NULL_HANDLE;
-            _previewImageAsset = nullptr;
-            Runtime::getModule<AssetManager>()
-                ->fetchAsset<ImageAsset>(AssetID(_focusedAsset->json()["id"].asString()))
-                .then([this](ImageAsset* image) {
+            case AssetType::image:
+            {
+                _imagePreview = VK_NULL_HANDLE;
+                _previewImageAsset = nullptr;
+                Runtime::getModule<AssetManager>()
+                    ->fetchAsset<ImageAsset>(AssetID(_focusedAsset->json()["id"].asString()))
+                    .then([this](ImageAsset* image) {
                     _previewImageAsset = image;
                     auto* texture = Runtime::getModule<graphics::VulkanRuntime>()->getTexture(image->runtimeID);
                     if(texture)
                         _imagePreview = ImGui_ImplVulkan_AddTexture(
                             texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
                 });
-        }
-        else if(_focusedAsset->type() == AssetType::material)
-        {
-            auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
-            auto frag = _editor.project().getEditorAsset(AssetID(material->json()["fragmentShader"].asString()));
-            if(frag)
-                material->initializeProperties(static_cast<EditorShaderAsset*>(frag.get()));
+            }
+            break;
+            case AssetType::material:
+            {
+                auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
+                auto frag = _editor.project().getEditorAsset(AssetID(material->json()["fragmentShader"].asString()));
+                if(frag)
+                    material->initializeProperties(static_cast<EditorShaderAsset*>(frag.get()));
+            }
+            break;
+            case AssetType::script:
+            {
+                auto* script = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
+                Runtime::getModule<AssetManager>()
+                    ->fetchAsset<ScriptAsset>(AssetID(_focusedAsset->json()["id"].asString()))
+                    .then([this](ScriptAsset* asset) { _scriptText = asset->scriptText; });
+            }
+            default:
+                Runtime::error("Tried to open unsupported asset type (report this): " +
+                               _focusedAsset->type().toString());
+                break;
         }
     });
     ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event) {
@@ -120,6 +138,9 @@ void DataWindow::displayAssetData()
                 break;
             case AssetType::chunk:
                 displayChunkData();
+                break;
+            case AssetType::script:
+                displayScriptData();
                 break;
             default:
                 ImGui::PushTextWrapPos();
@@ -294,10 +315,10 @@ class AddAssetComponentPopup : public GUIPopup
             Runtime::getModule<AssetManager>()
                 ->fetchAsset<ComponentAsset>(_search.currentSelected())
                 .then([this, asset, entity](ComponentAsset* component) {
-                    auto* compDef = Runtime::getModule<EntityManager>()->components().getComponentDef(component);
-                    VirtualComponent newComp(compDef);
-                    _focusedAsset->addEntityComponent(_focusedEntity, EditorAssemblyAsset::componentToJson(newComp));
-                });
+                auto* compDef = Runtime::getModule<EntityManager>()->components().getComponentDef(component);
+                VirtualComponent newComp(compDef);
+                _focusedAsset->addEntityComponent(_focusedEntity, EditorAssemblyAsset::componentToJson(newComp));
+            });
             ImGui::CloseCurrentPopup();
         }
     }
@@ -305,7 +326,7 @@ class AddAssetComponentPopup : public GUIPopup
   public:
     AddAssetComponentPopup(std::shared_ptr<EditorAssemblyAsset> focusedAsset, Json::ArrayIndex focusedEntity)
         : _focusedAsset(std::move(focusedAsset)), _focusedEntity(focusedEntity), _search(AssetType::component),
-          GUIPopup("add component"){};
+          GUIPopup("add component") {};
 };
 
 void DataWindow::displayEntityAssetData()
@@ -673,5 +694,32 @@ void DataWindow::displayImageData()
         if(texture)
             _imagePreview = ImGui_ImplVulkan_AddTexture(
                 texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+}
+
+void DataWindow::displayScriptData()
+{
+    auto* script = static_cast<EditorScriptAsset*>(_focusedAsset.get());
+    ImGui::Text("Script content:");
+    ImGui::TextWrapped("%s", _scriptText.c_str());
+
+    if(ImGui::Button("Run Script"))
+    {
+        // Load and run script
+        lua_State* L = luaL_newstate();
+        if(!L)
+        {
+            Runtime::error("Failed to init lua!");
+            return;
+        }
+
+        luaL_openlibs(L);
+
+        if(luaL_dostring(L, _scriptText.c_str()) != LUA_OK)
+        {
+            Runtime::error("Lua error: " + std::string(lua_tostring(L, -1)));
+            lua_pop(L, 1);
+        }
+        lua_close(L);
     }
 }

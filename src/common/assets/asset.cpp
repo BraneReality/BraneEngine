@@ -5,6 +5,7 @@
 #include "types/imageAsset.h"
 #include "types/materialAsset.h"
 #include "types/meshAsset.h"
+#include "types/scriptAsset.h"
 #include "types/shaderAsset.h"
 #include <utility/serializedData.h>
 
@@ -31,14 +32,12 @@ Asset* Asset::assetFromType(AssetType type)
             break;
         case AssetType::component:
             return new ComponentAsset();
-        case AssetType::system:
-            assert("Not implemented" && false);
-            break;
+        case AssetType::script:
+            return new ScriptAsset();
         case AssetType::mesh:
             return new MeshAsset();
         case AssetType::image:
             return new ImageAsset();
-            break;
         case AssetType::shader:
             return new ShaderAsset();
         case AssetType::material:

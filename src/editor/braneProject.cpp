@@ -8,6 +8,7 @@
 #include "assets/editorAsset.h"
 #include "assets/types/editorAssemblyAsset.h"
 #include "assets/types/editorImageAsset.h"
+#include "assets/types/editorScriptAsset.h"
 #include "assets/types/editorShaderAsset.h"
 #include "editor.h"
 #include "fileManager/fileManager.h"
@@ -220,6 +221,25 @@ void BraneProject::initLoaded()
         if(!isOpen)
             _openAssets.erase(assetPath.string());
     });
+    _fileWatcher->addFileWatcher(".lua", [this](const std::filesystem::path& path) {
+        Runtime::log("loading script: " + path.string());
+        std::filesystem::path assetPath = path;
+        assetPath.replace_extension(".script");
+
+        bool isOpen = _openAssets.count(assetPath.string());
+        if(!isOpen)
+            _openAssets.insert({assetPath.string(), std::make_shared<EditorScriptAsset>(assetPath, *this)});
+        std::shared_ptr<EditorScriptAsset> scriptAsset =
+            std::dynamic_pointer_cast<EditorScriptAsset>(_openAssets.at(assetPath.string()));
+
+        scriptAsset->updateSource(path);
+
+        registerAssetLocation(scriptAsset.get());
+        _editor.reloadAsset(scriptAsset);
+
+        if(!isOpen)
+            _openAssets.erase(assetPath.string());
+    });
     _fileWatcher->scanForChanges(true);
     _loaded = true;
     save();
@@ -303,7 +323,7 @@ void BraneProject::refreshAssets()
             assets.removeMember(id);
     }
 
-    std::unordered_set<std::string> assetTypes = {".shader", ".material", ".assembly", ".image"};
+    std::unordered_set<std::string> assetTypes = {".shader", ".material", ".assembly", ".image", ".script"};
     for(auto& file : std::filesystem::recursive_directory_iterator{projectDirectory() / "assets"})
     {
         if(!file.is_regular_file())

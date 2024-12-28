@@ -45,6 +45,7 @@ class AssetManager : public Module
 
     // To account for different ways of fetching assets for different build targets, this function is defined multiple
     // times
+    // TODO refactor this to use a callback std::function
     AsyncData<Asset*> fetchAssetInternal(const AssetID& id, bool incremental);
 
   public:

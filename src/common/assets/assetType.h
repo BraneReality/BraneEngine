@@ -13,7 +13,7 @@ class AssetType
     {
         none = 0,
         component = 1,
-        system = 2,
+        script = 2,
         mesh = 3,
         image = 4,
         shader = 5,

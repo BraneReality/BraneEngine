@@ -31,7 +31,6 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 
     if(changed)
     {
-        _json.data()["lastSourceHash"] = hash;
         Runtime::log("Extracting shader attributes for " + name());
         ShaderCompiler::ShaderAttributes attributes;
         std::string glsl;
@@ -100,6 +99,7 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
                 atr["samplers"].append(sampler);
             }
             _json.data()["attributes"] = atr;
+            _json.data()["lastSourceHash"] = hash;
         }
         else
             Runtime::error("Failed extract attributes");

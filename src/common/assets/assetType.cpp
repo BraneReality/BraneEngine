@@ -4,7 +4,7 @@
 const EnumNameMap<AssetType::Type> names({
     {AssetType::none, "none"},
     {AssetType::component, "component"},
-    {AssetType::system, "system"},
+    {AssetType::script, "script"},
     {AssetType::mesh, "mesh"},
     {AssetType::material, "material"},
     {AssetType::image, "image"},

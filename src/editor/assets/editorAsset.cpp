@@ -9,10 +9,11 @@
 #include "editor/assets/types/editorChunkAsset.h"
 #include "editor/assets/types/editorImageAsset.h"
 #include "editor/assets/types/editorMaterialAsset.h"
+#include "editor/assets/types/editorScriptAsset.h"
+#include "editor/assets/types/editorShaderAsset.h"
 #include "editor/braneProject.h"
 #include "editor/editor.h"
 #include "fileManager/fileManager.h"
-#include "types/editorShaderAsset.h"
 
 EditorAsset::EditorAsset(const std::filesystem::path& file, BraneProject& project)
     : _file(file), _project(project), _json(project.editor().jsonTracker())
@@ -94,6 +95,9 @@ EditorAsset* EditorAsset::openUnknownAsset(const std::filesystem::path& path, Br
         return new EditorChunkAsset(path, project);
     if(ext == ".image")
         return new EditorImageAsset(path, project);
+    if(ext == ".script")
+        return new EditorScriptAsset(path, project);
+    Runtime::error("Extension " + ext.string() + " not recognised");
     return nullptr;
 }
 
