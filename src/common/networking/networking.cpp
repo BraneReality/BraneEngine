@@ -19,14 +19,11 @@ void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
     auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
 
     auto tcpEndpoints = _tcpResolver.resolve(ip, std::to_string(port));
-    connection->connectToServer(
-        tcpEndpoints,
-        [this, ip, connection]() mutable {
+    connection->connectToServer(tcpEndpoints, [this, ip, connection]() mutable {
         _serverLock.lock();
         _servers.insert({ip, std::unique_ptr<net::ClientConnection<net::tcp_socket>>(connection)});
         _serverLock.unlock();
-        },
-        [] {});
+    }, [] {});
 }
 
 void NetworkManager::async_connectToAssetServer(const std::string& address,
@@ -52,21 +49,18 @@ void NetworkManager::async_connectToAssetServer(const std::string& address,
         {
             auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
             connection->onRequest([this](auto c, auto m) { handleResponse(c, std::move(m)); });
-            connection->connectToServer(
-                endpoints,
-                [this, address, callback, connection]() {
+            connection->connectToServer(endpoints, [this, address, callback, connection]() {
                 _serverLock.lock();
                 _servers.insert({address, std::unique_ptr<net::Connection>(connection)});
                 _serverLock.unlock();
                 callback(true);
                 if(!_running)
                     start();
-                },
-                [callback] { callback(false); });
+            }, [callback] { callback(false); });
         }
         else
             callback(false);
-        });
+    });
     if(!_running)
         start();
 }
@@ -121,16 +115,33 @@ void NetworkManager::configureServer()
 
 AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
 {
+    if(id.empty())
+    {
+        AsyncData<Asset*> asset;
+        asset.setError("Asset ID was empty");
+        return asset;
+    }
+
+    return MATCHV(
+        id.value.value(), [this](const BraneAssetID& id) { return async_requestAsset(id); }, [](const FileAssetID& id) {
+        AsyncData<Asset*> asset;
+        asset.setError("Network Manager cannot fetch file assets");
+        return asset;
+    });
+}
+
+AsyncData<Asset*> NetworkManager::async_requestAsset(const BraneAssetID& id)
+{
     AsyncData<Asset*> asset;
 
     _serverLock.lock_shared();
-    std::string address(id.address());
+    std::string address(id.domain);
     if(!_servers.count(address))
         throw std::runtime_error("No connection with " + address);
     net::Connection* server = _servers[address].get();
     _serverLock.unlock_shared();
 
-    Runtime::log("async requesting: " + id.string());
+    Runtime::log("async requesting: " + id.toString());
 
     SerializedData data;
     OutputSerializer s(data);
@@ -140,10 +151,11 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
         if(code != net::ResponseCode::success)
         {
             Runtime::error("Could not get asset, server responded with code: " + std::to_string((uint8_t)code));
+            asset.setError("Could not get asset, server responded with code: " + std::to_string((uint8_t)code));
             return;
         }
         auto* a = Asset::deserializeUnknown(sData);
-        a->id.setAddress(address);
+        // a->id.domain = address;
         asset.setData(a);
     });
     return asset;
@@ -151,16 +163,34 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
 
 AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const AssetID& id)
 {
+    if(id.empty())
+    {
+        AsyncData<IncrementalAsset*> asset;
+        asset.setError("Asset ID was empty");
+        return asset;
+    }
+
+    return MATCHV(id.value.value(), [this](const BraneAssetID& id) {
+        return async_requestAssetIncremental(id);
+    }, [](const FileAssetID& id) {
+        AsyncData<IncrementalAsset*> asset;
+        asset.setError("Network Manager cannot fetch file assets");
+        return asset;
+    });
+}
+
+AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const BraneAssetID& id)
+{
     AsyncData<IncrementalAsset*> asset;
 
     _serverLock.lock_shared();
-    std::string address(id.address());
+    std::string address(id.domain);
     if(!_servers.count(address))
         throw std::runtime_error("No connection with " + address);
     net::Connection* server = _servers[address].get();
     _serverLock.unlock_shared();
 
-    Runtime::log("async requesting incremental: " + id.string());
+    Runtime::log("async requesting incremental: " + id.domain);
     uint32_t streamID = _streamIDCounter++;
 
     SerializedData data;
@@ -170,27 +200,24 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
     // Set up a listener for the asset response
     server->sendRequest(
         "incrementalAsset", std::move(data), [asset, server, streamID](auto code, InputSerializer sData) {
-            if(code != net::ResponseCode::success)
-            {
-                Runtime::error("Could not get incremental asset, server responded with code: " +
-                               std::to_string((uint8_t)code));
-                return;
-            }
-            IncrementalAsset* assetPtr = IncrementalAsset::deserializeUnknownHeader(sData);
-            server->addStreamListener(
-                streamID,
-                [assetPtr](InputSerializer sData) { assetPtr->deserializeIncrement(sData); },
-                [assetPtr] { assetPtr->onDependenciesLoaded(); });
-            asset.setData(assetPtr);
-        });
+        if(code != net::ResponseCode::success)
+        {
+            Runtime::error("Could not get incremental asset, server responded with code: " +
+                           std::to_string((uint8_t)code));
+            return;
+        }
+        IncrementalAsset* assetPtr = IncrementalAsset::deserializeUnknownHeader(sData);
+        server->addStreamListener(streamID, [assetPtr](InputSerializer sData) {
+            assetPtr->deserializeIncrement(sData);
+        }, [assetPtr] { assetPtr->onDependenciesLoaded(); });
+        asset.setData(assetPtr);
+    });
     return asset;
 }
 
 void NetworkManager::startSystems()
 {
-    Runtime::timeline().addTask(
-        "ingest data",
-        [this] {
+    Runtime::timeline().addTask("ingest data", [this] {
         _serverLock.lock_shared();
         for(auto& s : _servers)
         {
@@ -204,11 +231,13 @@ void NetworkManager::startSystems()
                 ingestData(s.get());
         }
         _clientLock.unlock_shared();
-        },
-        "networking");
+    }, "networking");
 }
 
-const char* NetworkManager::name() { return "networkManager"; }
+const char* NetworkManager::name()
+{
+    return "networkManager";
+}
 
 void NetworkManager::addRequestListener(const std::string& name, std::function<void(RequestCTX& ctx)> callback)
 {

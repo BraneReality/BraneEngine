@@ -24,7 +24,7 @@ class VirtualVariableWidgets
 
     static UiChangeType displayVirtualVariable(const char* name,
                                                VirtualType::Type type,
-                                               byte* data,
+                                               uint8_t* data,
                                                const Json::Value& assembly = Json::nullValue);
 };
 

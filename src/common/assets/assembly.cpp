@@ -26,7 +26,7 @@ void Assembly::EntityAsset::serialize(OutputSerializer& message, const Assembly&
         }
         if(componentIDIndex >= assembly.components.size())
         {
-            Runtime::error("Component: " + components[i].description()->asset->id.string() +
+            Runtime::error("Component: " + components[i].description()->asset->id.toString() +
                            " not found in asset components");
             throw std::runtime_error("Component assetID not listed in asset components");
         }
@@ -43,7 +43,7 @@ void Assembly::EntityAsset::deserialize(InputSerializer& message,
                                         AssetManager& am)
 {
     uint32_t size;
-    message.readSafeArraySize(size);
+    message >> size;
     components.reserve(size);
     for(uint32_t i = 0; i < size; ++i)
     {
@@ -114,7 +114,7 @@ void Assembly::deserialize(InputSerializer& message)
     Asset::deserialize(message);
     message >> components >> scripts >> meshes >> materials >> rootIndex;
     uint32_t size;
-    message.readSafeArraySize(size);
+    message >> size;
     entities.resize(size);
     for(uint32_t i = 0; i < entities.size(); ++i)
     {
@@ -122,7 +122,10 @@ void Assembly::deserialize(InputSerializer& message)
     }
 }
 
-Assembly::Assembly() { type.set(AssetType::Type::assembly); }
+Assembly::Assembly()
+{
+    type.set(AssetType::Type::assembly);
+}
 
 EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef)
 {
@@ -165,16 +168,16 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
         if(entity.hasComponent(MeshRendererComponent::def()))
         {
             auto* renderer = em.getComponent<MeshRendererComponent>(entityMap[i]);
-            auto* mesh = am->getAsset<MeshAsset>(meshes[renderer->mesh].sameOrigin(id));
+            auto* mesh = am->getAsset<MeshAsset>(meshes[renderer->mesh]);
             renderer->mesh = mesh->runtimeID;
             for(auto& mID : renderer->materials)
             {
-                if(materials.size() <= mID || materials[mID].null())
+                if(materials.size() <= mID || materials[mID].empty())
                 {
                     mID = -1;
                     continue;
                 }
-                auto* material = am->getAsset<MaterialAsset>(materials[mID].sameOrigin(id));
+                auto* material = am->getAsset<MaterialAsset>(materials[mID]);
                 mID = material->runtimeID;
             }
         }
@@ -195,7 +198,7 @@ std::vector<AssetDependency> Assembly::dependencies() const
     for(auto& id : scripts)
         deps.push_back({id, false});
     for(auto& id : materials)
-        if(!id.null())
+        if(!id.empty())
             deps.push_back({id, false});
     for(auto& id : meshes)
         deps.push_back({id, true});

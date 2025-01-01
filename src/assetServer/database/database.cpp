@@ -55,6 +55,9 @@ Database::Database()
     _searchAssets.initialize(
         "SELECT AssetID, Name, Type FROM Assets WHERE Name LIKE ?3 AND Type LIKE ?4 ORDER BY Name LIMIT ?2 OFFSET ?1",
         _db);
+    _listUserAssets.initialize("SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = "
+                               "AssetPermissions.AssetID WHERE AssetPermissions.UserID = ?1",
+                               _db);
     _searchUsers.initialize(
         "SELECT UserID, Username FROM Users WHERE Username LIKE ?3 ORDER BY Username LIMIT ?2 OFFSET ?1", _db);
 
@@ -63,7 +66,10 @@ Database::Database()
     });
 }
 
-Database::~Database() { sqlite3_close(_db); }
+Database::~Database()
+{
+    sqlite3_close(_db);
+}
 
 int Database::sqliteCallback(void* callback, int argc, char** argv, char** azColName)
 {
@@ -109,17 +115,23 @@ std::unordered_set<std::string> Database::userPermissions(int64_t userID)
 
 void Database::insertAssetInfo(AssetInfo& assetInfo)
 {
-    _insertAssetInfo.run(assetInfo.id, sqlTEXT(assetInfo.name), assetInfo.type.toString(), assetInfo.hash);
+    _insertAssetInfo.run(
+        sqlBLOB(assetInfo.id.data.buffer, 16), sqlTEXT(assetInfo.name), assetInfo.type.toString(), assetInfo.hash);
     /*_getLastInserted.run("Assets", [&assetInfo](sqlINT id){
         assetInfo.id = id;
     });*/
 }
 
-AssetInfo Database::getAssetInfo(uint32_t id)
+AssetInfo Database::getAssetInfo(UUID id)
 {
     AssetInfo asset{};
-    _getAssetInfo.run(static_cast<sqlINT>(id), [&asset](sqlINT assetID, sqlTEXT name, sqlTEXT type, sqlTEXT hash) {
-        asset.id = assetID;
+    _getAssetInfo.run(sqlBLOB(id.data.buffer, 16), [&asset](sqlBLOB assetID, sqlTEXT name, sqlTEXT type, sqlTEXT hash) {
+        if(assetID.size != 16)
+        {
+            Runtime::error("Asset ID was not correct size!");
+            return;
+        }
+        asset.id = UUID((uint8_t*)assetID.ptr);
         asset.name = std::move(name);
         asset.type.set(type);
         asset.hash = std::move(hash);
@@ -129,25 +141,25 @@ AssetInfo Database::getAssetInfo(uint32_t id)
 
 void Database::updateAssetInfo(const AssetInfo& info)
 {
-    _updateAssetInfo.run(static_cast<sqlINT>(info.id), info.name, info.type.toString(), info.hash);
+    _updateAssetInfo.run(sqlBLOB(info.id.data.buffer, 16), info.name, info.type.toString(), info.hash);
 }
 
-AssetPermissionLevel Database::getAssetPermission(uint32_t assetID, uint32_t userID)
+AssetPermissionLevel Database::getAssetPermission(UUID assetID, uint32_t userID)
 {
     AssetPermissionLevel level = AssetPermissionLevel::none;
-    _getAssetPermission.run(static_cast<sqlINT>(assetID), static_cast<sqlINT>(userID), [&level](sqlINT Level) {
+    _getAssetPermission.run(sqlBLOB(assetID.data.buffer, 16), static_cast<sqlINT>(userID), [&level](sqlINT Level) {
         level = (AssetPermissionLevel)Level;
     });
     return level;
 }
 
-void Database::setAssetPermission(uint32_t assetID, uint32_t userID, AssetPermissionLevel level)
+void Database::setAssetPermission(UUID assetID, uint32_t userID, AssetPermissionLevel level)
 {
     if(level != AssetPermissionLevel::none)
         _updateAssetPermission.run(
-            static_cast<sqlINT>(assetID), static_cast<sqlINT>(userID), static_cast<sqlINT>(level));
+            sqlBLOB(assetID.data.buffer, 16), static_cast<sqlINT>(userID), static_cast<sqlINT>(level));
     else
-        _deleteAssetPermission.run(static_cast<sqlINT>(assetID), static_cast<sqlINT>(userID));
+        _deleteAssetPermission.run(sqlBLOB(assetID.data.buffer, 16), static_cast<sqlINT>(userID));
 }
 
 std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
@@ -156,25 +168,31 @@ std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
                           "AssetPermissions.AssetID WHERE AssetPermissions.UserID = " +
                           std::to_string(userID);
     std::vector<AssetInfo> assets;
-    rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns) {
+    _listUserAssets.run(sqlINT(userID), [&](sqlBLOB assetID, sqlTEXT name, sqlTEXT type, sqlTEXT hash) {
         AssetInfo ai;
-        ai.id = std::stoi(columns[0].value);
-        ai.name = columns[1].value;
-        ai.type.set(columns[2].value);
+        if(assetID.size != 16)
+        {
+            Runtime::error("Could not list asset! AssetID in database wrong size");
+            return;
+        }
+        ai.id = UUID((uint8_t*)assetID.ptr);
+        ai.name = type;
+        ai.type.set(type);
+        ai.hash = hash;
         assets.push_back(ai);
     });
     return assets;
 }
 
-std::string Database::assetName(AssetID& id)
+std::string Database::assetName(BraneAssetID& id)
 {
-    std::string name = "not found";
-    std::string sqlCall = "SELECT Name FROM Assets WHERE AssetID = " + std::to_string(id.id());
-    rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns) { name = columns[0].value; });
-    return name;
+    return getAssetInfo(id.uuid).name;
 }
 
-const char* Database::name() { return "database"; }
+const char* Database::name()
+{
+    return "database";
+}
 
 bool Database::authenticate(const std::string& username, const std::string& password)
 {
@@ -196,6 +214,9 @@ std::string Database::hashPassword(const std::string& password, const std::strin
     size_t hashIterations = Config::json()["security"].get("hash_iterations", 10000).asLargestInt();
     std::string input(SHA256_DIGEST_LENGTH, ' ');
     std::string output(SHA256_DIGEST_LENGTH, ' ');
+
+    // We can ignore the deprication warnings here for now because we're going to switch to a DID authentication system
+    // at some point and not store login info anymore
 
     // Always do one iteration first to initialize input
     SHA256_CTX sha256;
@@ -229,8 +250,13 @@ std::vector<Database::AssetSearchResult> Database::searchAssets(int start, int c
         count = 1000;
     match = "%" + match + "%";
     std::string typeStr = (type == AssetType::none) ? "%" : type.toString();
-    _searchAssets.run(start, count, match, typeStr, [&results](sqlINT id, sqlTEXT name, sqlTEXT type) {
-        results.push_back(AssetSearchResult{static_cast<uint32_t>(id), std::move(name), AssetType::fromString(type)});
+    _searchAssets.run(start, count, match, typeStr, [&results](sqlBLOB id, sqlTEXT name, sqlTEXT type) {
+        if(id.size != 16)
+        {
+            Runtime::error(std::format("Asset {} has invalid id length", name));
+            return;
+        }
+        results.push_back(AssetSearchResult{UUID((uint8_t*)id.ptr), std::move(name), AssetType::fromString(type)});
     });
     return results;
 }

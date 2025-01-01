@@ -21,13 +21,19 @@ EditorImageAsset::EditorImageAsset(const std::filesystem::path& file, BraneProje
 std::vector<std::pair<AssetID, AssetType>> EditorImageAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> deps;
-    deps.emplace_back(AssetID{_json["id"].asString()}, AssetType::image);
+    auto res = AssetID::parse(_json["id"].asString());
+    if(!res)
+    {
+        Runtime::warn(std::format("{} has an invalid id", _file.string()));
+        return deps;
+    }
+    deps.emplace_back(res.ok(), AssetType::image);
     return std::move(deps);
 }
 
 Asset* EditorImageAsset::buildAsset(const AssetID& id) const
 {
-    assert(id.string() == _json["id"].asString());
+    assert(id.toString() == _json["id"].asString());
     auto* asset = new ImageAsset();
 
     asset->name = name();

@@ -1,17 +1,18 @@
 #pragma once
 
-#include <byte.h>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <regex>
 #include <sstream>
 #include <typeinfo>
+#include <variant>
 #include <vector>
-#include <assets/assetID.h>
-#include <json/json.h>
-#include <utility/inlineArray.h>
+#include "json/json.h"
+#include "utility/assert.h"
+#include "utility/result.h"
 
 class SerializationError : virtual public std::runtime_error
 {
@@ -21,32 +22,83 @@ class SerializationError : virtual public std::runtime_error
     {}
 };
 
+struct SerializerError
+{
+    enum Type
+    {
+        NotEnoughData,
+        WrongFormat
+    } type;
+
+    inline SerializerError(Type type) : type(type) {}
+
+    std::string_view toString() const;
+};
+
+class InputSerializer;
+class OutputSerializer;
+
+template<class T>
+struct Serializer
+{
+    static Result<void, SerializerError> read(InputSerializer& s, T& value);
+
+    static Result<void, SerializerError> write(OutputSerializer& s, const T& value);
+};
+
 class SerializedData
 {
-    std::vector<byte> _data;
+    std::vector<uint8_t> _data;
 
   public:
     SerializedData() = default;
 
     SerializedData(const SerializedData& s) = delete;
 
-    SerializedData(SerializedData&& s) { _data = std::move(s._data); }
+    SerializedData(SerializedData&& s)
+    {
+        _data = std::move(s._data);
+    }
 
-    inline byte& operator[](size_t index) { return _data[index]; }
+    inline uint8_t& operator[](size_t index)
+    {
+        return _data[index];
+    }
 
-    inline const byte& operator[](size_t index) const { return _data[index]; }
+    inline const uint8_t& operator[](size_t index) const
+    {
+        return _data[index];
+    }
 
-    inline void clear() { _data.clear(); }
+    inline void clear()
+    {
+        _data.clear();
+    }
 
-    inline void resize(size_t newSize) { _data.resize(newSize); }
+    inline void resize(size_t newSize)
+    {
+        _data.resize(newSize);
+    }
 
-    inline size_t size() const { return _data.size(); }
+    inline size_t size() const
+    {
+        return _data.size();
+    }
 
-    inline byte* data() { return _data.data(); }
+    inline uint8_t* data()
+    {
+        return _data.data();
+    }
 
-    inline const byte* data() const { return _data.data(); }
+    inline const uint8_t* data() const
+    {
+        return _data.data();
+    }
 
-    inline std::vector<byte>& vector() { return _data; }
+    inline std::vector<uint8_t>& vector()
+    {
+        return _data;
+    }
 };
 
 class InputSerializer
@@ -55,28 +107,20 @@ class InputSerializer
     {
         size_t index = 0;
         const SerializedData& data;
-        size_t count = 0;
     };
 
-    Context* _ctx = nullptr;
+    std::shared_ptr<Context> _ctx = nullptr;
 
   public:
-    InputSerializer(const SerializedData& data) { _ctx = new Context{0, data, 1}; }
-
-    InputSerializer(const InputSerializer& s)
+    InputSerializer(const SerializedData& data)
     {
-        _ctx = s._ctx;
-        ++_ctx->count;
+        _ctx = std::make_shared<Context>(0, data);
     }
 
-    ~InputSerializer()
+    const SerializedData& data() const
     {
-        --_ctx->count;
-        if(_ctx->count == 0)
-            delete _ctx;
+        return _ctx->data;
     }
-
-    const SerializedData& data() const { return _ctx->data; }
 
     friend std::ostream& operator<<(std::ostream& os, const InputSerializer& s)
     {
@@ -91,126 +135,182 @@ class InputSerializer
         return os;
     }
 
-    template<typename T>
-    friend InputSerializer& operator>>(InputSerializer& s, T& object)
+    // Read a raw bytes from the buffer into the provide array
+    Result<void, SerializerError> read(void* value, size_t count)
     {
-        static_assert(std::is_trivially_copyable<T>());
-        if(s._ctx->index + sizeof(T) > s._ctx->data.size())
-            throw std::runtime_error("Tried to read past end of serialized data");
+        if(_ctx->index + count > _ctx->data.size())
+            return Err(SerializerError(SerializerError::NotEnoughData));
 
-        std::memcpy(&object, (void*)(s._ctx->data.data() + s._ctx->index), sizeof(T));
+        std::memcpy(value, (void*)(_ctx->data.data() + _ctx->index), count);
 
-        s._ctx->index += sizeof(T);
-
-        return s;
+        _ctx->index += count;
+        return Ok();
     }
 
     template<typename T>
-    void readSafeArraySize(T& index) // Call this instead of directly reading sizes to prevent buffer overruns
-    {
-        *this >> index;
-        if(index + _ctx->index > _ctx->data.size())
-            throw std::runtime_error("invalid array length in serialized data");
-    }
-
-    friend InputSerializer& operator>>(InputSerializer& s, std::vector<std::string>& strings)
-    {
-        uint32_t numStrings;
-        s >> numStrings;
-        strings.resize(numStrings);
-        for(uint32_t i = 0; i < numStrings; ++i)
-        {
-            s >> strings[i];
-        }
-        return s;
-    }
-
-    template<typename T>
-    friend InputSerializer& operator>>(InputSerializer& s, std::vector<T>& data)
+    Result<T, SerializerError> peek()
     {
         static_assert(std::is_trivially_copyable<T>());
-        uint32_t size;
-        s.readSafeArraySize(size);
-
-        data.resize(size / sizeof(T));
-        if(size > 0)
-            std::memcpy(data.data(), &s._ctx->data[s._ctx->index], size);
-
-        s._ctx->index += size;
-
-        return s;
+        if(_ctx->index + sizeof(T) > _ctx->data.size())
+            return Err(SerializerError(SerializerError::NotEnoughData));
+        size_t index = _ctx->index;
+        T o;
+        *this >> o;
+        _ctx->index = index;
+        return Ok(o);
     }
 
-    template<typename T, size_t Count>
-    friend InputSerializer& operator>>(InputSerializer& s, InlineArray<T, Count>& data)
+    size_t getPos() const
     {
-        static_assert(std::is_trivially_copyable<T>());
+        return _ctx->index;
+    }
 
-        uint32_t arrLength;
-        s.readSafeArraySize(arrLength);
-        // TODO make InlineArray have SerializedData as a friend class and make this more efficient
-        for(uint32_t i = 0; i < arrLength; ++i)
+    void setPos(size_t index)
+    {
+        assert(index <= _ctx->data.size());
+        _ctx->index = index;
+    }
+
+    bool isDone() const
+    {
+        return _ctx->index == _ctx->data.size();
+    }
+};
+
+class OutputSerializer
+{
+    SerializedData& _data;
+
+  public:
+    OutputSerializer(SerializedData& data) : _data(data) {};
+
+    const SerializedData& data() const
+    {
+        return _data;
+    }
+
+    Result<void, SerializerError> write(const void* src, size_t size)
+    {
+        size_t index = _data.size();
+        _data.resize(index + size);
+        std::memcpy(&_data[index], src, size);
+        return Ok();
+    }
+
+    Result<void, SerializerError> replace(size_t pos, const void* src, size_t size)
+    {
+        if(pos + size >= _data.size())
+            return Err(SerializerError(SerializerError::NotEnoughData));
+        std::memcpy(&_data[pos], src, size);
+        return Ok();
+    }
+
+    size_t size() const
+    {
+        return _data.size();
+    }
+};
+
+template<class T>
+Result<void, SerializerError> Serializer<T>::read(InputSerializer& s, T& value)
+{
+    static_assert(std::is_trivially_copyable<T>(),
+                  "Default serializer is only implemented for trivially copyable types, consider creating a custom "
+                  "implementation of Serializer<T> to support this type");
+    return s.read(&value, sizeof(T));
+}
+
+template<class T>
+Result<void, SerializerError> Serializer<T>::write(OutputSerializer& s, const T& value)
+{
+    static_assert(std::is_trivially_copyable<T>(),
+                  "Default serializer is only implemented for trivially copyable types, consider creating a custom "
+                  "implementation of Serializer<T> to support this type");
+    return s.write(&value, sizeof(value));
+}
+
+template<>
+struct Serializer<std::string>
+{
+    static Result<void, SerializerError> read(InputSerializer& s, std::string& value)
+    {
+        uint32_t count;
+        auto res = Serializer<uint32_t>::read(s, count);
+        if(!res)
+            return res;
+        value.resize(count);
+        if(count == 0)
+            return Ok();
+        return s.read(value.data(), count);
+    }
+
+    static Result<void, SerializerError> write(OutputSerializer& s, const std::string& value)
+    {
+        auto count = static_cast<uint32_t>(value.size());
+        auto res = Serializer<uint32_t>::write(s, count);
+        if(!res)
+            return res;
+        if(count == 0)
+            return Ok();
+        return s.write(value.data(), count);
+    }
+};
+
+template<class T>
+struct Serializer<std::vector<T>>
+{
+    static Result<void, SerializerError> read(InputSerializer& s, std::vector<T>& value)
+    {
+        uint32_t count;
+        auto res = Serializer<uint32_t>::read(s, count);
+        if(!res)
+            return res;
+        value.resize(count);
+        if(count == 0)
+            return Ok();
+        if constexpr(std::is_trivially_copyable<T>())
+            return s.read(value.data(), sizeof(T) * count);
+
+        for(auto& e : value)
         {
-            T d;
-            s >> d;
-            data.push_back(d);
+            auto res = Serializer<T>::read(s, e);
+            if(!res)
+                return res;
         }
 
-        return s;
+        return Ok();
     }
 
-    friend InputSerializer& operator>>(InputSerializer& s, std::string& data)
+    static Result<void, SerializerError> write(OutputSerializer& s, const std::vector<T>& value)
     {
-        uint32_t size;
-        s.readSafeArraySize(size);
+        auto count = static_cast<uint32_t>(value.size());
+        auto res = Serializer<uint32_t>::write(s, count);
+        if(!res)
+            return res;
+        if(count == 0)
+            return Ok();
+        if constexpr(std::is_trivially_copyable<T>())
+            return s.write(value.data(), count * sizeof(T));
 
-        data.resize(size);
-        if(size > 0)
-            std::memcpy(data.data(), &s._ctx->data[s._ctx->index], size);
-
-        s._ctx->index += size;
-
-        return s;
-    }
-
-    friend InputSerializer& operator>>(InputSerializer& s, std::string_view& data)
-    {
-        uint32_t size;
-        s.readSafeArraySize(size);
-
-        data = std::string_view(reinterpret_cast<const char*>(&s._ctx->data[s._ctx->index]), size);
-        s._ctx->index += size;
-        return s;
-    }
-
-    friend InputSerializer& operator>>(InputSerializer& s, AssetID& id)
-    {
-        std::string idString;
-        s >> idString;
-        id = std::move(idString);
-
-        return s;
-    }
-
-    friend InputSerializer& operator>>(InputSerializer& s, std::vector<AssetID>& ids)
-    {
-        uint32_t size;
-        s.readSafeArraySize(size);
-        ids.resize(size);
-        for(uint32_t i = 0; i < size; ++i)
+        for(const auto& e : value)
         {
-            std::string idString;
-            s >> idString;
-            ids[i] = std::move(idString);
+            auto res = Serializer<T>::write(s, e);
+            if(!res)
+                return res;
         }
-
-        return s;
+        return Ok();
     }
+};
 
-    friend InputSerializer& operator>>(InputSerializer& s, Json::Value& value)
+template<>
+struct Serializer<Json::Value>
+{
+    static Result<void, SerializerError> read(InputSerializer& s, Json::Value& value)
     {
         std::string jsonString;
-        s >> jsonString;
+        auto res = Serializer<std::string>::read(s, jsonString);
+        if(!res)
+            return Err(res.err());
 
         Json::CharReaderBuilder builder;
         Json::CharReader* reader = builder.newCharReader();
@@ -219,159 +319,108 @@ class InputSerializer
         bool success = reader->parse(jsonString.c_str(), jsonString.c_str() + jsonString.size(), &value, &errors);
         delete reader;
         if(!success)
-            throw std::runtime_error(errors);
+            return Err(SerializerError(SerializerError::WrongFormat));
 
-        return s;
+        return Ok();
     }
 
-    void read(void* dest, size_t size)
-    {
-        if(_ctx->index + size <= _ctx->data.size())
-            throw std::runtime_error("Tried to read past end of serialized data");
-
-        std::memcpy(dest, &_ctx->data[_ctx->index], size);
-        _ctx->index += size;
-    }
-
-    template<typename T>
-    T peek()
-    {
-        static_assert(std::is_trivially_copyable<T>());
-        if(_ctx->index + sizeof(T) > _ctx->data.size())
-            throw std::runtime_error("Tried to read past end of serialized data");
-        size_t index = _ctx->index;
-        T o;
-        *this >> o;
-        _ctx->index = index;
-        return o;
-    }
-
-    size_t getPos() const { return _ctx->index; }
-
-    void setPos(size_t index)
-    {
-        assert(index <= _ctx->data.size());
-        _ctx->index = index;
-    }
-
-    bool isDone() const { return _ctx->index == _ctx->data.size(); }
-};
-
-class OutputSerializer
-{
-    SerializedData& _data;
-
-  public:
-    OutputSerializer(SerializedData& data) : _data(data){};
-
-    const SerializedData& data() const { return _data; }
-
-    template<typename T>
-    friend OutputSerializer operator<<(OutputSerializer s, const T& data)
-    {
-        static_assert(std::is_trivially_copyable<T>());
-
-        size_t index = s._data.size();
-        s._data.resize(index + sizeof(T));
-        std::memcpy(&s._data[index], &data, sizeof(T));
-
-        return s;
-    }
-
-    template<typename T>
-    friend OutputSerializer operator<<(OutputSerializer s, const std::vector<T>& data)
-    {
-        static_assert(std::is_trivially_copyable<T>());
-
-        auto arrLength = static_cast<uint32_t>(data.size() * sizeof(T));
-        s << arrLength;
-        size_t index = s._data.size();
-        s._data.resize(index + arrLength);
-        if(arrLength > 0)
-            std::memcpy(&s._data[index], data.data(), arrLength);
-
-        return s;
-    }
-
-    template<typename T, size_t Count>
-    friend OutputSerializer operator<<(OutputSerializer s, const InlineArray<T, Count>& data)
-    {
-        static_assert(std::is_trivially_copyable<T>());
-
-        auto arrLength = static_cast<uint32_t>(data.size());
-        s << arrLength;
-        // TODO make InlineArray have SerializedData as a friend class and make this more efficient
-        for(uint32_t i = 0; i < arrLength; ++i)
-        {
-            s << data[i];
-        }
-
-        return s;
-    }
-
-    friend OutputSerializer operator<<(OutputSerializer s, const std::string& data)
-    {
-        auto arrLength = static_cast<uint32_t>(data.size());
-        s << arrLength;
-        size_t index = s._data.size();
-        s._data.resize(index + arrLength);
-        if(arrLength > 0)
-            std::memcpy(&s._data[index], data.data(), data.size());
-
-        return s;
-    }
-
-    friend OutputSerializer operator<<(OutputSerializer s, const AssetID& id)
-    {
-        s << id.string();
-
-        return s;
-    }
-
-    friend OutputSerializer operator<<(OutputSerializer s, const std::vector<std::string>& strings)
-    {
-        s << (uint32_t)strings.size();
-        for(uint32_t i = 0; i < strings.size(); ++i)
-        {
-            s << strings[i];
-        }
-        return s;
-    }
-
-    friend OutputSerializer operator<<(OutputSerializer s, const std::vector<AssetID>& ids)
-    {
-        s << (uint32_t)ids.size();
-        for(uint32_t i = 0; i < ids.size(); ++i)
-        {
-            s << ids[i].string();
-        }
-
-        return s;
-    }
-
-    friend OutputSerializer& operator<<(OutputSerializer& s, const Json::Value& value)
+    static Result<void, SerializerError> write(OutputSerializer& s, const Json::Value& value)
     {
         Json::FastWriter writer;
         std::string jsonString = writer.write(value);
 
-        s << jsonString;
-
-        return s;
+        return Serializer<std::string>::write(s, jsonString);
     }
-
-    void write(const void* src, size_t size)
-    {
-        size_t index = _data.size();
-        _data.resize(index + size);
-        std::memcpy(&_data[index], src, size);
-    }
-
-    void overwrite(size_t pos, const void* src, size_t size)
-    {
-        if(pos + size >= _data.size())
-            throw std::runtime_error("tried to overwrite nonexistent data");
-        std::memcpy(&_data[pos], src, size);
-    }
-
-    size_t size() const { return _data.size(); }
 };
+
+template<typename T>
+Result<InputSerializer&, SerializerError> operator>>(Result<InputSerializer&, SerializerError> r, T& data)
+{
+    if(r)
+    {
+        InputSerializer& s = r.ok();
+        s >> data;
+        return Ok<InputSerializer&>(s);
+    }
+    return r;
+}
+
+template<typename T>
+Result<OutputSerializer&, SerializerError> operator<<(Result<OutputSerializer&, SerializerError> r, const T& data)
+{
+    if(r)
+    {
+        OutputSerializer& s = r.ok();
+        s << data;
+        return Ok<OutputSerializer&>(s);
+    }
+    return r;
+}
+
+template<class... Args>
+struct Serializer<std::variant<Args...>>
+{
+    static constexpr size_t indexCount = std::variant_size_v<std::variant<Args...>>;
+    using IndexType = std::conditional_t<(indexCount < 256), uint8_t, uint16_t>;
+
+    template<size_t ArgIndex, class T, class... Remaining>
+    static Result<std::variant<Args...>, SerializerError> readT(InputSerializer& s, size_t typeIndex)
+    {
+        if(typeIndex == ArgIndex)
+        {
+            T value;
+            auto res = Serializer<T>::read(s, value);
+            if(!res)
+                return Err(res.err());
+            return Ok(std::variant<Args...>(std::move(value)));
+        }
+
+        if constexpr(sizeof...(Remaining))
+            return readT<ArgIndex + 1, Remaining...>(s, typeIndex);
+        return Err(SerializerError(SerializerError::WrongFormat));
+    }
+
+    template<size_t ArgIndex, class T, class... Remaining>
+    static Result<void, SerializerError>
+    writeT(OutputSerializer& s, size_t typeIndex, const std::variant<Args...>& value)
+    {
+        if(typeIndex == ArgIndex)
+            return Serializer<T>::write(s, std::get<ArgIndex>(value));
+
+        if constexpr(sizeof...(Remaining))
+            return writeT<ArgIndex + 1, Remaining...>(s, typeIndex, value);
+        return Err(SerializerError(SerializerError::WrongFormat));
+    }
+
+    static Result<void, SerializerError> read(InputSerializer& s, std::variant<Args...>& value)
+    {
+        IndexType index;
+        s >> index;
+        if(index >= indexCount)
+            return Err(SerializerError(SerializerError::WrongFormat));
+        auto res = readT<0, Args...>(s, index);
+        if(!res)
+            return Err(res.err());
+        value = res.ok();
+        return Ok();
+    }
+
+    static Result<void, SerializerError> write(OutputSerializer& s, const std::variant<Args...>& value)
+    {
+        IndexType index = value.index();
+        s << index;
+        return writeT<0, Args...>(s, index, value);
+    }
+};
+
+template<typename T>
+Result<InputSerializer&, SerializerError> operator>>(InputSerializer& s, T& data)
+{
+    return Serializer<T>::read(s, data).template map<InputSerializer&>([&]() -> InputSerializer& { return s; });
+}
+
+template<typename T>
+Result<OutputSerializer&, SerializerError> operator<<(OutputSerializer& s, const T& data)
+{
+    return Serializer<T>::write(s, data).template map<OutputSerializer&>([&]() -> OutputSerializer& { return s; });
+}

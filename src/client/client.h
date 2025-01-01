@@ -16,7 +16,7 @@ namespace graphics
 
 class Client : public Module
 {
-    std::unordered_map<HashedAssetID, EntityID> _chunkRoots;
+    std::unordered_map<AssetID, EntityID> _chunkRoots;
     graphics::SceneRenderer* _renderer;
     EntityID _mainCamera;
 

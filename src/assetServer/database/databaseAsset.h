@@ -7,6 +7,7 @@
 
 #include <string>
 #include "assets/assetType.h"
+#include "utility/uuid.h"
 
 class AssetType;
 
@@ -22,7 +23,7 @@ enum class AssetPermissionLevel
 
 struct AssetInfo
 {
-    uint32_t id;
+    UUID id;
     std::string name;
     AssetType type;
     std::string hash;

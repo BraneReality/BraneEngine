@@ -103,9 +103,15 @@ void BraneProject::save()
     _file.markClean();
 }
 
-bool BraneProject::loaded() const { return _loaded; }
+bool BraneProject::loaded() const
+{
+    return _loaded;
+}
 
-std::filesystem::path BraneProject::projectDirectory() { return _filepath.parent_path(); }
+std::filesystem::path BraneProject::projectDirectory()
+{
+    return _filepath.parent_path();
+}
 
 void BraneProject::initLoaded()
 {
@@ -136,7 +142,7 @@ void BraneProject::initLoaded()
         assembly->linkToGLTF(path);
 
         registerAssetLocation(assembly);
-        _editor.cache().deleteCachedAsset(AssetID{assembly->json()["id"].asString()});
+        _editor.cache().deleteCachedAsset(AssetID::parse(assembly->json()["id"].asString()).ok());
 
         if(!isOpen)
             delete assembly;
@@ -159,7 +165,7 @@ void BraneProject::initLoaded()
         assembly->linkToGLTF(path);
 
         registerAssetLocation(assembly);
-        _editor.cache().deleteCachedAsset(AssetID{assembly->json()["id"].asString()});
+        _editor.cache().deleteCachedAsset(AssetID::parse(assembly->json()["id"].asString()).ok());
 
         if(!isOpen)
             delete assembly;
@@ -257,15 +263,18 @@ bool BraneProject::unsavedChanges() const
     return false;
 }
 
-VersionedJson& BraneProject::json() { return _file; }
+VersionedJson& BraneProject::json()
+{
+    return _file;
+}
 
 std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(const AssetID& id)
 {
-    if(id.null())
+    if(id.empty())
         return nullptr;
-    if(!_file["assets"].isMember(id.string()))
+    if(!_file["assets"].isMember(id.toString()))
         return nullptr;
-    std::filesystem::path path = projectDirectory() / "assets" / _file["assets"][id.string()]["path"].asString();
+    std::filesystem::path path = projectDirectory() / "assets" / _file["assets"][id.toString()]["path"].asString();
     return getEditorAsset(path);
 }
 
@@ -279,7 +288,10 @@ std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(const std::filesystem:
     return asset;
 }
 
-Editor& BraneProject::editor() { return _editor; }
+Editor& BraneProject::editor()
+{
+    return _editor;
+}
 
 AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset, AssetType type)
 {
@@ -293,10 +305,13 @@ AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset, Asset
     assets[testID]["path"] = std::filesystem::relative(editorAsset, projectDirectory() / "assets").string();
     assets[testID]["type"] = type.toString();
 
-    return AssetID(testID);
+    return AssetID::parse(testID).ok();
 }
 
-FileWatcher* BraneProject::fileWatcher() { return _fileWatcher.get(); }
+FileWatcher* BraneProject::fileWatcher()
+{
+    return _fileWatcher.get();
+}
 
 void BraneProject::registerAssetLocation(const EditorAsset* asset)
 {
@@ -305,10 +320,10 @@ void BraneProject::registerAssetLocation(const EditorAsset* asset)
     Json::Value& assets = _file.data()["assets"];
     for(std::pair<AssetID, AssetType>& a : asset->containedAssets())
     {
-        assert(!a.first.null());
-        assets[a.first.string()]["path"] =
+        assert(!a.first.empty());
+        assets[a.first.toString()]["path"] =
             std::filesystem::relative(asset->file(), projectDirectory() / "assets").string();
-        assets[a.first.string()]["type"] = a.second.toString();
+        assets[a.first.toString()]["type"] = a.second.toString();
     }
 }
 
@@ -367,7 +382,7 @@ std::vector<std::pair<AssetID, std::filesystem::path>> BraneProject::searchAsset
                 continue;
             if(!query.empty() && path.filename().string().find(query) == std::string::npos)
                 continue;
-            assets.emplace_back(assetID, path);
+            assets.emplace_back(AssetID::parse(assetID).ok(), path);
         }
     }
     catch(const std::exception& e)
@@ -381,9 +396,9 @@ std::vector<std::pair<AssetID, std::filesystem::path>> BraneProject::searchAsset
 
 std::string BraneProject::getAssetName(const AssetID& id)
 {
-    if(!_file["assets"].isMember(id.string()))
+    if(!_file["assets"].isMember(id.toString()))
         return "null";
-    return std::filesystem::path{_file["assets"][id.string()]["path"].asString()}.stem().string();
+    return std::filesystem::path{_file["assets"][id.toString()]["path"].asString()}.stem().string();
 }
 
 std::vector<std::pair<AssetID, std::string>> BraneProject::getAssetHashes()
@@ -392,7 +407,7 @@ std::vector<std::pair<AssetID, std::string>> BraneProject::getAssetHashes()
     auto ids = _file["assets"].getMemberNames();
     for(auto& idStr : ids)
     {
-        AssetID id(idStr);
+        AssetID id = AssetID::parse(idStr).ok();
         hashes.emplace_back(std::move(id), getEditorAsset(id)->hash(id));
     }
     return hashes;

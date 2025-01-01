@@ -22,7 +22,7 @@ class ChunkLoader : public Module
     };
 
     std::shared_mutex _chunkLock;
-    std::unordered_map<HashedAssetID, ChunkContext> _chunks;
+    std::unordered_map<AssetID, ChunkContext> _chunks;
 
     staticIndexVector<ChunkLODCallback> _onLODChange;
 

@@ -25,7 +25,10 @@ EditorAsset::EditorAsset(const std::filesystem::path& file, BraneProject& projec
     load();
 }
 
-bool EditorAsset::unsavedChanges() const { return _json.dirty(); }
+bool EditorAsset::unsavedChanges() const
+{
+    return _json.dirty();
+}
 
 bool EditorAsset::load()
 {
@@ -34,12 +37,12 @@ bool EditorAsset::load()
         if(!FileManager::readFile(_file, _json.data()))
         {
             Runtime::log("Creating " + _file.string());
-            _json.data()["id"] = _project.newAssetID(_file, _type).string();
+            _json.data()["id"] = _project.newAssetID(_file, _type).toString();
             return false;
         }
         if(_json.data().get("id", "null").asString() == "null")
         {
-            _json.data()["id"] = _project.newAssetID(_file, _type).string();
+            _json.data()["id"] = _project.newAssetID(_file, _type).toString();
             _json.markDirty();
         }
     }
@@ -62,7 +65,7 @@ void EditorAsset::save()
     }
     FileManager::writeFile(_file, _json.data());
     _json.markClean();
-    auto* builtAsset = buildAsset(AssetID(_json["id"].asString()));
+    auto* builtAsset = buildAsset(AssetID::parse(_json["id"].asString()).ok());
     if(builtAsset)
         _project.editor().cache().cacheAsset(builtAsset);
     else
@@ -80,7 +83,10 @@ std::string EditorAsset::hash(const AssetID& id)
     return _project.editor().cache().getAssetHash(id);
 }
 
-VersionedJson& EditorAsset::json() { return _json; }
+VersionedJson& EditorAsset::json()
+{
+    return _json;
+}
 
 EditorAsset* EditorAsset::openUnknownAsset(const std::filesystem::path& path, BraneProject& project)
 {
@@ -101,10 +107,22 @@ EditorAsset* EditorAsset::openUnknownAsset(const std::filesystem::path& path, Br
     return nullptr;
 }
 
-const AssetType& EditorAsset::type() const { return _type; }
+const AssetType& EditorAsset::type() const
+{
+    return _type;
+}
 
-const std::string& EditorAsset::name() const { return _name; }
+const std::string& EditorAsset::name() const
+{
+    return _name;
+}
 
-const std::filesystem::path& EditorAsset::file() const { return _file; }
+const std::filesystem::path& EditorAsset::file() const
+{
+    return _file;
+}
 
-AssetID EditorAsset::id() const { return AssetID(_json["id"].asString()); }
+AssetID EditorAsset::id() const
+{
+    return AssetID::parse(_json["id"].asString()).ok();
+}

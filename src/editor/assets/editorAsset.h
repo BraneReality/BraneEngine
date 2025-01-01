@@ -6,6 +6,7 @@
 #define BRANEENGINE_EDITORASSET_H
 
 #include <filesystem>
+#include "assets/assetID.h"
 #include <assets/assetType.h>
 #include <utility/jsonVersioner.h>
 #include <utility/serializedData.h>

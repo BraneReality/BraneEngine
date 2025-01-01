@@ -26,14 +26,17 @@ void MaterialAsset::deserialize(InputSerializer& s)
     }
 }
 
-MaterialAsset::MaterialAsset() { type.set(AssetType::material); }
+MaterialAsset::MaterialAsset()
+{
+    type.set(AssetType::material);
+}
 
 std::vector<AssetDependency> MaterialAsset::dependencies() const
 {
     std::vector<AssetDependency> deps;
-    if(!vertexShader.null())
+    if(!vertexShader.empty())
         deps.push_back({vertexShader, false});
-    if(!fragmentShader.null())
+    if(!fragmentShader.empty())
         deps.push_back({fragmentShader, false});
     for(auto& t : textures)
         deps.push_back({t.second, true});
@@ -46,4 +49,5 @@ void MaterialAsset::onDependenciesLoaded()
     auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
     runtimeID = vkr->addAsset(this);
 }
+
 #endif

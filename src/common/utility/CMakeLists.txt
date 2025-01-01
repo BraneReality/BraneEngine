@@ -1,17 +1,20 @@
 # src/common/utlity
 
 find_package(jsoncpp CONFIG REQUIRED)
+find_package(tinyfiledialogs CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 set(SOURCES
 		clock.cpp
 		threadPool.cpp
 		sharedRecursiveMutex.cpp
 		serializedData.cpp
-		jsonVersioner.cpp enumNameMap.h)
+		jsonVersioner.cpp 
+        uuid.cpp)
 
 add_library(utility STATIC ${SOURCES} jsonTypeUtilities.h)
 
-target_link_libraries(utility PUBLIC runtime JsonCpp::JsonCpp)
+target_link_libraries(utility PUBLIC runtime JsonCpp::JsonCpp tinyfiledialogs::tinyfiledialogs OpenSSL::Crypto)
 
 if(BUILD_TESTS)
  add_library(utility_test STATIC ${SOURCES})

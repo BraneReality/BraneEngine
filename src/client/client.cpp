@@ -18,7 +18,46 @@
 #include "networking/connection.h"
 #include <utility/threadPool.h>
 
-const char* Client::name() { return "client"; }
+class ClientAssetLoader : public AssetLoader
+{
+    AsyncData<Asset*> loadAsset(const AssetID& inId, bool incremental) override
+    {
+        AsyncData<Asset*> asset;
+        auto castId = inId.as<BraneAssetID>();
+        if(!castId)
+        {
+            asset.setError("Can only load BraneAssetID");
+            return asset;
+        }
+        auto id = castId.value();
+        if(id.domain.empty())
+        {
+            asset.setError("Asset with id " + id.toString() +
+                           " was not found and can not be remotely fetched since it lacks a server address");
+            return asset;
+        }
+        auto* nm = Runtime::getModule<NetworkManager>();
+        if(incremental)
+        {
+            nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr) {
+                asset.setData(ptr);
+            }).onError([this, asset](std::string error) { asset.setError(error); });
+        }
+        else
+        {
+            nm->async_requestAsset(id).then([this, asset](Asset* ptr) {
+                asset.setData(ptr);
+            }).onError([this, asset](std::string error) { asset.setError(error); });
+        }
+        return asset;
+    }
+};
+
+const char* Client::name()
+
+{
+    return "client";
+}
 
 Client::Client() {}
 
@@ -29,7 +68,12 @@ void Client::start()
     auto* cl = Runtime::getModule<ChunkLoader>();
     auto* em = Runtime::getModule<EntityManager>();
 
+    am->addLoader(std::make_unique<ClientAssetLoader>());
+
     cl->addOnLODChangeCallback([this, em, am](const WorldChunk* chunk, uint32_t oldLod, uint32_t newLod) {
+        Runtime::error("LOD changes not implemented");
+        return;
+        /*
         if(oldLod != NullLOD)
         {
             for(auto& lod : chunk->LODs)
@@ -49,22 +93,23 @@ void Client::start()
                 if(lod.min <= newLod && newLod <= lod.max)
                 {
                     AssetID id = lod.assembly;
-                    if(id.address().empty())
-                        id.setAddress(chunk->id.address());
+                    if(id.domain.empty())
+                        id.domain = chunk->id.domain;
                     am->fetchAsset<Assembly>(id).thenMain(
                         [this, em](Assembly* assembly) { _chunkRoots[assembly->id] = assembly->inject(*em); });
                 }
             }
         }
+        */
     });
 
     nm->addRequestListener("loadChunk", [am](auto& rc) {
         AssetID chunkID;
         rc.req >> chunkID;
-        Runtime::log("Was requested to load chunk " + chunkID.string());
+        Runtime::log("Was requested to load chunk " + chunkID.toString());
         am->fetchAsset<WorldChunk>(chunkID).then([](WorldChunk* chunk) {
             Runtime::getModule<ChunkLoader>()->loadChunk(chunk);
-            Runtime::log("Loaded chunk " + chunk->id.string());
+            Runtime::log("Loaded chunk " + chunk->id.toString());
         });
     });
     nm->addRequestListener("unloadChunk", [](auto& rc) { Runtime::log("Was requested to unload chunk"); });
@@ -115,40 +160,4 @@ void Client::start()
             Runtime::error("Failed to connect to asset server");
         }
     });
-}
-
-AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
-{
-    AsyncData<Asset*> asset;
-    if(id.address().empty())
-    {
-        asset.setError("Asset with id " + std::string(id.idStr()) +
-                       " was not found and can not be remotely fetched since it lacks a server address");
-        return asset;
-    }
-    auto* nm = Runtime::getModule<NetworkManager>();
-    if(incremental)
-    {
-        nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr) { asset.setData(ptr); });
-    }
-    else
-    {
-        nm->async_requestAsset(id).then([this, asset](Asset* ptr) {
-            _assetLock.lock();
-            _assets.at(ptr->id)->loadState = LoadState::awaitingDependencies;
-            _assetLock.unlock();
-            if(dependenciesLoaded(ptr))
-            {
-                asset.setData(ptr);
-                return;
-            }
-            fetchDependencies(ptr, [ptr, asset](bool success) mutable {
-                if(success)
-                    asset.setData(ptr);
-                else
-                    asset.setError("Failed to load dependency for: " + ptr->name);
-            });
-        });
-    }
-    return asset;
 }

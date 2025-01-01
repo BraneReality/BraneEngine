@@ -11,9 +11,7 @@
 
 void Asset::serialize(OutputSerializer& s) const
 {
-    AssetID serverlessID = id;
-    serverlessID.setAddress("");
-    s << serverlessID << name << type.toString();
+    s << id << name << type.toString();
 }
 
 void Asset::deserialize(InputSerializer& s)
@@ -71,13 +69,22 @@ Asset* Asset::deserializeUnknown(InputSerializer& s)
     return asset;
 }
 
-std::vector<AssetDependency> Asset::dependencies() const { return {}; }
+std::vector<AssetDependency> Asset::dependencies() const
+{
+    return {};
+}
 
 void Asset::onDependenciesLoaded() {}
 
-void IncrementalAsset::serializeHeader(OutputSerializer& s) const { Asset::serialize(s); }
+void IncrementalAsset::serializeHeader(OutputSerializer& s) const
+{
+    Asset::serialize(s);
+}
 
-void IncrementalAsset::deserializeHeader(InputSerializer& s) { Asset::deserialize(s); }
+void IncrementalAsset::deserializeHeader(InputSerializer& s)
+{
+    Asset::deserialize(s);
+}
 
 IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer& s)
 {

@@ -29,7 +29,10 @@ class AsyncData
     std::shared_ptr<InternalData> _instance;
 
   public:
-    AsyncData() { _instance = std::make_shared<InternalData>(); }
+    AsyncData()
+    {
+        _instance = std::make_shared<InternalData>();
+    }
 
     AsyncData& then(const std::function<void(T)>& callback)
     {
@@ -95,7 +98,6 @@ class AsyncData
     void setError(const std::string& error) const
     {
         std::scoped_lock lock(_instance->_lock);
-        T data;
         if(!_instance->_errorMessage.empty())
             return;
         if(_instance->_error)

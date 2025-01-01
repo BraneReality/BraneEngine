@@ -54,7 +54,7 @@ std::vector<size_t> ComponentDescription::generateOffsets(const std::vector<Virt
     return offsets;
 }
 
-void ComponentDescription::construct(byte* component) const
+void ComponentDescription::construct(uint8_t* component) const
 {
     for(auto& m : _members)
     {
@@ -62,7 +62,7 @@ void ComponentDescription::construct(byte* component) const
     }
 }
 
-void ComponentDescription::deconstruct(byte* component) const
+void ComponentDescription::deconstruct(uint8_t* component) const
 {
     for(auto& m : _members)
     {
@@ -70,7 +70,7 @@ void ComponentDescription::deconstruct(byte* component) const
     }
 }
 
-void ComponentDescription::serialize(OutputSerializer& sData, byte* component) const
+void ComponentDescription::serialize(OutputSerializer& sData, uint8_t* component) const
 {
     for(auto& m : _members)
     {
@@ -78,7 +78,7 @@ void ComponentDescription::serialize(OutputSerializer& sData, byte* component) c
     }
 }
 
-void ComponentDescription::deserialize(InputSerializer& sData, byte* component) const
+void ComponentDescription::deserialize(InputSerializer& sData, uint8_t* component) const
 {
     for(auto& m : _members)
     {
@@ -86,7 +86,7 @@ void ComponentDescription::deserialize(InputSerializer& sData, byte* component) 
     }
 }
 
-void ComponentDescription::copy(byte* src, byte* dest) const
+void ComponentDescription::copy(uint8_t* src, uint8_t* dest) const
 {
     for(auto& m : _members)
     {
@@ -94,7 +94,7 @@ void ComponentDescription::copy(byte* src, byte* dest) const
     }
 }
 
-void ComponentDescription::move(byte* src, byte* dest) const
+void ComponentDescription::move(uint8_t* src, uint8_t* dest) const
 {
     for(auto& m : _members)
     {
@@ -102,9 +102,15 @@ void ComponentDescription::move(byte* src, byte* dest) const
     }
 }
 
-const std::vector<ComponentDescription::Member>& ComponentDescription::members() const { return _members; }
+const std::vector<ComponentDescription::Member>& ComponentDescription::members() const
+{
+    return _members;
+}
 
-size_t ComponentDescription::size() const { return _size; }
+size_t ComponentDescription::size() const
+{
+    return _size;
+}
 
 size_t ComponentDescription::serializationSize() const
 {
@@ -117,7 +123,7 @@ size_t ComponentDescription::serializationSize() const
 VirtualComponent::VirtualComponent(const VirtualComponent& source)
 {
     _description = source._description;
-    _data = new byte[_description->size()];
+    _data = new uint8_t[_description->size()];
     for(auto& member : _description->members())
     {
         VirtualType::construct(member.type, _data + member.offset);
@@ -128,7 +134,7 @@ VirtualComponent::VirtualComponent(const VirtualComponent& source)
 VirtualComponent::VirtualComponent(const VirtualComponentView& source)
 {
     _description = source.description();
-    _data = new byte[_description->size()];
+    _data = new uint8_t[_description->size()];
     for(auto& member : _description->members())
     {
         VirtualType::construct(member.type, _data + member.offset);
@@ -146,17 +152,17 @@ VirtualComponent::VirtualComponent(VirtualComponent&& source)
 VirtualComponent::VirtualComponent(const ComponentDescription* definition)
 {
     _description = definition;
-    _data = new byte[_description->size()];
+    _data = new uint8_t[_description->size()];
     for(auto& member : _description->members())
     {
         VirtualType::construct(member.type, _data + member.offset);
     }
 }
 
-VirtualComponent::VirtualComponent(const ComponentDescription* definition, const byte* data)
+VirtualComponent::VirtualComponent(const ComponentDescription* definition, const uint8_t* data)
 {
     _description = definition;
-    _data = new byte[_description->size()];
+    _data = new uint8_t[_description->size()];
     for(auto& member : _description->members())
     {
         VirtualType::construct(member.type, _data + member.offset);
@@ -192,7 +198,7 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponent& source)
         {
             if(_data)
                 delete _data;
-            _data = new byte[source._description->size()];
+            _data = new uint8_t[source._description->size()];
         }
         _description = source._description;
         for(auto& member : _description->members())
@@ -220,7 +226,7 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponentView& source
         {
             if(_data)
                 delete _data;
-            _data = new byte[source.description()->size()];
+            _data = new uint8_t[source.description()->size()];
         }
         _description = source.description();
         for(auto& member : _description->members())
@@ -232,20 +238,32 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponentView& source
     return *this;
 }
 
-byte* VirtualComponent::data() const { return _data; }
+uint8_t* VirtualComponent::data() const
+{
+    return _data;
+}
 
-const ComponentDescription* VirtualComponent::description() const { return _description; }
+const ComponentDescription* VirtualComponent::description() const
+{
+    return _description;
+}
 
 VirtualComponentView::VirtualComponentView(const VirtualComponent& source)
     : VirtualComponentView(source.description(), source.data())
 {}
 
-VirtualComponentView::VirtualComponentView(const ComponentDescription* description, byte* data)
+VirtualComponentView::VirtualComponentView(const ComponentDescription* description, uint8_t* data)
 {
     _data = data;
     _description = description;
 }
 
-byte* VirtualComponentView::data() const { return _data; }
+uint8_t* VirtualComponentView::data() const
+{
+    return _data;
+}
 
-const ComponentDescription* VirtualComponentView::description() const { return _description; }
+const ComponentDescription* VirtualComponentView::description() const
+{
+    return _description;
+}

@@ -19,6 +19,24 @@ using sqlINT64 = int64_t;
 using sqlFLOAT = double;
 using sqlTEXT = std::string;
 
+struct sqlBLOB
+{
+    const void* ptr = nullptr;
+    size_t size = 0;
+
+    sqlBLOB() = default;
+
+    template<class T>
+    sqlBLOB(T* ptr, size_t size) : ptr((void*)ptr), size(size)
+    {}
+
+    template<class T>
+    static sqlBLOB from(std::vector<T>& vec)
+    {
+        return sqlBLOB(vec.data(), vec.size());
+    }
+};
+
 template<typename... Args>
 class PreppedSQLCall
 {
@@ -69,6 +87,14 @@ class PreppedSQLCall
     }
 
     template<typename... Types>
+    void bindArg(int index, sqlBLOB arg, Types... args)
+    {
+        checkBindArg(sqlite3_bind_blob64(stmt, index, arg.ptr, arg.size, SQLITE_STATIC));
+        if constexpr(sizeof...(Types))
+            bindArg(index + 1, args...);
+    }
+
+    template<typename... Types>
     void getColumns(std::tuple<Types...>& columns)
     {
         getColumn<0, Types...>(columns);
@@ -83,17 +109,32 @@ class PreppedSQLCall
             getColumn<index + 1, Types...>(columns);
     }
 
-    void getColumn(sqlINT& value, int index) { value = sqlite3_column_int(stmt, index); }
+    void getColumn(sqlINT& value, int index)
+    {
+        value = sqlite3_column_int(stmt, index);
+    }
 
-    void getColumn(sqlINT64& value, int index) { value = sqlite3_column_int64(stmt, index); }
+    void getColumn(sqlINT64& value, int index)
+    {
+        value = sqlite3_column_int64(stmt, index);
+    }
 
-    void getColumn(sqlFLOAT& value, int index) { value = sqlite3_column_double(stmt, index); }
+    void getColumn(sqlFLOAT& value, int index)
+    {
+        value = sqlite3_column_double(stmt, index);
+    }
 
     void getColumn(sqlTEXT& value, int index)
     {
         const char* data = (const char*)sqlite3_column_text(stmt, index);
         size_t size = sqlite3_column_bytes(stmt, index);
         value = std::string(data, size);
+    }
+
+    void getColumn(sqlBLOB& value, int index)
+    {
+        value.size = sqlite3_column_bytes(stmt, index);
+        value.ptr = sqlite3_column_blob(stmt, index);
     }
 
   public:
@@ -122,6 +163,7 @@ class PreppedSQLCall
         int result = SQLITE_ROW;
         while(result == SQLITE_ROW)
             result = sqlite3_step(stmt);
+        sqlite3_clear_bindings(stmt);
         sqlite3_reset(stmt);
         if(result != SQLITE_DONE)
             throw std::runtime_error("Prepared SQL statement failed with return value: " + std::to_string(result));
@@ -149,6 +191,7 @@ class PreppedSQLCall
                 std::apply(f, columns);
             }
         }
+        sqlite3_clear_bindings(stmt);
         sqlite3_reset(stmt);
         if(result != SQLITE_DONE)
             throw std::runtime_error("Prepared SQL statement failed with return value: " + std::to_string(result));

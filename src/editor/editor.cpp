@@ -27,8 +27,75 @@
 
 #include "tinyfiledialogs.h"
 
+// The editor specific fetch asset function
+class EditorAssetLoader : public AssetLoader
+{
+
+    AsyncData<Asset*> loadAsset(const AssetID& inId, bool incremental) override
+    {
+        assert(!inId.empty());
+        AsyncData<Asset*> asset;
+        auto castId = inId.as<BraneAssetID>();
+        if(!castId)
+        {
+            asset.setError("Can only fetch Brane Asset IDs");
+            return asset;
+        }
+        auto id = castId.value();
+
+        Editor* editor = Runtime::getModule<Editor>();
+
+        if(editor->cache().hasAsset(id))
+        {
+            ThreadPool::enqueue([this, editor, asset, id]() {
+                Asset* cachedAsset = editor->cache().getAsset(id);
+                asset.setData(cachedAsset);
+            });
+            return asset;
+        }
+
+        std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
+        if(editorAsset)
+        {
+            ThreadPool::enqueue([this, editorAsset, editor, asset, id]() {
+                Asset* a = editorAsset->buildAsset(id);
+                if(!a)
+                {
+                    asset.setError("Could not build " + id.toString() + " from " + editorAsset->name());
+                    return;
+                }
+                editor->cache().cacheAsset(a);
+                asset.setData(a);
+            });
+            return asset;
+        }
+
+        if(id.domain.empty())
+        {
+            asset.setError("Asset with id " + std::string(id.toString()) +
+                           " was not found and can not be remotely fetched since it lacks a server address");
+            return asset;
+        }
+        auto* nm = Runtime::getModule<NetworkManager>();
+        if(incremental)
+        {
+            nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr) {
+                asset.setData(ptr);
+            }).onError([asset](std::string error) { asset.setError(error); });
+        }
+        else
+        {
+            nm->async_requestAsset(id).then([this, asset](Asset* ptr) {
+                asset.setData(ptr);
+            }).onError([asset](std::string error) { asset.setError(error); });
+        }
+        return asset;
+    }
+};
+
 void Editor::start()
 {
+    Runtime::getModule<AssetManager>()->addLoader(std::make_unique<EditorAssetLoader>());
     _ui = Runtime::getModule<GUI>();
     _selectProjectWindow = _ui->addWindow<SelectProjectWindow>(*this);
 
@@ -55,7 +122,10 @@ void Editor::start()
     });
 }
 
-const char* Editor::name() { return "editor"; }
+const char* Editor::name()
+{
+    return "editor";
+}
 
 void Editor::addMainWindows()
 {
@@ -136,7 +206,10 @@ void Editor::drawMenu()
     }
 }
 
-BraneProject& Editor::project() { return _project; }
+BraneProject& Editor::project()
+{
+    return _project;
+}
 
 void Editor::loadProject(const std::filesystem::path& filepath)
 {
@@ -158,17 +231,29 @@ void Editor::createProject(const std::string& name, const std::filesystem::path&
     _ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
 }
 
-JsonVersionTracker& Editor::jsonTracker() { return _jsonTracker; }
+JsonVersionTracker& Editor::jsonTracker()
+{
+    return _jsonTracker;
+}
 
-Editor::Editor() : _project(*this) { _cache.setProject(&_project); }
+Editor::Editor() : _project(*this)
+{
+    _cache.setProject(&_project);
+}
 
-AssetCache& Editor::cache() { return _cache; }
+AssetCache& Editor::cache()
+{
+    return _cache;
+}
 
-ShaderCompiler& Editor::shaderCompiler() { return _shaderCompiler; }
+ShaderCompiler& Editor::shaderCompiler()
+{
+    return _shaderCompiler;
+}
 
 void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 {
-    AssetID id(asset->json()["id"].asString());
+    AssetID id = AssetID::parse(asset->json()["id"].asString()).ok();
     _cache.deleteCachedAsset(id);
     auto* am = Runtime::getModule<AssetManager>();
     if(!am->hasAsset(id))
@@ -176,7 +261,7 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
     Asset* newAsset = asset->buildAsset(id);
     if(!newAsset)
     {
-        Runtime::error("Could not reload asset " + id.string() + "!");
+        Runtime::error("Could not reload asset " + id.toString() + "!");
         return;
     }
     am->reloadAsset(newAsset);
@@ -197,85 +282,4 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
             });
             break;
     }
-}
-
-// The editor specific fetch asset function
-AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
-{
-    assert(!id.null());
-    AsyncData<Asset*> asset;
-
-    Editor* editor = Runtime::getModule<Editor>();
-
-    if(editor->cache().hasAsset(id))
-    {
-        ThreadPool::enqueue([this, editor, asset, id]() {
-            Asset* cachedAsset = editor->cache().getAsset(id);
-            fetchDependencies(cachedAsset, [asset, cachedAsset](bool success) mutable {
-                if(success)
-                    asset.setData(cachedAsset);
-                else
-                    asset.setError("Failed to load dependency for: " + cachedAsset->name);
-            });
-        });
-        return asset;
-    }
-
-    std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
-    if(editorAsset)
-    {
-        ThreadPool::enqueue([this, editorAsset, editor, asset, id]() {
-            Asset* a = editorAsset->buildAsset(id);
-            if(!a)
-            {
-                asset.setError("Could not build " + id.string() + " from " + editorAsset->name());
-                return;
-            }
-            _assetLock.lock();
-            _assets.at(id)->loadState = LoadState::awaitingDependencies;
-            _assetLock.unlock();
-            fetchDependencies(a, [editor, asset, a](bool success) mutable {
-                if(success)
-                {
-                    editor->cache().cacheAsset(a);
-                    asset.setData(a);
-                }
-                else
-                    asset.setError("Failed to load dependency for: " + a->name);
-            });
-        });
-        return asset;
-    }
-
-    if(id.address().empty())
-    {
-        asset.setError("Asset with id " + std::string(id.idStr()) +
-                       " was not found and can not be remotely fetched since it lacks a server address");
-        return asset;
-    }
-    auto* nm = Runtime::getModule<NetworkManager>();
-    if(incremental)
-    {
-        nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr) { asset.setData(ptr); });
-    }
-    else
-    {
-        nm->async_requestAsset(id).then([this, asset](Asset* ptr) {
-            _assetLock.lock();
-            _assets.at(ptr->id)->loadState = LoadState::awaitingDependencies;
-            _assetLock.unlock();
-            if(dependenciesLoaded(ptr))
-            {
-                asset.setData(ptr);
-                return;
-            }
-            fetchDependencies(ptr, [ptr, asset](bool success) mutable {
-                if(success)
-                    asset.setData(ptr);
-                else
-                    asset.setError("Failed to load dependency for: " + ptr->name);
-            });
-        });
-    }
-    return asset;
 }

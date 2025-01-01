@@ -45,7 +45,7 @@ void EditorScriptAsset::updateSource(const std::filesystem::path& source)
 
 Asset* EditorScriptAsset::buildAsset(const AssetID& id) const
 {
-    assert(id.string() == _json["id"].asString());
+    assert(id.toString() == _json["id"].asString());
     if(_json["source"].asString().empty())
     {
         Runtime::error("Shader source not set for " + _json["name"].asString());
@@ -55,7 +55,7 @@ Asset* EditorScriptAsset::buildAsset(const AssetID& id) const
     std::string fileSuffix = source.extension().string();
 
     ScriptAsset* script = new ScriptAsset();
-    script->id = _json["id"].asString();
+    script->id = id;
     script->name = name();
 
     std::string scriptCode;
@@ -74,7 +74,13 @@ Asset* EditorScriptAsset::buildAsset(const AssetID& id) const
 std::vector<std::pair<AssetID, AssetType>> EditorScriptAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> deps;
-    deps.emplace_back(AssetID{_json["id"].asString()}, AssetType::script);
+    auto res = AssetID::parse(_json["id"].asString());
+    if(!res)
+    {
+        Runtime::error(std::format("Script Asset at {} has invalid id", _file.string()));
+        return deps;
+    }
+    deps.emplace_back(res.ok(), AssetType::script);
     return std::move(deps);
 }
 

@@ -45,7 +45,7 @@ class EditorAssemblyAsset : public EditorAsset
 
     static Json::Value componentToJson(VirtualComponentView component);
 
-    static VirtualComponent jsonToComponent(Json::Value component);
+    static Result<VirtualComponent> jsonToComponent(Json::Value component);
 };
 
 #endif // BRANEENGINE_EDITORASSEMBLYASSET_H

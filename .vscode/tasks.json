@@ -9,7 +9,7 @@
             "options": {
                 "cwd": "${workspaceRoot}"
             },
-            "command": "cmake -S. -B./build/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=\"${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON  -DBUILD_TESTS=ON  ",
+            "command": "cmake -S. -B./build/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=\"${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON  -DBUILD_TESTS=ON  -DCLANGD_COMPATABILITY=ON",
             "presentation": "always"
         },
         {
@@ -36,7 +36,7 @@
             "options": {
                 "cwd": "${workspaceRoot}"
             },
-            "command": "cmake -S. -B./build/Release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=\"${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON  -DBUILD_TESTS=ON",
+            "command": "cmake -S. -B./build/Release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=\"${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake\" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON  -DBUILD_TESTS=ON -DCLANGD_COMPATABILITY=ON",
             "presentation": "always"
         },
         {

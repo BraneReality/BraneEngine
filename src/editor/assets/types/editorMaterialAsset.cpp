@@ -24,17 +24,17 @@ EditorMaterialAsset::EditorMaterialAsset(const std::filesystem::path& file, Bran
 
 Asset* EditorMaterialAsset::buildAsset(const AssetID& id) const
 {
-    assert(id.string() == _json["id"].asString());
+    assert(id.toString() == _json["id"].asString());
     auto* material = new MaterialAsset();
     material->name = name();
-    material->id = _json["id"].asString();
-    material->vertexShader = _json["vertexShader"].asString();
-    material->fragmentShader = _json["fragmentShader"].asString();
+    material->id = AssetID::parse(_json["id"].asString()).ok();
+    material->vertexShader = AssetID::parse(_json["vertexShader"].asString()).ok();
+    material->fragmentShader = AssetID::parse(_json["fragmentShader"].asString()).ok();
     for(auto& texture : _json["textures"])
     {
         std::pair<uint16_t, AssetID> tb;
         tb.first = texture["binding"].asUInt();
-        tb.second = texture["id"].asString();
+        tb.second = AssetID::parse(texture["id"].asString()).ok();
         material->textures.push_back(tb);
     }
     material->serializedProperties = serializeProperties();
@@ -45,7 +45,7 @@ Asset* EditorMaterialAsset::buildAsset(const AssetID& id) const
 std::vector<std::pair<AssetID, AssetType>> EditorMaterialAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> deps;
-    deps.emplace_back(AssetID{_json["id"].asString()}, AssetType::material);
+    deps.emplace_back(AssetID::parse(_json["id"].asString()).ok(), AssetType::material);
     return std::move(deps);
 }
 

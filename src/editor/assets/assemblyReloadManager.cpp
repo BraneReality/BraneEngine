@@ -11,9 +11,15 @@
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "systems/transforms.h"
 
-AssemblyReloadManager::AssemblyReloadManager() { _em = Runtime::getModule<EntityManager>(); }
+AssemblyReloadManager::AssemblyReloadManager()
+{
+    _em = Runtime::getModule<EntityManager>();
+}
 
-const char* AssemblyReloadManager::name() { return "assemblyReloadManager"; }
+const char* AssemblyReloadManager::name()
+{
+    return "assemblyReloadManager";
+}
 
 EntityID AssemblyReloadManager::instantiate(Assembly* assembly)
 {
@@ -56,7 +62,7 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
                 AssetID id;
                 if(material < assembly->materials.size())
                     id = assembly->materials[material];
-                if(!id.null())
+                if(!id.empty())
                     material = am->getAsset<MaterialAsset>(id)->runtimeID;
                 else
                     material = -1;

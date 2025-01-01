@@ -56,7 +56,7 @@ namespace graphics
             ComponentFilter filter(ctx);
             filter.addComponent(Transform::def()->id, ComponentFilterFlags_Const);
             filter.addComponent(PointLightComponent::def()->id, ComponentFilterFlags_Const);
-            _em.getEntities(filter).forEachNative([&pointLights](byte** components) {
+            _em.getEntities(filter).forEachNative([&pointLights](uint8_t** components) {
                 Transform* transform = Transform::fromVirtual(components[0]);
                 PointLightComponent* light = PointLightComponent::fromVirtual(components[1]);
                 PointLightData data{transform->value[3], light->color};
@@ -71,7 +71,7 @@ namespace graphics
             ComponentFilter filter(ctx);
             filter.addComponent(Transform::def()->id, ComponentFilterFlags_Const);
             filter.addComponent(MeshRendererComponent::def()->id, ComponentFilterFlags_Const);
-            _em.getEntities(filter).forEachNative([this, &meshTransforms](byte** components) {
+            _em.getEntities(filter).forEachNative([this, &meshTransforms](uint8_t** components) {
                 MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[1]);
                 if(!_vkr.meshes().hasIndex(mr->mesh))
                 {
@@ -99,7 +99,7 @@ namespace graphics
             ComponentFilter filter(ctx);
             filter.addComponent(Camera::def()->id, ComponentFilterFlags_Const);
             filter.addComponent(Transform::def()->id, ComponentFilterFlags_Const);
-            _em.getEntities(filter).forEachNative([&](byte** components) {
+            _em.getEntities(filter).forEachNative([&](uint8_t** components) {
                 auto* camera = Camera::fromVirtual(components[0]);
                 auto* transform = Transform::fromVirtual(components[1]);
                 glm::mat4 cameraMatrix =

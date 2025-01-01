@@ -10,11 +10,11 @@
 class ChunkComponentView
 {
     const ComponentDescription* _description = nullptr;
-    byte* _data = nullptr;
+    uint8_t* _data = nullptr;
     size_t _maxSize = 0;
     size_t _size = 0;
 
-    byte* dataIndex(size_t index) const;
+    uint8_t* dataIndex(size_t index) const;
 
     SharedRecursiveMutex _mutex;
 
@@ -23,7 +23,7 @@ class ChunkComponentView
 
     ChunkComponentView() = default;
 
-    ChunkComponentView(byte* data, size_t maxSize, const ComponentDescription* def);
+    ChunkComponentView(uint8_t* data, size_t maxSize, const ComponentDescription* def);
 
     ChunkComponentView(const ChunkComponentView&);
 
@@ -43,7 +43,7 @@ class ChunkComponentView
 
     void setComponent(size_t index, VirtualComponent&& component);
 
-    byte* getComponentData(size_t index);
+    uint8_t* getComponentData(size_t index);
 
     void lockShared();
 
@@ -68,21 +68,27 @@ class ChunkBase
 #endif
     size_t _size;
     size_t _maxCapacity;
-    std::array<byte, N> _data;
+    std::array<uint8_t, N> _data;
     std::unordered_map<ComponentID, ChunkComponentView> _components;
 
   public:
-    ChunkBase() { _size = 0; }
+    ChunkBase()
+    {
+        _size = 0;
+    }
 
     ChunkBase(const ChunkBase&) = delete;
 
-    ~ChunkBase() { clear(); }
+    ~ChunkBase()
+    {
+        clear();
+    }
 
     void setComponents(std::vector<const ComponentDescription*> components)
     {
         clear();
         _components.reserve(components.size());
-        byte* componentDataStart = _data.data();
+        uint8_t* componentDataStart = _data.data();
         size_t entitySize = 0;
         for(auto& c : components)
             entitySize += c->size();
@@ -95,9 +101,15 @@ class ChunkBase
         }
     }
 
-    const std::unordered_map<ComponentID, ChunkComponentView>& components() { return _components; }
+    const std::unordered_map<ComponentID, ChunkComponentView>& components()
+    {
+        return _components;
+    }
 
-    bool hasComponent(uint32_t id) { return _components.contains(id); }
+    bool hasComponent(uint32_t id)
+    {
+        return _components.contains(id);
+    }
 
     ChunkComponentView& getComponent(uint32_t id)
     {
@@ -160,13 +172,25 @@ class ChunkBase
         _maxCapacity = 0;
     }
 
-    size_t size() { return _size; }
+    size_t size()
+    {
+        return _size;
+    }
 
-    size_t maxCapacity() { return _maxCapacity; }
+    size_t maxCapacity()
+    {
+        return _maxCapacity;
+    }
 
-    byte* data() { return _data.data(); }
+    uint8_t* data()
+    {
+        return _data.data();
+    }
 
-    static size_t allocationSize() { return N; }
+    static size_t allocationSize()
+    {
+        return N;
+    }
 };
 
 template<size_t>

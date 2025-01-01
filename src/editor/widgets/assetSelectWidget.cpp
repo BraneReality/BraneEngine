@@ -16,7 +16,7 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
     bool changed = false;
     ImGui::PushID(&id);
     std::string name;
-    if(id.null())
+    if(id.empty())
         name = "null";
     else
         name = Runtime::getModule<Editor>()->project().getAssetName(id);
@@ -35,7 +35,7 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
         }
         if(ImGui::IsKeyPressed(ImGuiKey_Delete))
         {
-            id.setNull();
+            id.clear();
             changed = true;
         }
     }

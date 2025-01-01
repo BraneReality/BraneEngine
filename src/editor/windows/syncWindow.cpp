@@ -70,34 +70,34 @@ void SyncWindow::drawSetupConnection()
                 auto* server = nm->getServer(_serverAddress);
                 server->sendRequest(
                     "login", std::move(req), [this, server](net::ResponseCode code, InputSerializer sData) {
-                        if(code != net::ResponseCode::success)
-                        {
-                            _loggingIn = false;
-                            if(code == net::ResponseCode::denied)
-                                _feedbackMessage = "invalid username/password";
-                            else
-                                _feedbackMessage = "request error: " + std::to_string((uint8_t)code);
-                            return;
-                        }
-
-                        _feedbackMessage = "Logged in!";
-                        _loggedIn = true;
+                    if(code != net::ResponseCode::success)
+                    {
                         _loggingIn = false;
+                        if(code == net::ResponseCode::denied)
+                            _feedbackMessage = "invalid username/password";
+                        else
+                            _feedbackMessage = "request error: " + std::to_string((uint8_t)code);
+                        return;
+                    }
 
-                        auto& project = _editor.project().json().data();
-                        project["server"]["address"] = _serverAddress;
-                        project["server"]["port"] = _port;
-                        project["server"]["username"] = _username;
+                    _feedbackMessage = "Logged in!";
+                    _loggedIn = true;
+                    _loggingIn = false;
 
-                        _syncServer = server;
-                        _syncServer->onDisconnect([]() {
-                            // Don't need a "this" pointer as they're static
-                            _loggedIn = false;
-                            _loggingIn = false;
-                            _syncServer = nullptr;
-                            _feedbackMessage = "Disconnected from server!";
-                        });
+                    auto& project = _editor.project().json().data();
+                    project["server"]["address"] = _serverAddress;
+                    project["server"]["port"] = _port;
+                    project["server"]["username"] = _username;
+
+                    _syncServer = server;
+                    _syncServer->onDisconnect([]() {
+                        // Don't need a "this" pointer as they're static
+                        _loggedIn = false;
+                        _loggingIn = false;
+                        _syncServer = nullptr;
+                        _feedbackMessage = "Disconnected from server!";
                     });
+                });
             }
             else
             {
@@ -112,7 +112,10 @@ void SyncWindow::drawSetupConnection()
     ImGui::Text("%s", _feedbackMessage.c_str());
 }
 
-net::Connection* SyncWindow::syncServer() { return _syncServer; }
+net::Connection* SyncWindow::syncServer()
+{
+    return _syncServer;
+}
 
 void SyncWindow::drawConnected()
 {
@@ -190,8 +193,8 @@ void SyncWindow::syncAssets()
     }
     for(auto& asset : _assetDiffs)
     {
-        ImGui::PushID(asset.id.id());
-        ImGui::Text("%s: %s", _editor.project().getAssetName(asset.id).c_str(), asset.id.string().c_str());
+        ImGui::PushID(&asset.id);
+        ImGui::Text("%s: %s", _editor.project().getAssetName(asset.id).c_str(), asset.id.toString().c_str());
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 20);
         if(ImGui::Button(ICON_FA_CLOUD_ARROW_UP))
         {
@@ -221,9 +224,9 @@ void SyncWindow::updateAsset(const AssetID& asset)
     }
     _syncServer->sendRequest("updateAsset", std::move(assetData), [asset](auto ec, InputSerializer res) {
         if(ec == net::ResponseCode::success)
-            Runtime::log("Asset " + asset.string() + " updated");
+            Runtime::log("Asset " + asset.toString() + " updated");
         else
-            Runtime::error("Failed to update asset " + asset.string());
+            Runtime::error("Failed to update asset " + asset.toString());
     });
 }
 
@@ -257,9 +260,9 @@ void SyncWindow::serverSettings()
         return;
     }
 
-    AssetID defaultChunk(_serverSettings["default_assets"]["chunk"].asString());
+    AssetID defaultChunk = AssetID::parse(_serverSettings["default_assets"]["chunk"].asString()).ok();
     if(AssetSelectWidget::draw(defaultChunk, AssetType::chunk))
-        _serverSettings["default_assets"]["chunk"] = defaultChunk.string();
+        _serverSettings["default_assets"]["chunk"] = defaultChunk.toString();
 
     if(ImGui::Button("Save " ICON_FA_CLOUD_ARROW_UP))
     {
@@ -301,17 +304,17 @@ class DeleteUserPopup : public GUIPopup
             auto& win = _window;
             _window.syncServer()->sendRequest(
                 "adminDeleteUser", std::move(data), [username, &win](auto ec, InputSerializer s) {
-                    if(ec != net::ResponseCode::success)
-                        Runtime::log("Couldn't delete " + username);
-                    win.refreshUsers();
-                });
+                if(ec != net::ResponseCode::success)
+                    Runtime::log("Couldn't delete " + username);
+                win.refreshUsers();
+            });
             ImGui::CloseCurrentPopup();
         }
     }
 
   public:
     DeleteUserPopup(std::string username, uint32_t userID, SyncWindow& window)
-        : _username(std::move(username)), _userID(userID), _window(window), GUIPopup("Delete User"){};
+        : _username(std::move(username)), _userID(userID), _window(window), GUIPopup("Delete User") {};
 };
 
 class EditPasswordPopup : public GUIPopup
@@ -367,7 +370,7 @@ class EditPasswordPopup : public GUIPopup
 
   public:
     EditPasswordPopup(uint32_t userID, net::Connection* server)
-        : _userID(userID), _server(server), GUIPopup("Edit Password"){};
+        : _userID(userID), _server(server), GUIPopup("Edit Password") {};
 };
 
 void SyncWindow::drawUsers()
@@ -457,7 +460,10 @@ void SyncWindow::getUsers(const std::string& filter)
     _usersSynced = 0;
 }
 
-void SyncWindow::refreshUsers() { _usersSynced = -1; }
+void SyncWindow::refreshUsers()
+{
+    _usersSynced = -1;
+}
 
 void SyncWindow::displayLoadingAnim()
 {

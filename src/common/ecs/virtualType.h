@@ -1,6 +1,5 @@
 #pragma once
 
-#include "byte.h"
 #include "entityID.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -15,25 +14,25 @@ class OutputSerializer;
 class AssetID;
 
 template<class T>
-constexpr inline T* getVirtual(const byte* var)
+constexpr inline T* getVirtual(const uint8_t* var)
 {
     return (T*)var;
 }
 
 template<class T>
-constexpr inline T readVirtual(byte* var)
+constexpr inline T readVirtual(uint8_t* var)
 {
     return *(T*)var;
 }
 
 template<class T>
-constexpr inline T readVirtual(const byte* var)
+constexpr inline T readVirtual(const uint8_t* var)
 {
     return *(T*)var;
 }
 
 template<class T>
-constexpr inline void setVirtual(const byte* var, T value)
+constexpr inline void setVirtual(const uint8_t* var, T value)
 {
     *(T*)var = value;
 }
@@ -69,52 +68,52 @@ namespace VirtualType
 
     Type stringToType(const std::string& type);
 
-    void serialize(Type type, OutputSerializer data, const byte* source);
+    void serialize(Type type, OutputSerializer data, const uint8_t* source);
 
-    void deserialize(Type type, InputSerializer data, byte* source);
+    void deserialize(Type type, InputSerializer data, uint8_t* source);
 
     size_t size(Type type);
 
-    void construct(Type type, byte* var);
+    void construct(Type type, uint8_t* var);
 
-    void deconstruct(Type type, byte* var);
+    void deconstruct(Type type, uint8_t* var);
 
-    void copy(Type type, byte* dest, const byte* source);
+    void copy(Type type, uint8_t* dest, const uint8_t* source);
 
-    void move(Type type, byte* dest, byte* source);
+    void move(Type type, uint8_t* dest, uint8_t* source);
 
     template<typename T>
-    void serialize(OutputSerializer& data, const byte* source)
+    void serialize(OutputSerializer& data, const uint8_t* source)
     {
         data << *getVirtual<T>(source);
     }
 
     template<typename T>
-    void deserialize(InputSerializer& data, byte* source)
+    void deserialize(InputSerializer& data, uint8_t* source)
     {
         data >> *getVirtual<T>(source);
     }
 
     template<typename T>
-    void construct(byte* var)
+    void construct(uint8_t* var)
     {
         new(var) T();
     }
 
     template<typename T>
-    void deconstruct(byte* var)
+    void deconstruct(uint8_t* var)
     {
         ((T*)var)->~T();
     }
 
     template<typename T>
-    void copy(byte* dest, const byte* source)
+    void copy(uint8_t* dest, const uint8_t* source)
     {
         *((T*)dest) = *((T*)source);
     }
 
     template<typename T>
-    void move(byte* dest, byte* source)
+    void move(uint8_t* dest, uint8_t* source)
     {
         *((T*)dest) = std::move(*((T*)source));
     }

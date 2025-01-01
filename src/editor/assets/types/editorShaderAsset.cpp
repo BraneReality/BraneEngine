@@ -109,7 +109,7 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 
 Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 {
-    assert(id.string() == _json["id"].asString());
+    assert(id.toString() == _json["id"].asString());
     if(_json["source"].asString().empty())
     {
         Runtime::error("Shader source not set for " + _json["name"].asString());
@@ -119,7 +119,10 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
     std::string fileSuffix = source.extension().string();
 
     ShaderAsset* shader = new ShaderAsset();
-    shader->id = _json["id"].asString();
+    auto idRes = AssetID::parse(_json["id"].asString());
+    if(!idRes)
+        return nullptr;
+    shader->id = idRes.ok();
     shader->name = name();
     shader->shaderType = shaderType();
 
@@ -157,7 +160,10 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 std::vector<std::pair<AssetID, AssetType>> EditorShaderAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> deps;
-    deps.emplace_back(AssetID{_json["id"].asString()}, AssetType::shader);
+    auto id = AssetID::parse(_json["id"].asString());
+    if(!id)
+        return deps;
+    deps.emplace_back(id.ok(), AssetType::shader);
     return std::move(deps);
 }
 

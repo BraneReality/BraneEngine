@@ -25,9 +25,15 @@ void MeshAsset::deserialize(InputSerializer& s)
     s >> _data;
 }
 
-MeshAsset::MeshAsset() { type.set(AssetType::Type::mesh); }
+MeshAsset::MeshAsset()
+{
+    type.set(AssetType::Type::mesh);
+}
 
-size_t MeshAsset::meshSize() const { return _data.size(); }
+size_t MeshAsset::meshSize() const
+{
+    return _data.size();
+}
 
 void MeshAsset::serializeHeader(OutputSerializer& s) const
 {
@@ -117,7 +123,7 @@ bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* it
                 uint32_t attributeOffset = a.second.offset + a.second.step * index;
                 s << a.second.step << attributeOffset;
                 for(uint32_t j = 0; j < a.second.step; ++j)
-                    s << (byte)_data[attributeOffset + j];
+                    s << (uint8_t)_data[attributeOffset + j];
             }
             itr->vertexSent[index] = true;
         }
@@ -179,7 +185,7 @@ void MeshAsset::deserializeIncrement(InputSerializer& s)
                 if(attributeOffset + step >= _data.size())
                     throw std::runtime_error("increment deserialization fail, out of bounds data");
                 for(uint32_t k = 0; k < step; ++k)
-                    s >> (byte&)_data[attributeOffset + k];
+                    s >> (uint8_t&)_data[attributeOffset + k];
             }
         }
     }
@@ -231,7 +237,10 @@ size_t MeshAsset::addPrimitive(const std::vector<uint32_t>& indices, uint32_t ve
     return _primitives.size() - 1;
 }
 
-const std::vector<byte>& MeshAsset::packedData() const { return _data; }
+const std::vector<uint8_t>& MeshAsset::packedData() const
+{
+    return _data;
+}
 
 uint32_t MeshAsset::indexOffset(size_t primitive) const
 {
@@ -252,7 +261,10 @@ uint32_t MeshAsset::attributeOffset(size_t primitive, const std::string& name) c
     return _primitives[primitive].attributes.find(name)->second.offset;
 }
 
-size_t MeshAsset::primitiveCount() const { return _primitives.size(); }
+size_t MeshAsset::primitiveCount() const
+{
+    return _primitives.size();
+}
 
 uint32_t MeshAsset::vertexCount(uint32_t primitive) const
 {

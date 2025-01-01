@@ -7,11 +7,53 @@
 #include "fileManager/fileManager.h"
 #include "networking/networking.h"
 #include "utility/hex.h"
+#include "utility/mutex.h"
+#include <type_traits>
+
+class AssetServerLoader : public AssetLoader
+{
+    AsyncData<Asset*> loadAsset(const AssetID& assetId, bool incremental) override
+    {
+
+        AsyncData<Asset*> asset;
+        if(std::holds_alternative<BraneAssetID>(assetId.value.value()))
+            const BraneAssetID& id = std::get<BraneAssetID>(assetId.value.value());
+
+        auto castId = assetId.as<BraneAssetID>();
+        if(!castId)
+        {
+            asset.setError("ID was not a Brane protocol ID");
+            return asset;
+        }
+        auto id = castId.value();
+
+        auto* nm = Runtime::getModule<NetworkManager>();
+        auto* fm = Runtime::getModule<FileManager>();
+
+        auto path = std::filesystem::current_path() / Config::json()["data"]["asset_path"].asString() /
+                    ((std::string)id.uuid.toString() + ".bin");
+        if(std::filesystem::exists(path))
+        {
+            fm->async_readUnknownAsset(path).then([this, asset](Asset* ptr) {
+                asset.setData(ptr);
+            }).onError([asset](auto& err) { asset.setError(err); });
+            return asset;
+        }
+        else
+        {
+            asset.setError("Cached path to asset is invalid");
+        }
+        return asset;
+    }
+};
 
 AssetServer::AssetServer()
     : _nm(*Runtime::getModule<NetworkManager>()), _am(*Runtime::getModule<AssetManager>()),
       _fm(*Runtime::getModule<FileManager>()), _db(*Runtime::getModule<Database>())
+
 {
+    _am.addLoader(std::make_unique<AssetServerLoader>());
+
     _nm.start();
     _nm.configureServer();
     std::filesystem::create_directory(Config::json()["data"]["asset_path"].asString());
@@ -37,8 +79,7 @@ AssetServer::AssetServer()
 
     createListeners();
 
-    Runtime::timeline().addTask(
-        "send asset data", [this] { processMessages(); }, "networking");
+    Runtime::timeline().addTask("send asset data", [this] { processMessages(); }, "networking");
 }
 
 AssetServer::~AssetServer() {}
@@ -87,8 +128,16 @@ void AssetServer::createAssetListeners()
         }
         AssetID id;
         rc.req >> id;
-        std::cout << "request for: " << id.string() << std::endl;
-        _fm.readFile(assetPath(id), rc.responseData.vector());
+        std::cout << "request for: " << id.toString() << std::endl;
+
+        auto castId = id.as<BraneAssetID>();
+        if(!castId)
+        {
+            rc.code = net::ResponseCode::invalidRequest;
+            rc.res << "Asset server can only fetch assets that use the Brane protocol";
+            return;
+        }
+        _fm.readFile(assetPath(castId.value()), rc.responseData.vector());
     });
 
     _nm.addRequestListener("incrementalAsset", [this](auto& rc) {
@@ -101,8 +150,15 @@ void AssetServer::createAssetListeners()
         AssetID id;
         uint32_t streamID;
         rc.req >> id >> streamID;
-        std::cout << "request for: " << id.string() << std::endl;
+        std::cout << "request for: " << id.toString() << std::endl;
 
+        auto castId = id.as<BraneAssetID>();
+        if(!castId)
+        {
+            rc.code = net::ResponseCode::invalidRequest;
+            rc.res << "Asset server can only fetch assets that use the Brane protocol";
+            return;
+        }
         auto ctxPtr = std::make_shared<RequestCTX>(std::move(rc));
         auto f = [this, ctxPtr, streamID](Asset* asset) mutable {
             auto* ia = dynamic_cast<IncrementalAsset*>(asset);
@@ -142,9 +198,16 @@ void AssetServer::createAssetListeners()
         }
         SerializedData data;
         OutputSerializer s(data);
-        AssetID defaultChunk(Config::json()["default_assets"]["chunk"].asString());
-        if(defaultChunk.address().empty())
-            defaultChunk.setAddress(Config::json()["network"]["domain"].asString());
+        auto defaultChunkUUID = UUID::fromString(Config::json()["default_assets"]["chunk"].asString());
+        if(!defaultChunkUUID)
+        {
+            Runtime::error("Invalid default chunk ID!");
+            return;
+        }
+
+        BraneAssetID defaultChunk(Config::json()["network"]["domain"].asString(), defaultChunkUUID.ok());
+        if(defaultChunk.domain.empty())
+            defaultChunk.domain = (Config::json()["network"]["domain"].asString());
         s << defaultChunk;
         rc.sender->sendRequest("loadChunk", std::move(data), [](auto rc, auto s) {});
     });
@@ -162,16 +225,16 @@ void AssetServer::createEditorListeners()
         }
         uint32_t hashCount;
         rc.req >> hashCount;
-        std::vector<std::pair<AssetID, std::string>> hashes(hashCount);
+        std::vector<std::pair<BraneAssetID, std::string>> hashes(hashCount);
         for(uint32_t h = 0; h < hashCount; ++h)
             rc.req >> hashes[h].first >> hashes[h].second;
 
-        std::vector<AssetID> assetsWithDiff;
+        std::vector<BraneAssetID> assetsWithDiff;
         for(auto& h : hashes)
         {
-            if(!h.first.address().empty())
+            if(!h.first.domain.empty())
                 continue;
-            auto info = _db.getAssetInfo(h.first.id());
+            auto info = _db.getAssetInfo(h.first.uuid);
             if(info.hash != h.second)
                 assetsWithDiff.push_back(std::move(h.first));
         }
@@ -188,9 +251,18 @@ void AssetServer::createEditorListeners()
         }
         Asset* asset = Asset::deserializeUnknown(rc.req);
 
-        auto assetInfo = _db.getAssetInfo(asset->id.id());
+        auto castId = asset->id.as<BraneAssetID>();
+        if(!castId)
+        {
+            rc.code = net::ResponseCode::invalidRequest;
+            rc.res << "Can only";
+        }
+        auto id = castId.value();
 
-        auto path = assetPath(asset->id);
+
+        auto assetInfo = _db.getAssetInfo(id.uuid);
+
+        auto path = assetPath(id);
         bool assetExists = true;
         if(assetInfo.hash.empty())
         {
@@ -198,7 +270,7 @@ void AssetServer::createEditorListeners()
         }
 
         FileManager::writeAsset(asset, path);
-        assetInfo.id = asset->id.id();
+        assetInfo.id = id.uuid;
         assetInfo.name = asset->name;
         assetInfo.type = asset->type;
         assetInfo.hash = FileManager::fileHash(path);
@@ -301,12 +373,16 @@ void AssetServer::processMessages()
     _sendersLock.unlock();
 }
 
-const char* AssetServer::name() { return "assetServer"; }
+const char* AssetServer::name()
+{
+    return "assetServer";
+}
 
-AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool incremental)
+AsyncData<Asset*> AssetServer::fetchAssetCallback(const BraneAssetID& id, bool incremental)
 {
     AsyncData<Asset*> asset;
-    auto info = _db.getAssetInfo(id.id());
+
+    auto info = _db.getAssetInfo(id.uuid);
     std::filesystem::path path = assetPath(id);
     if(!std::filesystem::exists(path))
         asset.setError("Asset not found");
@@ -351,50 +427,7 @@ bool AssetServer::validatePermissions(AssetServer::ConnectionContext& ctx, const
     return true;
 }
 
-std::filesystem::path AssetServer::assetPath(const AssetID& id)
+std::filesystem::path AssetServer::assetPath(const BraneAssetID& id)
 {
-    return std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (std::string(id.idStr()) + ".bin");
-}
-
-// The asset server specific fetch asset function
-AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
-{
-    AsyncData<Asset*> asset;
-
-    auto* nm = Runtime::getModule<NetworkManager>();
-    auto* fm = Runtime::getModule<FileManager>();
-
-    auto path = std::filesystem::current_path() / Config::json()["data"]["asset_path"].asString() /
-                ((std::string)id.idStr() + ".bin");
-    if(std::filesystem::exists(path))
-    {
-        fm->async_readUnknownAsset(path)
-            .then([this, asset](Asset* ptr) {
-                ptr->id.setAddress(Config::json()["network"]["domain"].asString());
-                _assetLock.lock();
-                auto& d = _assets.at(ptr->id);
-                d->loadState = LoadState::awaitingDependencies;
-                _assetLock.unlock();
-                if(dependenciesLoaded(ptr))
-                {
-                    asset.setData(ptr);
-                    return;
-                }
-
-                d->loadState = LoadState::awaitingDependencies;
-                fetchDependencies(ptr, [ptr, asset](bool success) mutable {
-                    if(success)
-                        asset.setData(ptr);
-                    else
-                        asset.setError("Failed to load dependency for: " + ptr->name);
-                });
-            })
-            .onError([asset](auto& err) { asset.setError(err); });
-        return asset;
-    }
-    else
-    {
-        asset.setError("Asset not found");
-    }
-    return asset;
+    return std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (id.uuid.toString() + ".bin");
 }

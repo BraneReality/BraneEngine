@@ -116,7 +116,10 @@ AssetBrowserWidget::AssetBrowserWidget(GUI& ui, bool allowEdits) : _ui(ui), _all
     setDirectory(_root.get());
 }
 
-void AssetBrowserWidget::displayDirectoryTree() { displayDirectoriesRecursive(_root.get()); }
+void AssetBrowserWidget::displayDirectoryTree()
+{
+    displayDirectoriesRecursive(_root.get());
+}
 
 void AssetBrowserWidget::displayDirectoriesRecursive(FileManager::Directory* dir)
 {
@@ -203,9 +206,10 @@ void AssetBrowserWidget::displayFiles()
                         auto editor = Runtime::getModule<Editor>();
                         std::shared_ptr<EditorAsset> asset =
                             editor->project().getEditorAsset(currentDirectory() / file);
-                        Runtime::warn("Could not find clicked asset!");
                         if(asset)
                             _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+                        else
+                            Runtime::warn("Could not find clicked asset!");
                     }
                     if(type == FileType::directory)
                     {
@@ -324,7 +328,10 @@ void AssetBrowserWidget::displayFiles()
     }
 }
 
-std::filesystem::path AssetBrowserWidget::currentDirectory() { return _rootPath / _currentDir->path(); }
+std::filesystem::path AssetBrowserWidget::currentDirectory()
+{
+    return _rootPath / _currentDir->path();
+}
 
 void AssetBrowserWidget::displayFullBrowser()
 {
@@ -366,7 +373,10 @@ void AssetBrowserWidget::displayFullBrowser()
     }
 }
 
-void AssetBrowserWidget::reloadCurrentDirectory() { setDirectory(_currentDir); }
+void AssetBrowserWidget::reloadCurrentDirectory()
+{
+    setDirectory(_currentDir);
+}
 
 const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
 {

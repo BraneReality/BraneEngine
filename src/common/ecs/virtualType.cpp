@@ -1,6 +1,7 @@
 #include "virtualType.h"
 #include "common/utility/serializedData.h"
 #include "utility/enumNameMap.h"
+#include <assets/asset.h>
 #include <unordered_map>
 
 namespace VirtualType
@@ -24,9 +25,15 @@ namespace VirtualType
                              {virtualUIntArray, "uintArray"},
                              {virtualEntityIDArray, "entityIDArray"}});
 
-    std::string typeToString(Type type) { return names.toString(type); }
+    std::string typeToString(Type type)
+    {
+        return names.toString(type);
+    }
 
-    Type stringToType(const std::string& type) { return names.toEnum(type); }
+    Type stringToType(const std::string& type)
+    {
+        return names.toEnum(type);
+    }
 
     size_t size(Type type)
     {
@@ -74,7 +81,7 @@ namespace VirtualType
         return 0;
     }
 
-    void construct(Type type, byte* var)
+    void construct(Type type, uint8_t* var)
     {
         assert(type != virtualUnknown);
         switch(type)
@@ -135,7 +142,7 @@ namespace VirtualType
         }
     }
 
-    void deconstruct(Type type, byte* var)
+    void deconstruct(Type type, uint8_t* var)
     {
         assert(type != virtualUnknown);
         switch(type)
@@ -193,7 +200,7 @@ namespace VirtualType
         }
     }
 
-    void copy(Type type, byte* dest, const byte* source)
+    void copy(Type type, uint8_t* dest, const uint8_t* source)
     {
         assert(type != virtualUnknown);
         switch(type)
@@ -251,7 +258,7 @@ namespace VirtualType
         }
     }
 
-    void move(Type type, byte* dest, byte* source)
+    void move(Type type, uint8_t* dest, uint8_t* source)
     {
         assert(type != virtualUnknown);
         switch(type)
@@ -310,7 +317,7 @@ namespace VirtualType
         }
     }
 
-    void serialize(Type type, OutputSerializer data, const byte* source)
+    void serialize(Type type, OutputSerializer data, const uint8_t* source)
     {
         assert(type != virtualUnknown);
         switch(type)
@@ -371,7 +378,7 @@ namespace VirtualType
         }
     }
 
-    void deserialize(Type type, InputSerializer data, byte* source)
+    void deserialize(Type type, InputSerializer data, uint8_t* source)
     {
         assert(type != virtualUnknown);
         switch(type)

@@ -2,18 +2,26 @@
 
 #include <runtime/module.h>
 
+#include <mutex>
+#include <variant>
 #include "asset.h"
+#include "utility/result.h"
 #include <unordered_set>
 #include <utility/asyncData.h>
 #include <utility/asyncQueue.h>
 
 class EntityManager;
 
+class AssetLoader
+{
+  public:
+    virtual AsyncData<Asset*> loadAsset(const AssetID& id, bool incremental) = 0;
+    virtual ~AssetLoader() = default;
+};
+
 class AssetManager : public Module
 {
   public:
-    using FetchCallback = std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)>;
-
     enum class LoadState : uint8_t
     {
         unloaded = 0,
@@ -30,26 +38,36 @@ class AssetManager : public Module
         uint32_t useCount = 0;
         uint32_t unloadedDependencies = 0;
         LoadState loadState = LoadState::unloaded;
-        std::unordered_set<HashedAssetID> usedBy;
+        std::unordered_set<AssetID> usedBy;
     };
 
   private:
     std::mutex _assetLock;
-    std::unordered_map<HashedAssetID, std::unique_ptr<AssetData>> _assets;
-    std::unordered_map<HashedAssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
+    std::unordered_map<AssetID, std::unique_ptr<AssetData>> _assets;
+    std::unordered_map<AssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
+
+    std::vector<std::unique_ptr<AssetLoader>> _loaders;
 
     size_t _nativeComponentID = 0;
 
     template<typename T>
     void addNativeComponent(EntityManager& em);
 
-    // To account for different ways of fetching assets for different build targets, this function is defined multiple
-    // times
-    // TODO refactor this to use a callback std::function
-    AsyncData<Asset*> fetchAssetInternal(const AssetID& id, bool incremental);
+    void fetchAssetInternal(const AssetID& id,
+                            bool incremental,
+                            AssetData* entry,
+                            AsyncData<Asset*> asset,
+                            std::vector<std::unique_ptr<AssetLoader>>::iterator loader);
+    AsyncData<Result<void>> loadDepsInternal(Asset* asset);
+    void finalizeAssetInternal(std::variant<Asset*, std::string> result,
+                               AssetData* entry,
+                               const AssetID& id,
+                               AsyncData<Asset*> promise);
 
   public:
     AssetManager();
+
+    void addLoader(std::unique_ptr<AssetLoader> loader);
 
     template<typename T>
     T* getAsset(const AssetID& id)
@@ -66,7 +84,7 @@ class AssetManager : public Module
     template<typename T>
     AsyncData<T*> fetchAsset(const AssetID& id)
     {
-        static_assert(std::is_base_of<Asset, T>());
+        static_assert(std::is_base_of<Asset, T>(), "fetchAsset requires T to inherit from Asset");
         AsyncData<T*> asset;
         fetchAsset(id, std::is_base_of<IncrementalAsset, T>()).then([asset](Asset* a) {
             asset.setData(std::move((T*)a));

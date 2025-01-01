@@ -67,7 +67,7 @@ class EntitySet
   public:
     EntitySet(std::vector<Archetype*> archetypes, ComponentFilter filter);
 
-    void forEachNative(const std::function<void(byte** components)>& f);
+    void forEachNative(const std::function<void(uint8_t** components)>& f);
 
     size_t archetypeCount() const;
 };

@@ -14,11 +14,20 @@ void ComponentFilter::addComponent(ComponentID id, ComponentFilterFlags flags)
         _chunkFlags = true;
 }
 
-const std::vector<ComponentFilter::Component>& ComponentFilter::components() const { return _components; }
+const std::vector<ComponentFilter::Component>& ComponentFilter::components() const
+{
+    return _components;
+}
 
-ComponentFilter::ComponentFilter(SystemContext* system) { _system = system; }
+ComponentFilter::ComponentFilter(SystemContext* system)
+{
+    _system = system;
+}
 
-SystemContext* ComponentFilter::system() const { return _system; }
+SystemContext* ComponentFilter::system() const
+{
+    return _system;
+}
 
 bool ComponentFilter::checkChunk(Chunk* chunk) const
 {
@@ -51,7 +60,7 @@ EntitySet::EntitySet(std::vector<Archetype*> archetypes, ComponentFilter filter)
     : _archetypes(std::move(archetypes)), _filter(std::move(filter))
 {}
 
-void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
+void EntitySet::forEachNative(const std::function<void(uint8_t** components)>& f)
 {
     std::vector<ComponentID> itrComponents;
     for(auto& c : _filter.components())
@@ -59,7 +68,7 @@ void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
             itrComponents.push_back(c.id);
 
     std::vector<ChunkComponentView*> componentViews(itrComponents.size());
-    std::vector<byte*> data(itrComponents.size());
+    std::vector<uint8_t*> data(itrComponents.size());
 
     for(auto* arch : _archetypes)
     {
@@ -88,4 +97,7 @@ void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
     }
 }
 
-size_t EntitySet::archetypeCount() const { return _archetypes.size(); }
+size_t EntitySet::archetypeCount() const
+{
+    return _archetypes.size();
+}
