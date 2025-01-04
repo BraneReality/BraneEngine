@@ -33,8 +33,6 @@ class BraneProject
 
     void initLoaded();
 
-    void refreshAssets();
-
   public:
     BraneProject(Editor& editor);
 
@@ -57,21 +55,6 @@ class BraneProject
     Editor& editor();
 
     FileWatcher* fileWatcher();
-
-    AssetID newAssetID(const std::filesystem::path& editorAsset, AssetType type);
-
-    void registerAssetLocation(const EditorAsset* asset);
-
-    std::vector<std::pair<AssetID, std::filesystem::path>> searchAssets(const std::string& query,
-                                                                        AssetType type = AssetType::none);
-
-    std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
-
-    std::shared_ptr<EditorAsset> getEditorAsset(const std::filesystem::path& path);
-
-    std::string getAssetName(const AssetID& id);
-
-    std::vector<std::pair<AssetID, std::string>> getAssetHashes();
 };
 
 #endif // BRANEENGINE_BRANEPROJECT_H

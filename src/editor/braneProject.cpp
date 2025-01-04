@@ -90,15 +90,6 @@ void BraneProject::save()
             ++openAsset;
     }
 
-    Json::Value& assets = _file.data()["assets"];
-    // Clean up broken filepaths
-    for(const std::string& id : assets.getMemberNames())
-    {
-        std::filesystem::path path = projectDirectory() / "assets" / assets[id]["path"].asString();
-        if(!std::filesystem::exists(path))
-            assets.removeMember(id);
-    }
-
     FileManager::writeFile(_filepath.string(), _file.data());
     _file.markClean();
 }
@@ -142,7 +133,7 @@ void BraneProject::initLoaded()
         assembly->linkToGLTF(path);
 
         registerAssetLocation(assembly);
-        _editor.cache().deleteCachedAsset(AssetID::parse(assembly->json()["id"].asString()).ok());
+        _editor.cache().deleteCachedAsset(AssetID::parse(assembly->data()["id"].asString()).ok());
 
         if(!isOpen)
             delete assembly;
@@ -165,7 +156,7 @@ void BraneProject::initLoaded()
         assembly->linkToGLTF(path);
 
         registerAssetLocation(assembly);
-        _editor.cache().deleteCachedAsset(AssetID::parse(assembly->json()["id"].asString()).ok());
+        _editor.cache().deleteCachedAsset(AssetID::parse(assembly->data()["id"].asString()).ok());
 
         if(!isOpen)
             delete assembly;
@@ -316,13 +307,13 @@ FileWatcher* BraneProject::fileWatcher()
 void BraneProject::registerAssetLocation(const EditorAsset* asset)
 {
     assert(asset);
-    assert(std::filesystem::exists(asset->file()));
+    assert(std::filesystem::exists(asset->datafile()));
     Json::Value& assets = _file.data()["assets"];
     for(std::pair<AssetID, AssetType>& a : asset->containedAssets())
     {
         assert(!a.first.empty());
         assets[a.first.toString()]["path"] =
-            std::filesystem::relative(asset->file(), projectDirectory() / "assets").string();
+            std::filesystem::relative(asset->datafile(), projectDirectory() / "assets").string();
         assets[a.first.toString()]["type"] = a.second.toString();
     }
 }

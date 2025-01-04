@@ -3,45 +3,69 @@
 #define H_BRANE_MUTEX
 
 #include <mutex>
-#include <optional>
-#include <thread>
+#include "option.h"
 
 template<class T>
 class Mutex
 {
     T value;
-    std::mutex m;
+    mutable std::mutex m;
 
+  public:
     class Lock
     {
         std::lock_guard<std::mutex> lock;
-        T& value;
+        T* value;
 
-        Lock(T& value, std::mutex& m) : value(value), lock(m, std::adopt_lock) {}
+        Lock(T* value, std::mutex& m) : value(value), lock(m, std::adopt_lock) {}
 
         T& operator->()
         {
-            return value;
+            return *value;
         }
 
         T& operator*()
         {
-            return value;
+            return *value;
+        }
+
+        const T& operator->() const
+        {
+            return *value;
+        }
+
+        const T& operator*() const
+        {
+            return *value;
         }
     };
 
     Lock lock()
     {
         m.lock();
-        return Lock(value, m);
+        return Lock(&value, m);
     }
 
-    std::optional<Lock> try_lock()
+    const Lock lock() const
+    {
+        m.lock();
+        return Lock(&value, m);
+    }
+
+    Option<Lock> try_lock()
     {
         if(m.try_lock())
-            return Lock(value, m);
+            return Some(Lock(&value, m));
         else
-            return std::nullopt;
+            return None();
+    }
+
+    Option<const Lock> try_lock() const
+    {
+        if(m.try_lock())
+            return Some(Lock(&value, m));
+        else
+            return None();
     }
 };
 

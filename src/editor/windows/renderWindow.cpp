@@ -59,7 +59,7 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusedAssetEntity = -1;
         if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
         {
-            am->fetchAsset<Assembly>(AssetID::parse(_focusedAsset->json()["id"].asString()).ok())
+            am->fetchAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
                 .then([this](Assembly* assembly) {
                 _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
             }).onError([this](const std::string& error) {
@@ -84,7 +84,7 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
             return;
         auto* am = Runtime::getModule<AssetManager>();
         auto* arm = Runtime::getModule<AssemblyReloadManager>();
-        auto* assembly = am->getAsset<Assembly>(AssetID::parse(_focusedAsset->json()["id"].asString()).ok());
+        auto* assembly = am->getAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok());
         if(assembly)
         {
             _focusedAssetEntity = event->entity();
@@ -294,7 +294,7 @@ void RenderWindow::displayContent()
                 if(_focusedAsset && _focusedAssetEntity != -1)
                 {
                     auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get());
-                    assembly->json().beginMultiChange();
+                    assembly->data().beginMultiChange();
                     if(em->hasComponent<TRS>(_focusedEntity))
                     {
                         assembly->updateEntityComponent(_focusedAssetEntity,
@@ -305,7 +305,7 @@ void RenderWindow::displayContent()
                         assembly->updateEntityComponent(_focusedAssetEntity,
                                                         em->getComponent<Transform>(_focusedEntity)->toVirtual());
                     }
-                    assembly->json().endMultiChange();
+                    assembly->data().endMultiChange();
                 }
             }
         }

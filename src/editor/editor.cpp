@@ -253,7 +253,7 @@ ShaderCompiler& Editor::shaderCompiler()
 
 void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 {
-    AssetID id = AssetID::parse(asset->json()["id"].asString()).ok();
+    AssetID id = AssetID::parse(asset->data()["id"].asString()).ok();
     _cache.deleteCachedAsset(id);
     auto* am = Runtime::getModule<AssetManager>();
     if(!am->hasAsset(id))

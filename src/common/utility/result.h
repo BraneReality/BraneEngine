@@ -8,9 +8,6 @@
 #include "assert.h"
 #include "variantMatch.h"
 
-template<typename T>
-concept ValueNotVoid = !std::is_void_v<T>;
-
 template<typename T = void>
 struct Ok
 {
@@ -19,13 +16,12 @@ struct Ok
     Ok() = default;
 
     Ok(T val)
-        requires std::negation_v<std::is_reference<T>>
-        : value(std::move(val))
-    {}
-
-    Ok(T val)
-        requires std::is_reference_v<T>
-        : value(val)
+        : value([](T val) -> T {
+              if constexpr(std::is_reference<T>())
+                  return val;
+              else
+                  return std::move(val);
+          }(val))
     {}
 };
 
@@ -39,6 +35,7 @@ template<class T>
 struct Err
 {
     T data;
+    Err(T data) : data(std::move(data)) {};
 };
 
 template<class V = void, class E = std::string>
@@ -76,7 +73,7 @@ class Result
 
     /// consumes the result
     V ok()
-        requires ValueNotVoid<V>
+        requires std::negation_v<std::is_void<V>>
     {
         return MATCHV(std::move(_value), [](Ok<V> ok) -> V {
             if constexpr(std::is_reference<V>() || std::is_pointer<V>())
@@ -99,17 +96,18 @@ class Result
         });
     }
 
-    template<class T>
-    Result<T, E> map(std::function<T(V)> f)
-        requires ValueNotVoid<V>
+    template<class T, class C = V>
+    Result<T, E> map(std::function<T(C)> f)
+        requires std::negation_v<std::is_void<C>>
     {
         return MATCHV(std::move(_value), [&](Ok<V> value) {
             return Result<T, E>(Ok<T>(f(std::move(value.value))));
         }, [](Err<E> err) { return Result<T, E>(std::move(err)); });
     }
 
-    template<class T>
+    template<class T, class C = V>
     Result<T, E> map(std::function<T()> f)
+        requires std::is_void_v<C>
     {
         return MATCHV(std::move(_value), [&](Ok<V> value) { return Result<T, E>(Ok<T>(f())); }, [](Err<E> err) {
             return Result<T, E>(std::move(err));

@@ -14,7 +14,7 @@ bool GLTFLoader::loadGltfFromFile(const std::filesystem::path& gltfFilename)
         return false;
     try
     {
-        jsonFile >> _json;
+        jsonFile >> _data;
     }
     catch(const std::exception& e)
     {
@@ -24,7 +24,7 @@ bool GLTFLoader::loadGltfFromFile(const std::filesystem::path& gltfFilename)
 
     jsonFile.close();
 
-    std::filesystem::path binFilename = gltfFilename.parent_path() / _json["buffers"][0]["uri"].asString();
+    std::filesystem::path binFilename = gltfFilename.parent_path() / _data["buffers"][0]["uri"].asString();
 
     std::ifstream binFile = std::ifstream(
         binFilename, std::ios::binary | std::ios::ate); // File will be closed when this object is destroyed.
@@ -59,7 +59,7 @@ bool GLTFLoader::loadGlbFromFile(const std::filesystem::path& glbFilename)
     binFile.read(jsonStr.data(), jsonLength);
 
     Json::Reader reader;
-    if(!reader.parse(jsonStr, _json))
+    if(!reader.parse(jsonStr, _data))
     {
         std::cerr << "Problem parsing assetData: " << jsonStr << std::endl;
         return false;
@@ -76,7 +76,7 @@ bool GLTFLoader::loadGlbFromFile(const std::filesystem::path& glbFilename)
 bool GLTFLoader::loadGltfFromString(const std::string& gltf, const std::string& bin)
 {
     Json::Reader reader;
-    if(!reader.parse(gltf, _json))
+    if(!reader.parse(gltf, _data))
     {
         std::cerr << "Problem parsing assetData: " << gltf << std::endl;
         return false;
@@ -101,7 +101,7 @@ bool GLTFLoader::loadGlbFromString(const std::string& glb)
     binFile.read(jsonStr.data(), jsonLength);
 
     Json::Reader reader;
-    if(!reader.parse(jsonStr, _json))
+    if(!reader.parse(jsonStr, _data))
     {
         std::cerr << "Problem parsing assetData: " << jsonStr << std::endl;
         return false;
@@ -121,11 +121,11 @@ GLTFLoader::~GLTFLoader() {}
 
 void GLTFLoader::printInfo()
 {
-    std::cout << "meshes: " << _json["meshes"].size() << std::endl;
+    std::cout << "meshes: " << _data["meshes"].size() << std::endl;
     size_t primitives = 0;
     size_t verts = 0;
     std::unordered_set<size_t> accessors;
-    for(Json::Value& mesh : _json["meshes"])
+    for(Json::Value& mesh : _data["meshes"])
     {
         primitives += mesh["primitives"].size();
         for(Json::Value& primitive : mesh["primitives"])
@@ -134,7 +134,7 @@ void GLTFLoader::printInfo()
             if(!accessors.count(position))
             {
                 accessors.insert(position);
-                verts += _json["accessors"][position]["count"].asLargestUInt();
+                verts += _data["accessors"][position]["count"].asLargestUInt();
             }
         }
     }
@@ -144,9 +144,9 @@ void GLTFLoader::printInfo()
 
 void GLTFLoader::printPositions(int meshIndex, int primitiveIndex)
 {
-    Json::Value& primitive = _json["meshes"][meshIndex]["primitives"][primitiveIndex];
-    Json::Value& positionAccessor = _json["accessors"][primitive["attributes"]["POSITION"].asInt()];
-    Json::Value& bufferView = _json["bufferViews"][positionAccessor["bufferView"].asInt()];
+    Json::Value& primitive = _data["meshes"][meshIndex]["primitives"][primitiveIndex];
+    Json::Value& positionAccessor = _data["accessors"][primitive["attributes"]["POSITION"].asInt()];
+    Json::Value& bufferView = _data["bufferViews"][positionAccessor["bufferView"].asInt()];
 
     float* buffer = (float*)(_bin.data() + bufferView["byteOffset"].asInt());
 
@@ -160,11 +160,11 @@ void GLTFLoader::printPositions(int meshIndex, int primitiveIndex)
 
 std::vector<uint16_t> GLTFLoader::readShortScalarBuffer(uint32_t accessorIndex)
 {
-    Json::Value& accessor = _json["accessors"][accessorIndex];
+    Json::Value& accessor = _data["accessors"][accessorIndex];
     if(accessor["type"].asString() != "SCALAR" || accessor["componentType"].asUInt() != 5123)
         throw std::runtime_error("Mismatched accessor type for reading Scalar");
 
-    Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+    Json::Value& bufferView = _data["bufferViews"][accessor["bufferView"].asUInt()];
     uint32_t count = accessor["count"].asUInt();
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
@@ -177,11 +177,11 @@ std::vector<uint16_t> GLTFLoader::readShortScalarBuffer(uint32_t accessorIndex)
 
 std::vector<uint32_t> GLTFLoader::readScalarBuffer(uint32_t accessorIndex)
 {
-    Json::Value& accessor = _json["accessors"][accessorIndex];
+    Json::Value& accessor = _data["accessors"][accessorIndex];
     if(accessor["type"].asString() != "SCALAR")
         throw std::runtime_error("Mismatched accessor type for reading Scalar");
 
-    Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+    Json::Value& bufferView = _data["bufferViews"][accessor["bufferView"].asUInt()];
     uint32_t count = accessor["count"].asUInt();
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
@@ -208,11 +208,11 @@ std::vector<uint32_t> GLTFLoader::readScalarBuffer(uint32_t accessorIndex)
 
 std::vector<glm::vec2> GLTFLoader::readVec2Buffer(uint32_t accessorIndex)
 {
-    Json::Value& accessor = _json["accessors"][accessorIndex];
+    Json::Value& accessor = _data["accessors"][accessorIndex];
     if(accessor["componentType"].asUInt() != 5126 || accessor["type"].asString() != "VEC2")
         throw std::runtime_error("Mismatched accessor values for reading Vec2");
 
-    Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+    Json::Value& bufferView = _data["bufferViews"][accessor["bufferView"].asUInt()];
     uint32_t count = accessor["count"].asUInt();
     uint32_t stride = bufferView.get("byteStride", sizeof(float) * 2).asUInt();
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
@@ -230,13 +230,13 @@ std::vector<glm::vec2> GLTFLoader::readVec2Buffer(uint32_t accessorIndex)
 
 std::vector<glm::vec3> GLTFLoader::readVec3Buffer(uint32_t accessorIndex)
 {
-    Json::Value& accessor = _json["accessors"][accessorIndex];
+    Json::Value& accessor = _data["accessors"][accessorIndex];
     std::string type = accessor["type"].asString();
     // We can read vec4 values as vec 3 as the stride will account for the unread value.
     if(accessor["componentType"].asUInt() != 5126 || !(type == "VEC3" || type == "VEC4"))
         throw std::runtime_error("Mismatched accessor values for reading Vec3");
 
-    Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+    Json::Value& bufferView = _data["bufferViews"][accessor["bufferView"].asUInt()];
     uint32_t count = accessor["count"].asUInt();
     uint32_t stride = bufferView.get("byteStride", sizeof(float) * 3).asUInt();
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
@@ -255,13 +255,13 @@ std::vector<glm::vec3> GLTFLoader::readVec3Buffer(uint32_t accessorIndex)
 
 std::vector<glm::vec4> GLTFLoader::readVec4Buffer(uint32_t accessorIndex)
 {
-    Json::Value& accessor = _json["accessors"][accessorIndex];
+    Json::Value& accessor = _data["accessors"][accessorIndex];
     std::string type = accessor["type"].asString();
     // We can read vec4 values as vec 3 as the stride will account for the unread value.
     if(accessor["componentType"].asUInt() != 5126 || !(type == "VEC4"))
         throw std::runtime_error("Mismatched accessor values for reading Vec3");
 
-    Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+    Json::Value& bufferView = _data["bufferViews"][accessor["bufferView"].asUInt()];
     uint32_t count = accessor["count"].asUInt();
     uint32_t stride = bufferView.get("byteStride", sizeof(float) * 4).asUInt();
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
@@ -282,7 +282,7 @@ std::vector<glm::vec4> GLTFLoader::readVec4Buffer(uint32_t accessorIndex)
 std::vector<MeshAsset*> GLTFLoader::extractAllMeshes()
 {
     std::vector<MeshAsset*> meshAssets;
-    for(auto& meshData : _json["meshes"])
+    for(auto& meshData : _data["meshes"])
     {
         MeshAsset* mesh = new MeshAsset();
         mesh->name = meshData["name"].asString();
@@ -327,9 +327,15 @@ std::vector<MeshAsset*> GLTFLoader::extractAllMeshes()
     return meshAssets;
 }
 
-Json::Value& GLTFLoader::nodes() { return _json["nodes"]; }
+Json::Value& GLTFLoader::nodes()
+{
+    return _data["nodes"];
+}
 
-Json::Value& GLTFLoader::json() { return _json; }
+Json::Value& GLTFLoader::data()
+{
+    return _data;
+}
 
 bool GLTFLoader::loadFromFile(const std::filesystem::path& filename)
 {
@@ -344,6 +350,6 @@ bool GLTFLoader::loadFromFile(const std::filesystem::path& filename)
 
 uint32_t GLTFLoader::accessorComponentType(uint32_t accessorIndex)
 {
-    Json::Value& accessor = _json["accessors"][accessorIndex];
+    Json::Value& accessor = _data["accessors"][accessorIndex];
     return accessor["componentType"].asUInt();
 }

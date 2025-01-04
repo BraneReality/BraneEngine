@@ -14,14 +14,14 @@ EditorImageAsset::EditorImageAsset(const std::filesystem::path& file, BraneProje
     // Generate default
     if(!std::filesystem::exists(_file))
     {
-        _json.data()["imageType"] = 0;
+        _data.data()["imageType"] = 0;
     }
 }
 
 std::vector<std::pair<AssetID, AssetType>> EditorImageAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> deps;
-    auto res = AssetID::parse(_json["id"].asString());
+    auto res = AssetID::parse(_data["id"].asString());
     if(!res)
     {
         Runtime::warn(std::format("{} has an invalid id", _file.string()));
@@ -33,13 +33,13 @@ std::vector<std::pair<AssetID, AssetType>> EditorImageAsset::containedAssets() c
 
 Asset* EditorImageAsset::buildAsset(const AssetID& id) const
 {
-    assert(id.toString() == _json["id"].asString());
+    assert(id.toString() == _data["id"].asString());
     auto* asset = new ImageAsset();
 
     asset->name = name();
     asset->id = id;
-    asset->imageType = (ImageAsset::ImageType)_json["imageType"].asUInt();
-    std::filesystem::path imagePath = _file.parent_path() / _json["source"].asString();
+    asset->imageType = (ImageAsset::ImageType)_data["imageType"].asUInt();
+    std::filesystem::path imagePath = _file.parent_path() / _data["source"].asString();
 
     int w, h, texChannels;
     unsigned char* pixels = stbi_load(imagePath.string().c_str(), &w, &h, &texChannels, STBI_rgb_alpha);
@@ -60,6 +60,6 @@ Asset* EditorImageAsset::buildAsset(const AssetID& id) const
 
 void EditorImageAsset::updateSource(const std::filesystem::path& source)
 {
-    _json.data()["source"] = std::filesystem::relative(source, _file.parent_path()).string();
+    _data.data()["source"] = std::filesystem::relative(source, _file.parent_path()).string();
     save();
 }

@@ -56,7 +56,7 @@ Result<UUID> UUID::fromString(std::string_view text)
     std::memcpy(buffer, text.data(), 36);
     UUID ret;
     size_t res = std::sscanf(buffer,
-                             "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                             "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
                              &ret.data.time_low,
                              &ret.data.time_mid,
                              &ret.data.time_hi_and_version,
@@ -90,7 +90,7 @@ std::string UUID::toString() const
 
     snprintf(buffer.data(),
              38,
-             "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+             "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
              data.time_low,
              data.time_mid,
              data.time_hi_and_version,

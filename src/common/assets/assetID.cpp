@@ -1,6 +1,5 @@
 #include "assetID.h"
 #include <cassert>
-#include <sstream>
 #include <utility/hex.h>
 
 std::string BraneAssetID::toString() const
@@ -66,9 +65,9 @@ Result<AssetID, std::string> AssetID::parse(std::string_view text)
     std::string_view protocol_str = text.substr(0, protocol_end);
     std::string_view content_str = text.substr(protocol_end + 1);
     if(protocol_str == "brane")
-        return BraneAssetID::parse(content_str).map<AssetID>([](BraneAssetID id) { return std::move(id); });
+        return BraneAssetID::parse(content_str).map<AssetID, BraneAssetID>([](auto id) { return std::move(id); });
     else if(protocol_str == "file")
-        return FileAssetID::parse(content_str).map<AssetID>([](FileAssetID id) { return std::move(id); });
+        return FileAssetID::parse(content_str).map<AssetID, FileAssetID>([](auto id) { return std::move(id); });
     else
     {
         return Err("Invalid protocol: " + std::string(protocol_str));

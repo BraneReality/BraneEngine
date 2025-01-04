@@ -15,7 +15,7 @@ class EditorScriptAsset : public EditorAsset
 
     std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;
 
-    Asset* buildAsset(const AssetID& id) const override;
+    Result<std::unique_ptr<Asset>> buildAsset(const AssetID& id) const override;
 
     void updateSource(const std::filesystem::path& source);
 

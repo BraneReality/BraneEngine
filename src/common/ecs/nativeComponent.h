@@ -5,6 +5,7 @@
 #ifndef BRANEENGINE_NATIVECOMPONENT_H
 #define BRANEENGINE_NATIVECOMPONENT_H
 
+#include "assets/assetID.h"
 #include "component.h"
 #include "structMembers.h"
 

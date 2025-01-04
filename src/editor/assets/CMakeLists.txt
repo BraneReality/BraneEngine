@@ -7,11 +7,5 @@ add_library(editorAssets STATIC
         editorAsset.cpp
         assemblyReloadManager.cpp 
         assetCache.cpp 
-        jsonVirtualType.cpp 
-        types/editorShaderAsset.cpp
-        types/editorScriptAsset.cpp
-        types/editorAssemblyAsset.cpp
-        types/editorMaterialAsset.cpp 
-        types/editorChunkAsset.cpp 
-        types/editorImageAsset.cpp)
+        jsonVirtualType.cpp)
 target_link_libraries(editorAssets PUBLIC assets_client ecs JsonCpp::JsonCpp)

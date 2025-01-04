@@ -18,16 +18,16 @@ EditorShaderAsset::EditorShaderAsset(const std::filesystem::path& file, BranePro
     // Generate default
     if(!std::filesystem::exists(_file))
     {
-        _json.data()["source"] = "";
+        _data.data()["source"] = "";
     }
 }
 
 void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 {
     std::filesystem::path relPath = std::filesystem::relative(source, _file.parent_path()).string();
-    _json.data()["source"] = relPath.string();
+    _data.data()["source"] = relPath.string();
     std::string hash = FileManager::fileHash(source);
-    bool changed = _json.data().get("lastSourceHash", "") != hash;
+    bool changed = _data.data().get("lastSourceHash", "") != hash;
 
     if(changed)
     {
@@ -98,8 +98,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
                 sampler["binding"] = samp.location;
                 atr["samplers"].append(sampler);
             }
-            _json.data()["attributes"] = atr;
-            _json.data()["lastSourceHash"] = hash;
+            _data.data()["attributes"] = atr;
+            _data.data()["lastSourceHash"] = hash;
         }
         else
             Runtime::error("Failed extract attributes");
@@ -109,17 +109,17 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 
 Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 {
-    assert(id.toString() == _json["id"].asString());
-    if(_json["source"].asString().empty())
+    assert(id.toString() == _data["id"].asString());
+    if(_data["source"].asString().empty())
     {
-        Runtime::error("Shader source not set for " + _json["name"].asString());
+        Runtime::error("Shader source not set for " + _data["name"].asString());
         return nullptr;
     }
-    std::filesystem::path source = _file.parent_path() / _json["source"].asString();
+    std::filesystem::path source = _file.parent_path() / _data["source"].asString();
     std::string fileSuffix = source.extension().string();
 
     ShaderAsset* shader = new ShaderAsset();
-    auto idRes = AssetID::parse(_json["id"].asString());
+    auto idRes = AssetID::parse(_data["id"].asString());
     if(!idRes)
         return nullptr;
     shader->id = idRes.ok();
@@ -160,7 +160,7 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 std::vector<std::pair<AssetID, AssetType>> EditorShaderAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> deps;
-    auto id = AssetID::parse(_json["id"].asString());
+    auto id = AssetID::parse(_data["id"].asString());
     if(!id)
         return deps;
     deps.emplace_back(id.ok(), AssetType::shader);
@@ -169,7 +169,7 @@ std::vector<std::pair<AssetID, AssetType>> EditorShaderAsset::containedAssets() 
 
 ShaderType EditorShaderAsset::shaderType() const
 {
-    std::filesystem::path path{_json["source"].asString()};
+    std::filesystem::path path{_data["source"].asString()};
     auto ext = path.extension();
     if(ext == ".vert")
         return ShaderType::vertex;

@@ -11,6 +11,15 @@ template<class T>
 struct Some
 {
     T value;
+
+    Some(T val)
+        : value([](T val) -> T {
+              if constexpr(std::is_reference<T>())
+                  return val;
+              else
+                  return std::move(val);
+          }(val))
+    {}
 };
 
 template<class V>
@@ -71,8 +80,15 @@ class Option
     Option<T> map(std::function<T(V)> f)
     {
         return MATCHV(std::move(_value), [&](Some<V> value) {
-            return Option(Some(f(std::move(value.value))));
+            return Option<T>(Some<T>(f(std::move(value.value))));
         }, [](None none) { return Option(none); });
+    }
+
+    V valueOrDefault(V defaultValue)
+    {
+        return MATCHV(std::move(_value), [&](Some<V> value) {
+            return std::move(value.value);
+        }, [defaultValue](None none) { return std::forward(defaultValue); });
     }
 };
 

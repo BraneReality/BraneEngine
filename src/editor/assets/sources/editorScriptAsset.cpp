@@ -14,16 +14,16 @@ EditorScriptAsset::EditorScriptAsset(const std::filesystem::path& file, BranePro
     // Generate default
     if(!std::filesystem::exists(_file))
     {
-        _json.data()["source"] = "";
+        _data.data()["source"] = "";
     }
 }
 
 void EditorScriptAsset::updateSource(const std::filesystem::path& source)
 {
     std::filesystem::path relPath = std::filesystem::relative(source, _file.parent_path()).string();
-    _json.data()["source"] = relPath.string();
+    _data.data()["source"] = relPath.string();
     std::string hash = FileManager::fileHash(source);
-    bool changed = _json.data().get("lastSourceHash", "") != hash;
+    bool changed = _data.data().get("lastSourceHash", "") != hash;
 
     if(changed)
     {
@@ -45,13 +45,13 @@ void EditorScriptAsset::updateSource(const std::filesystem::path& source)
 
 Asset* EditorScriptAsset::buildAsset(const AssetID& id) const
 {
-    assert(id.toString() == _json["id"].asString());
-    if(_json["source"].asString().empty())
+    assert(id.toString() == _data["id"].asString());
+    if(_data["source"].asString().empty())
     {
-        Runtime::error("Shader source not set for " + _json["name"].asString());
+        Runtime::error("Shader source not set for " + _data["name"].asString());
         return nullptr;
     }
-    std::filesystem::path source = _file.parent_path() / _json["source"].asString();
+    std::filesystem::path source = _file.parent_path() / _data["source"].asString();
     std::string fileSuffix = source.extension().string();
 
     ScriptAsset* script = new ScriptAsset();
@@ -74,7 +74,7 @@ Asset* EditorScriptAsset::buildAsset(const AssetID& id) const
 std::vector<std::pair<AssetID, AssetType>> EditorScriptAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> deps;
-    auto res = AssetID::parse(_json["id"].asString());
+    auto res = AssetID::parse(_data["id"].asString());
     if(!res)
     {
         Runtime::error(std::format("Script Asset at {} has invalid id", _file.string()));
