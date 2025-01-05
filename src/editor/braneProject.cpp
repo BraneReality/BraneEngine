@@ -16,7 +16,7 @@
 #include "runtime/runtime.h"
 #include "utility/hex.h"
 
-BraneProject::BraneProject(Editor& editor) : _editor(editor), _file(editor.jsonTracker()) {}
+BraneProject::BraneProject(Editor& editor) : _editor(editor), _data(editor.jsonTracker()) {}
 
 BraneProject::~BraneProject() {}
 
@@ -36,7 +36,7 @@ void BraneProject::loadDefault()
         Runtime::error("Error parsing default project file: " + (std::string)e.what());
         throw std::runtime_error("Error  parsing default project file!");
     }
-    _file.initialize(file);
+    _data.initialize(file);
 }
 
 bool BraneProject::load(const std::filesystem::path& filepath)
@@ -56,7 +56,7 @@ bool BraneProject::load(const std::filesystem::path& filepath)
         Runtime::error("Error opening " + filepath.string() + ". " + e.what());
         return false;
     }
-    _file.initialize(file);
+    _data.initialize(file);
     initLoaded();
     return true;
 }
@@ -64,7 +64,7 @@ bool BraneProject::load(const std::filesystem::path& filepath)
 void BraneProject::create(const std::string& projectName, const std::filesystem::path& directory)
 {
     loadDefault();
-    _file.data()["info"]["name"] = projectName;
+    _data.data()["info"]["name"] = projectName;
     _filepath = directory;
     _filepath = _filepath / projectName / (projectName + ".brane");
 
@@ -90,8 +90,8 @@ void BraneProject::save()
             ++openAsset;
     }
 
-    FileManager::writeFile(_filepath.string(), _file.data());
-    _file.markClean();
+    FileManager::writeFile(_filepath.string(), _data.data());
+    _data.markClean();
 }
 
 bool BraneProject::loaded() const
@@ -108,9 +108,9 @@ void BraneProject::initLoaded()
 {
     refreshAssets();
 
-    Json::Value& assets = _file.data()["assets"];
-    if(!_file.data().isMember("assetIdCounter"))
-        _file.data()["assetIdCounter"] = 0;
+    Json::Value& assets = _data.data()["assets"];
+    if(!_data.data().isMember("assetIdCounter"))
+        _data.data()["assetIdCounter"] = 0;
 
     _fileWatcher = std::make_unique<FileWatcher>();
     _fileWatcher->loadCache(projectDirectory() / "cache" / "changeCache");
@@ -244,7 +244,7 @@ void BraneProject::initLoaded()
 
 bool BraneProject::unsavedChanges() const
 {
-    if(_file.dirty())
+    if(_data.dirty())
         return true;
     for(auto& asset : _openAssets)
     {
@@ -256,16 +256,16 @@ bool BraneProject::unsavedChanges() const
 
 VersionedJson& BraneProject::json()
 {
-    return _file;
+    return _data;
 }
 
 std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(const AssetID& id)
 {
     if(id.empty())
         return nullptr;
-    if(!_file["assets"].isMember(id.toString()))
+    if(!_data["assets"].isMember(id.toString()))
         return nullptr;
-    std::filesystem::path path = projectDirectory() / "assets" / _file["assets"][id.toString()]["path"].asString();
+    std::filesystem::path path = projectDirectory() / "assets" / _data["assets"][id.toString()]["path"].asString();
     return getEditorAsset(path);
 }
 
@@ -273,7 +273,7 @@ std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(const std::filesystem:
 {
     if(_openAssets.count(path.string()))
         return _openAssets.at(path.string());
-    auto asset = std::shared_ptr<EditorAsset>(EditorAsset::openUnknownAsset(path, *this));
+    auto asset = std::shared_ptr<EditorAsset>(EditorAsset::loadAsset(path, *this));
     if(asset)
         _openAssets.insert({path.string(), asset});
     return asset;
@@ -286,12 +286,12 @@ Editor& BraneProject::editor()
 
 AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset, AssetType type)
 {
-    Json::Value& assets = _file.data()["assets"];
-    auto id = _file["assetIdCounter"].asUInt();
+    Json::Value& assets = _data.data()["assets"];
+    auto id = _data["assetIdCounter"].asUInt();
     std::string testID = "/" + toHex(id);
     while(assets.isMember(testID))
         testID = "/" + toHex(++id);
-    _file.data()["assetIdCounter"] = id;
+    _data.data()["assetIdCounter"] = id;
 
     assets[testID]["path"] = std::filesystem::relative(editorAsset, projectDirectory() / "assets").string();
     assets[testID]["type"] = type.toString();
@@ -302,104 +302,4 @@ AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset, Asset
 FileWatcher* BraneProject::fileWatcher()
 {
     return _fileWatcher.get();
-}
-
-void BraneProject::registerAssetLocation(const EditorAsset* asset)
-{
-    assert(asset);
-    assert(std::filesystem::exists(asset->datafile()));
-    Json::Value& assets = _file.data()["assets"];
-    for(std::pair<AssetID, AssetType>& a : asset->containedAssets())
-    {
-        assert(!a.first.empty());
-        assets[a.first.toString()]["path"] =
-            std::filesystem::relative(asset->datafile(), projectDirectory() / "assets").string();
-        assets[a.first.toString()]["type"] = a.second.toString();
-    }
-}
-
-void BraneProject::refreshAssets()
-{
-    Json::Value& assets = _file.data()["assets"];
-    // Delete paths that no longer exist
-    for(const std::string& id : assets.getMemberNames())
-    {
-        std::filesystem::path path = projectDirectory() / "assets" / assets[id]["path"].asString();
-        if(!std::filesystem::exists(path))
-            assets.removeMember(id);
-    }
-
-    std::unordered_set<std::string> assetTypes = {".shader", ".material", ".assembly", ".image", ".script"};
-    for(auto& file : std::filesystem::recursive_directory_iterator{projectDirectory() / "assets"})
-    {
-        if(!file.is_regular_file())
-            continue;
-        if(!assetTypes.count(file.path().extension().string()))
-            continue;
-        EditorAsset* asset = nullptr;
-        try
-        {
-            asset = EditorAsset::openUnknownAsset(file, *this);
-        }
-        catch(const std::exception& e)
-        {
-            Runtime::error("Could not open asset " + file.path().string() + " error: " + e.what());
-            continue;
-        }
-        if(!asset)
-        {
-            Runtime::error("Could not automatically open asset with extension " + file.path().extension().string());
-            continue;
-        }
-        registerAssetLocation(asset);
-        delete asset;
-    }
-}
-
-std::vector<std::pair<AssetID, std::filesystem::path>> BraneProject::searchAssets(const std::string& query,
-                                                                                  AssetType type)
-{
-    std::vector<std::pair<AssetID, std::filesystem::path>> assets;
-    auto nativeAssets = Runtime::getModule<AssetManager>()->nativeAssets(type);
-    for(auto& asset : nativeAssets)
-        assets.emplace_back(asset->id, asset->name);
-    try
-    {
-        for(auto& assetID : _file["assets"].getMemberNames())
-        {
-            const Json::Value& asset = _file["assets"][assetID];
-            std::filesystem::path path{asset["path"].asString()};
-            if(type != AssetType::none && asset["type"] != type.toString())
-                continue;
-            if(!query.empty() && path.filename().string().find(query) == std::string::npos)
-                continue;
-            assets.emplace_back(AssetID::parse(assetID).ok(), path);
-        }
-    }
-    catch(const std::exception& e)
-    {
-        Runtime::warn("Error searching assets, may be a problem with the project file: " + (std::string)e.what());
-    }
-
-    std::sort(assets.begin(), assets.end(), [](auto& a, auto& b) { return a.second.stem() < b.second.stem(); });
-    return assets;
-}
-
-std::string BraneProject::getAssetName(const AssetID& id)
-{
-    if(!_file["assets"].isMember(id.toString()))
-        return "null";
-    return std::filesystem::path{_file["assets"][id.toString()]["path"].asString()}.stem().string();
-}
-
-std::vector<std::pair<AssetID, std::string>> BraneProject::getAssetHashes()
-{
-    std::vector<std::pair<AssetID, std::string>> hashes;
-    auto ids = _file["assets"].getMemberNames();
-    for(auto& idStr : ids)
-    {
-        AssetID id = AssetID::parse(idStr).ok();
-        hashes.emplace_back(std::move(id), getEditorAsset(id)->hash(id));
-    }
-    return hashes;
 }

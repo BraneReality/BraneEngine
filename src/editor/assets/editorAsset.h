@@ -58,10 +58,11 @@ class EditorAsset : public TrackedObject
     int changeVersion = 0;
     int saveVersion = 0;
 
-  public:
-    static Result<std::unique_ptr<EditorAsset>> openUnknownAsset(const std::filesystem::path& sourcePath);
-
     EditorAsset(const std::filesystem::path& sourcePath);
+
+  public:
+    static Result<std::unique_ptr<EditorAsset>> loadAsset(const std::filesystem::path& sourcePath);
+
 
     virtual ~EditorAsset() = default;
 

@@ -13,7 +13,8 @@ add_executable(BraneEditor
         main.cpp
         editor.cpp
         editorEvents.cpp
-        braneProject.cpp)
+        braneProject.cpp
+        assetIndexer.cpp)
 if(WIN32)
     set_target_properties(BraneEditor PROPERTIES WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,TRUE,FALSE>)
 endif()
