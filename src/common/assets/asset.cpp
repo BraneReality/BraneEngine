@@ -97,6 +97,9 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer& s)
         case AssetType::mesh:
             asset = new MeshAsset();
             break;
+        case AssetType::image:
+            // asset = new ImageAsset();
+            // break;
         default:
             throw std::runtime_error("Tried to incrementally deserialize, non-incremental asset.");
     }

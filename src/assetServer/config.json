@@ -1,27 +1,25 @@
 {
-  "network": {
-    "use_ssl" : false,
-    "domain" : "localhost",
-    "ssl_cert" : "keys/branevr_privkey.pem",
-    "private_key" : "keys/branevr_cert.pem",
-    "tmp_dh" : "keys/tmp_dh2048.pem",
-    "auto_renew_key" : true,
-    "account_key" : "keys/account.key",
-    "web_file_dir" : "../../src/assetServer/pages",
-    "tcp_port": 2001,
-    "ssl_port": 2002
-  },
-  "security" :
-  {
-    "hash_iterations" : 10001
-  },
-  "data" : {
-    "database_path" : "database/data.db",
-    "asset_path" : "assets"
-  },
-  "default_assets" :
-  {
-    "material" : "defaults/shaded.material",
-    "chunk" : ""
-  }
+    "network": {
+        "use_ssl": false,
+        "domain": "localhost",
+        "ssl_cert": "keys/branevr_privkey.pem",
+        "private_key": "keys/branevr_cert.pem",
+        "tmp_dh": "keys/tmp_dh2048.pem",
+        "auto_renew_key": true,
+        "account_key": "keys/account.key",
+        "web_file_dir": "../../src/assetServer/pages",
+        "tcp_port": 2001,
+        "ssl_port": 2002
+    },
+    "security": {
+        "hash_iterations": 10001
+    },
+    "data": {
+        "database_path": "database/data.db",
+        "asset_path": "assets"
+    },
+    "default_assets": {
+        "material": "defaults/shaded.material",
+        "chunk": "/A"
+    }
 }

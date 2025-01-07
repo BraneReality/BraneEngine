@@ -36,7 +36,7 @@ std::vector<AssetDependency> MaterialAsset::dependencies() const
     if(!fragmentShader.null())
         deps.push_back({fragmentShader, false});
     for(auto& t : textures)
-        deps.push_back({t.second, true});
+        deps.push_back({t.second, false});
     return deps;
 }
 

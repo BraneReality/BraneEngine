@@ -39,13 +39,13 @@ void ImageAsset::deserialize(InputSerializer& s)
 
 void ImageAsset::serializeHeader(OutputSerializer& s) const
 {
-    IncrementalAsset::serializeHeader(s);
+    // IncrementalAsset::serializeHeader(s);
     s << imageType << size << (uint32_t)data.size();
 }
 
 void ImageAsset::deserializeHeader(InputSerializer& s)
 {
-    IncrementalAsset::deserializeHeader(s);
+    // IncrementalAsset::deserializeHeader(s);
     uint32_t dataSize;
     s >> imageType >> size >> dataSize;
     data.resize(dataSize);
@@ -68,9 +68,10 @@ void ImageAsset::deserializeHeader(InputSerializer& s)
     }
 }
 
+/*
 std::unique_ptr<IncrementalAsset::SerializationContext> ImageAsset::createContext() const
 {
-    return std::unique_ptr<ImageSerializationContext>();
+    return std::move(std::unique_ptr<ImageSerializationContext>());
 }
 
 bool ImageAsset::serializeIncrement(OutputSerializer& s, IncrementalAsset::SerializationContext* iteratorData) const
@@ -94,6 +95,7 @@ bool ImageAsset::serializeIncrement(OutputSerializer& s, IncrementalAsset::Seria
 
     return ctx->pos != size.x * size.y;
 }
+*/
 
 void ImageAsset::deserializeIncrement(InputSerializer& s)
 {

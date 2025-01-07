@@ -8,7 +8,7 @@
 #include "../asset.h"
 #include "glm/vec2.hpp"
 
-class ImageAsset : public IncrementalAsset
+class ImageAsset : public Asset
 {
   public:
     std::vector<uint8_t> data;
@@ -33,15 +33,15 @@ class ImageAsset : public IncrementalAsset
 
     void deserialize(InputSerializer& s) override;
 
-    void serializeHeader(OutputSerializer& s) const override;
+    void serializeHeader(OutputSerializer& s) const;
 
-    void deserializeHeader(InputSerializer& s) override;
+    void deserializeHeader(InputSerializer& s);
 
-    std::unique_ptr<SerializationContext> createContext() const override;
+    // std::unique_ptr<SerializationContext> createContext() const;
 
-    bool serializeIncrement(OutputSerializer& sData, SerializationContext* iteratorData) const override;
+    // bool serializeIncrement(OutputSerializer& sData, SerializationContext* iteratorData) const;
 
-    void deserializeIncrement(InputSerializer& sData) override;
+    void deserializeIncrement(InputSerializer& sData);
 };
 
 #endif // BRANEENGINE_IMAGEASSET_H

@@ -37,8 +37,7 @@ AssetServer::AssetServer()
 
     createListeners();
 
-    Runtime::timeline().addTask(
-        "send asset data", [this] { processMessages(); }, "networking");
+    Runtime::timeline().addTask("send asset data", [this] { processMessages(); }, "networking");
 }
 
 AssetServer::~AssetServer() {}
@@ -113,6 +112,7 @@ void AssetServer::createAssetListeners()
 
                 IncrementalAssetSender assetSender{};
                 assetSender.iteratorData = ia->createContext();
+                assert(assetSender.iteratorData);
                 assetSender.asset = ia;
                 assetSender.streamID = streamID;
                 assetSender.connection = ctxPtr->sender;
@@ -370,26 +370,25 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
     {
         fm->async_readUnknownAsset(path)
             .then([this, asset](Asset* ptr) {
-                ptr->id.setAddress(Config::json()["network"]["domain"].asString());
-                _assetLock.lock();
-                auto& d = _assets.at(ptr->id);
-                d->loadState = LoadState::awaitingDependencies;
-                _assetLock.unlock();
-                if(dependenciesLoaded(ptr))
-                {
-                    asset.setData(ptr);
-                    return;
-                }
+            ptr->id.setAddress(Config::json()["network"]["domain"].asString());
+            _assetLock.lock();
+            auto& d = _assets.at(ptr->id);
+            d->loadState = LoadState::awaitingDependencies;
+            _assetLock.unlock();
+            if(dependenciesLoaded(ptr))
+            {
+                asset.setData(ptr);
+                return;
+            }
 
-                d->loadState = LoadState::awaitingDependencies;
-                fetchDependencies(ptr, [ptr, asset](bool success) mutable {
-                    if(success)
-                        asset.setData(ptr);
-                    else
-                        asset.setError("Failed to load dependency for: " + ptr->name);
-                });
-            })
-            .onError([asset](auto& err) { asset.setError(err); });
+            d->loadState = LoadState::awaitingDependencies;
+            fetchDependencies(ptr, [ptr, asset](bool success) mutable {
+                if(success)
+                    asset.setData(ptr);
+                else
+                    asset.setError("Failed to load dependency for: " + ptr->name);
+            });
+        }).onError([asset](auto& err) { asset.setError(err); });
         return asset;
     }
     else

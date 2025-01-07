@@ -281,26 +281,23 @@ void AssetBrowserWidget::displayFiles()
 #elif __unix__
                 const std::string fileBrowser = "xdg-open \"";
 #endif
-                system((fileBrowser + currentDirectory().string() + "\"").c_str());
+                std::string command = (fileBrowser + currentDirectory().string() + "\"");
+                Logging::pushLog("running " + command, Logging::LogLevel::log);
+                system(command.c_str());
             }
             if(_selectedFiles.x != -1)
             {
                 ImGui::Separator();
                 if(_selectedFiles.x == _selectedFiles.y)
                 {
-                    if(getFileType(_contents[_selectedFiles.x]) == FileType::source &&
-                       ImGui::Selectable(ICON_FA_UP_RIGHT_FROM_SQUARE " Edit"))
-                    {
 #ifdef _WIN32
-                        const std::string osCommand = R"(start "" ")";
+                    const std::string osCommand = R"(start "" ")";
 #elif __unix__
-                        const std::string osCommand = "xdg-open \"";
+                    const std::string osCommand = "xdg-open \"";
 #endif
-                        auto path = currentDirectory() / _contents[_selectedFiles.x].path();
-                        system((osCommand + path.string() + "\"").c_str());
-                    }
+                    auto path = currentDirectory() / _contents[_selectedFiles.x].path();
+                    system((osCommand + path.string() + "\"").c_str());
                 }
-
                 if(ImGui::Selectable(ICON_FA_TRASH " Delete"))
                 {
                     Runtime::warn("TODO delete assets from project file");

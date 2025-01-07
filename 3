@@ -88,13 +88,6 @@ namespace graphics
         for(auto& textureBinding : asset->textures)
         {
             auto* image = am->getAsset<ImageAsset>(textureBinding.second);
-
-            if(!image)
-            {
-                AssetID shitWorkaround = textureBinding.second;
-                shitWorkaround.setAddress("192.168.0.135");
-                image = am->getAsset<ImageAsset>(shitWorkaround);
-            }
             Texture* texture = vkr->getTexture(image->runtimeID);
             _textures.push_back({texture, textureBinding.first});
         }

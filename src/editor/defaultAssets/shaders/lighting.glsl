@@ -54,7 +54,7 @@ float GeometrySchlickGGX(float dotp, float roughness)
     float r = (roughness + 1.0);
     float k = (r*r) / 8.0;
 
-    return dotp / (dotp * (1.0 - k) + k);
+    return dotp / (dotp * (1.0 - k) + k + 0.0001);
 }
 float GeometrySmith(vec3 normal, vec3 viewVec, vec3 lightVec, float roughness)
 {
@@ -68,7 +68,7 @@ float GeometrySmith(vec3 normal, vec3 viewVec, vec3 lightVec, float roughness)
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 vec3 shadePBR(vec3 albedo, vec3 position, vec3 cameraPos, vec3 normal, float roughness, float metallic)
@@ -82,9 +82,9 @@ vec3 shadePBR(vec3 albedo, vec3 position, vec3 cameraPos, vec3 normal, float rou
         // radiance
         vec3  lightVec    = normalize(plb.lights[i].position - position);
         vec3  halfVec     = normalize(viewVec + lightVec);
-        float distance    = length(plb.lights[i].position - position);
-        float attenuation = 1.0 / (distance * distance);
-        vec3  radiance    = plb.lights[i].color.xyz * attenuation * max(plb.lights[i].color.a, 0);
+        float d   = length(plb.lights[i].position - position);
+        float attenuation = 1.0 / (d * d);
+        vec3  radiance    = plb.lights[i].color.xyz * max(plb.lights[i].color.a, 0) * attenuation;
 
         // brdf
         float NDF = DistributionGGX(normal, halfVec, roughness);
@@ -98,15 +98,15 @@ vec3 shadePBR(vec3 albedo, vec3 position, vec3 cameraPos, vec3 normal, float rou
         float viewDot  = max(dot(normal, viewVec), 0.0);
         float lightDot = max(dot(normal, lightVec), 0.0);
 
-        vec3 specular = (NDF * G * F) / (4.0 * viewDot * lightDot + 0.001);
+        vec3 specular = (NDF * G * F) / (4.0 * viewDot * lightDot + 0.00001);
 
         // add to hue
-        lightHue += ((kD * albedo) / PI + specular) * radiance * lightDot;
+        lightHue += (kD * albedo / PI + specular) * radiance * lightDot;
 
     }
 
-    //Add in ambient here later
-    vec3 color = lightHue;
+    vec3 ambient = vec3(0.03) * albedo * (1.0 - metallic);
+    vec3 color = ambient + lightHue;
 
     return gammaCorrect(color);
 }
