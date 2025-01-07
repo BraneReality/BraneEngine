@@ -83,10 +83,11 @@ void Client::start()
     camera.fov = 45;
     em->setComponent(_mainCamera, camera);
 
-    nm->async_connectToAssetServer("localhost", 2001, [nm](bool success) {
+    std::string serverIp = "192.168.0.135";
+    nm->async_connectToAssetServer(serverIp, 2001, [nm, serverIp](bool success) {
         if(success)
         {
-            auto* assetServer = nm->getServer("localhost");
+            auto* assetServer = nm->getServer(serverIp);
             SerializedData data;
             OutputSerializer s(data);
             std::string username = Config::json()["user"]["username"].asString();
