@@ -29,7 +29,7 @@ vec3 shadeDiffuse(vec3 color, vec3 position, vec3 normal)
     }
     color *= lightHue;
 
-    return gammaCorrect(color);
+    return color;
 }
 
 #ifndef PI
@@ -108,7 +108,7 @@ vec3 shadePBR(vec3 albedo, vec3 position, vec3 cameraPos, vec3 normal, float rou
     //Add in ambient here later
     vec3 color = lightHue;
 
-    return gammaCorrect(color);
+    return color;
 }
 
 #endif
