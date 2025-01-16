@@ -12,7 +12,6 @@
 #include "editor/assets/editorAsset.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
 #include "editor/assets/types/editorMaterialAsset.h"
-#include "editor/assets/types/EditorScriptAsset.h"
 #include "editor/assets/types/editorShaderAsset.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
@@ -140,8 +139,6 @@ void DataWindow::displayAssetData()
                 displayChunkData();
                 break;
             case AssetType::script:
-                displayScriptData();
-                break;
             default:
                 ImGui::PushTextWrapPos();
                 ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an "
@@ -697,32 +694,5 @@ void DataWindow::displayImageData()
         if(texture)
             _imagePreview = ImGui_ImplVulkan_AddTexture(
                 texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
-}
-
-void DataWindow::displayScriptData()
-{
-    auto* script = static_cast<EditorScriptAsset*>(_focusedAsset.get());
-    ImGui::Text("Script content:");
-    ImGui::TextWrapped("%s", _scriptText.c_str());
-
-    if(ImGui::Button("Run Script"))
-    {
-        // Load and run script
-        lua_State* L = luaL_newstate();
-        if(!L)
-        {
-            Runtime::error("Failed to init lua!");
-            return;
-        }
-
-        luaL_openlibs(L);
-
-        if(luaL_dostring(L, _scriptText.c_str()) != LUA_OK)
-        {
-            Runtime::error("Lua error: " + std::string(lua_tostring(L, -1)));
-            lua_pop(L, 1);
-        }
-        lua_close(L);
     }
 }
