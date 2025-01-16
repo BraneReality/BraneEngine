@@ -9,6 +9,7 @@
 #include "types/materialAsset.h"
 #include "types/meshAsset.h"
 #include "types/shaderAsset.h"
+#include "utility/variantMatch.h"
 
 AssetManager::AssetManager()
 {
@@ -25,15 +26,25 @@ AssetManager::AssetManager()
     addNativeComponent<graphics::Camera>(*em);
 }
 
-const char* AssetManager::name() { return "assetManager"; }
+void AssetManager::addLoader(std::unique_ptr<AssetLoader> loader)
+{
+    _loaders.push_back(std::move(loader));
+}
+
+const char* AssetManager::name()
+{
+    return "assetManager";
+}
 
 template<typename T>
 void AssetManager::addNativeComponent(EntityManager& em)
 {
     static_assert(std::is_base_of<NativeComponent<T>, T>());
     ComponentDescription* description = T::constructDescription();
-    ComponentAsset* asset = new ComponentAsset(
-        T::getMemberTypes(), T::getMemberNames(), AssetID("native", static_cast<uint32_t>(_nativeComponentID++)));
+    ComponentAsset* asset =
+        new ComponentAsset(T::getMemberTypes(),
+                           T::getMemberNames(),
+                           FileAssetID(std::format("native/{}", static_cast<uint32_t>(_nativeComponentID++))));
     asset->name = T::getComponentName();
     asset->componentID = em.components().registerComponent(description);
 
@@ -60,7 +71,7 @@ bool AssetManager::hasAsset(const AssetID& id)
 void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callback)
 {
     assert(a);
-    assert(!a->id.null());
+    assert(!a->id.empty());
     std::vector<std::pair<AssetID, bool>> unloadedDeps;
     _assetLock.lock();
     for(AssetDependency& d : a->dependencies())
@@ -69,10 +80,6 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
         if(dep == _assets.end() || dep->second->loadState < LoadState::usable)
         {
             std::pair<AssetID, bool> depPair = {d.id, d.streamable};
-            // If the server address is empty, it means this asset is from the same origin as the parent.
-            if(depPair.first.address().empty())
-                depPair.first.setAddress(a->id.address());
-
             unloadedDeps.push_back(std::move(depPair));
         }
     }
@@ -93,23 +100,22 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
     {
         fetchAsset(d.first, d.second)
             .then([this, id, callbackPtr](Asset* asset) {
-                Runtime::log("Loaded: " + asset->name);
-                _assetLock.lock();
-                if(!_assets.count(id))
-                {
-                    _assetLock.unlock();
-                    return;
-                }
-                auto* data = _assets.at(id).get();
-                auto remaining = --data->unloadedDependencies;
+            Runtime::log("Loaded: " + asset->name);
+            _assetLock.lock();
+            if(!_assets.count(id))
+            {
                 _assetLock.unlock();
-                if(remaining == 0)
-                    (*callbackPtr)(true);
-            })
-            .onError([a, callbackPtr](const std::string& message) {
-                Runtime::error("Unable to fetch dependency of " + a->id.string() + ": " + message);
-                (*callbackPtr)(false);
-            });
+                return;
+            }
+            auto* data = _assets.at(id).get();
+            auto remaining = --data->unloadedDependencies;
+            _assetLock.unlock();
+            if(remaining == 0)
+                (*callbackPtr)(true);
+        }).onError([a, callbackPtr](const std::string& message) {
+            Runtime::error("Unable to fetch dependency of " + a->id.toString() + ": " + message);
+            (*callbackPtr)(false);
+        });
     }
 }
 
@@ -120,6 +126,89 @@ bool AssetManager::dependenciesLoaded(const Asset* asset) const
         if(!_assets.count(d.id))
             return false;
     return true;
+}
+
+AsyncData<Result<void>> AssetManager::loadDepsInternal(Asset* asset)
+{
+    assert(asset);
+    AsyncData<Result<void>> promise;
+    _assetLock.lock();
+    _assets.at(asset->id)->loadState = LoadState::awaitingDependencies;
+    _assetLock.unlock();
+    if(dependenciesLoaded(asset))
+    {
+        promise.setData(Ok());
+        return promise;
+    }
+    fetchDependencies(asset, [asset, promise](bool success) {
+        if(success)
+            promise.setData(Ok());
+        else
+            promise.setError("Failed to load dependency for: " + asset->name);
+    });
+    return promise;
+}
+
+void AssetManager::finalizeAssetInternal(std::variant<Asset*, std::string> result,
+                                         AssetData* entry,
+                                         const AssetID& id,
+                                         AsyncData<Asset*> promise)
+{
+    MATCHV(result, [&](std::string error) {
+        _assetLock.lock();
+        std::vector<std::function<void(Asset*)>> onLoaded;
+        if(_awaitingLoad.count(id))
+        {
+            onLoaded = std::move(_awaitingLoad.at(id));
+            _awaitingLoad.erase(id);
+        }
+        _assets.erase(id);
+        _assetLock.unlock();
+
+        promise.setError(error);
+        for(auto& f : onLoaded)
+            f(nullptr);
+    }, [&](Asset* a) {
+        assert(a);
+        loadDepsInternal(a)
+            .then([this, a, entry, promise](Result<void> depsResult) {
+            _assetLock.lock();
+            entry->loadState = LoadState::loaded;
+            entry->asset = std::unique_ptr<Asset>(a);
+            std::vector<std::function<void(Asset*)>> onLoaded;
+            if(_awaitingLoad.count(a->id))
+            {
+                onLoaded = std::move(_awaitingLoad.at(a->id));
+                _awaitingLoad.erase(a->id);
+            }
+            _assetLock.unlock();
+            a->onDependenciesLoaded();
+            for(auto& f : onLoaded)
+                f(a);
+
+            promise.setData(a);
+        }).onError([this, a, entry, id, promise](std::string error) {
+            finalizeAssetInternal(error, entry, id, promise);
+        });
+    });
+}
+
+void AssetManager::fetchAssetInternal(const AssetID& id,
+                                      bool incremental,
+                                      AssetData* entry,
+                                      AsyncData<Asset*> asset,
+                                      std::vector<std::unique_ptr<AssetLoader>>::iterator loader)
+{
+    if(loader == _loaders.end())
+    {
+        finalizeAssetInternal(std::format("Asset {} could not be fetched", id.toString()), entry, id, asset);
+        return;
+    }
+    (*loader)
+        ->loadAsset(id, incremental)
+        .then([this, entry, asset, id](Asset* a) {
+        finalizeAssetInternal(a, entry, id, asset);
+    }).onError([this, entry, asset, id](const std::string& error) { finalizeAssetInternal(error, entry, id, asset); });
 }
 
 AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
@@ -147,39 +236,13 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
     _assets.insert({id, std::unique_ptr<AssetData>(assetData)});
 
     _assetLock.unlock();
-    fetchAssetInternal(id, incremental)
-        .then([this, assetData, asset](Asset* a) {
-            assert(a);
-            _assetLock.lock();
-            assetData->loadState = LoadState::loaded;
-            assetData->asset = std::unique_ptr<Asset>(a);
-            std::vector<std::function<void(Asset*)>> onLoaded;
-            if(_awaitingLoad.count(a->id))
-            {
-                onLoaded = std::move(_awaitingLoad.at(a->id));
-                _awaitingLoad.erase(a->id);
-            }
-            _assetLock.unlock();
-            a->onDependenciesLoaded();
-            for(auto& f : onLoaded)
-                f(a);
 
-            asset.setData(a);
-        })
-        .onError([this, asset, id](const std::string& error) {
-            _assetLock.lock();
-            std::vector<std::function<void(Asset*)>> onLoaded;
-            if(_awaitingLoad.count(id))
-            {
-                onLoaded = std::move(_awaitingLoad.at(id));
-                _awaitingLoad.erase(id);
-            }
-            _assets.erase(id);
-            _assetLock.unlock();
-            asset.setError(error);
-            for(auto& f : onLoaded)
-                f(nullptr);
-        });
+    if(_loaders.empty())
+    {
+        asset.setError("No asset loaders set!");
+        return asset;
+    }
+    fetchAssetInternal(id, incremental, assetData, asset, _loaders.begin());
 
     return asset;
 }
@@ -230,7 +293,7 @@ std::vector<const Asset*> AssetManager::nativeAssets(AssetType type)
                       MeshRendererComponent::def()->asset,
                       PointLightComponent::def()->asset};
             break;
-        case AssetType::system:
+        case AssetType::script:
             break;
         case AssetType::mesh:
             break;

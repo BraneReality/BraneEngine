@@ -7,12 +7,15 @@
 #include "fileManager/fileManager.h"
 #include "utility/hex.h"
 
-void AssetCache::setProject(BraneProject* project) { _project = project; }
+void AssetCache::setProject(BraneProject* project)
+{
+    _project = project;
+}
 
 std::filesystem::path AssetCache::getPath(const AssetID& id)
 {
     assert(_project);
-    return _project->projectDirectory() / "cache" / (std::string(id.idStr()) + ".bin");
+    return _project->projectDirectory() / "cache" / (id.toString() + ".bin");
 }
 
 void AssetCache::cacheAsset(const Asset* asset)
@@ -43,6 +46,12 @@ Asset* AssetCache::getAsset(const AssetID& asset)
     return FileManager::readUnknownAsset(path);
 }
 
-bool AssetCache::hasAsset(const AssetID& asset) { return std::filesystem::exists(getPath(asset)); }
+bool AssetCache::hasAsset(const AssetID& asset)
+{
+    return std::filesystem::exists(getPath(asset));
+}
 
-std::string AssetCache::getAssetHash(const AssetID& asset) { return FileManager::fileHash(getPath(asset)); }
+std::string AssetCache::getAssetHash(const AssetID& asset)
+{
+    return FileManager::fileHash(getPath(asset));
+}

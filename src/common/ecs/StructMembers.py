@@ -42,7 +42,7 @@ for numMembers in range(1, maxNativeMembers + 1):
     file.write(f"#define STRUCT_MEMBER_OFFSETS_{numMembers}(Struct, {argumentsStr}) \\\n")
     file.write("\tstd::move(std::vector<size_t>(\\\n\t{\\\n")
     for member in members:
-        file.write(f"\t\toffsetof(Struct, Struct::{member}), \\\n")
+        file.write(f"\t\toffsetof(Struct, {member}), \\\n")
     file.write("\t}))\n\n\n")
 
 # Preprocessor that creates a vector of member names

@@ -34,7 +34,7 @@ class MeshAsset : public IncrementalAsset
 
   private:
     std::vector<Primitive> _primitives;
-    std::vector<byte> _data;
+    std::vector<uint8_t> _data;
 
   public:
     MeshAsset();
@@ -63,7 +63,7 @@ class MeshAsset : public IncrementalAsset
         _primitives[primitive].attributes.insert({name, {(uint32_t)index, sizeof(T)}});
     }
 
-    const std::vector<byte>& packedData() const;
+    const std::vector<uint8_t>& packedData() const;
 
     uint32_t indexOffset(size_t primitive) const;
 

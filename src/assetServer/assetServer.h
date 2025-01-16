@@ -49,9 +49,9 @@ class AssetServer : public Module
     std::mutex _sendersLock;
     std::list<IncrementalAssetSender> _senders;
 
-    std::filesystem::path assetPath(const AssetID& id);
+    std::filesystem::path assetPath(const BraneAssetID& id);
 
-    AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);
+    AsyncData<Asset*> fetchAssetCallback(const BraneAssetID& id, bool incremental);
 
     void createListeners();
 

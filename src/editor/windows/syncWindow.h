@@ -6,6 +6,7 @@
 #define BRANEENGINE_SYNCWINDOW_H
 
 #include <atomic>
+#include "assets/assetID.h"
 #include "editorWindow.h"
 #include "networking/connection.h"
 

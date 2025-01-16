@@ -5,14 +5,13 @@
 #include "types/imageAsset.h"
 #include "types/materialAsset.h"
 #include "types/meshAsset.h"
+#include "types/scriptAsset.h"
 #include "types/shaderAsset.h"
 #include <utility/serializedData.h>
 
 void Asset::serialize(OutputSerializer& s) const
 {
-    AssetID serverlessID = id;
-    serverlessID.setAddress("");
-    s << serverlessID << name << type.toString();
+    s << id << name << type.toString();
 }
 
 void Asset::deserialize(InputSerializer& s)
@@ -31,14 +30,12 @@ Asset* Asset::assetFromType(AssetType type)
             break;
         case AssetType::component:
             return new ComponentAsset();
-        case AssetType::system:
-            assert("Not implemented" && false);
-            break;
+        case AssetType::script:
+            return new ScriptAsset();
         case AssetType::mesh:
             return new MeshAsset();
         case AssetType::image:
             return new ImageAsset();
-            break;
         case AssetType::shader:
             return new ShaderAsset();
         case AssetType::material:
@@ -72,13 +69,22 @@ Asset* Asset::deserializeUnknown(InputSerializer& s)
     return asset;
 }
 
-std::vector<AssetDependency> Asset::dependencies() const { return {}; }
+std::vector<AssetDependency> Asset::dependencies() const
+{
+    return {};
+}
 
 void Asset::onDependenciesLoaded() {}
 
-void IncrementalAsset::serializeHeader(OutputSerializer& s) const { Asset::serialize(s); }
+void IncrementalAsset::serializeHeader(OutputSerializer& s) const
+{
+    Asset::serialize(s);
+}
 
-void IncrementalAsset::deserializeHeader(InputSerializer& s) { Asset::deserialize(s); }
+void IncrementalAsset::deserializeHeader(InputSerializer& s)
+{
+    Asset::deserialize(s);
+}
 
 IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer& s)
 {

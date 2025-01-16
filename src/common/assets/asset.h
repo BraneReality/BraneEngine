@@ -1,7 +1,6 @@
 #pragma once
 
 #include <atomic>
-#include <byte.h>
 #include <memory>
 #include <vector>
 #include "assets/assetID.h"

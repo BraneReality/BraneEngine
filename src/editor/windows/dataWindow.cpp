@@ -12,6 +12,7 @@
 #include "editor/assets/editorAsset.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
 #include "editor/assets/types/editorMaterialAsset.h"
+#include "editor/assets/types/EditorScriptAsset.h"
 #include "editor/assets/types/editorShaderAsset.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
@@ -30,6 +31,7 @@
 #include "ui/guiPopup.h"
 
 #include "assets/types/imageAsset.h"
+#include "lua.hpp"
 #include "utility/jsonTypeUtilities.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
@@ -40,26 +42,42 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusMode = FocusMode::asset;
         _focusedAssetEntity = -1;
 
-        if(_focusedAsset->type() == AssetType::image)
+        switch(_focusedAsset->type().type())
         {
-            _imagePreview = VK_NULL_HANDLE;
-            _previewImageAsset = nullptr;
-            Runtime::getModule<AssetManager>()
-                ->fetchAsset<ImageAsset>(AssetID(_focusedAsset->json()["id"].asString()))
-                .then([this](ImageAsset* image) {
+            case AssetType::image:
+            {
+                _imagePreview = VK_NULL_HANDLE;
+                _previewImageAsset = nullptr;
+                Runtime::getModule<AssetManager>()
+                    ->fetchAsset<ImageAsset>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
+                    .then([this](ImageAsset* image) {
                     _previewImageAsset = image;
                     auto* texture = Runtime::getModule<graphics::VulkanRuntime>()->getTexture(image->runtimeID);
                     if(texture)
                         _imagePreview = ImGui_ImplVulkan_AddTexture(
                             texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
                 });
-        }
-        else if(_focusedAsset->type() == AssetType::material)
-        {
-            auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
-            auto frag = _editor.project().getEditorAsset(AssetID(material->json()["fragmentShader"].asString()));
-            if(frag)
-                material->initializeProperties(static_cast<EditorShaderAsset*>(frag.get()));
+            }
+            break;
+            case AssetType::material:
+            {
+                auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
+                auto frag = _editor.project().getEditorAsset(
+                    AssetID::parse(material->data()["fragmentShader"].asString()).ok());
+                if(frag)
+                    material->initializeProperties(static_cast<EditorShaderAsset*>(frag.get()));
+            }
+            break;
+            case AssetType::script:
+            {
+                auto* script = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
+                Runtime::getModule<AssetManager>()
+                    ->fetchAsset<ScriptAsset>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
+                    .then([this](ScriptAsset* asset) { _scriptText = asset->scriptText; });
+                break;
+            }
+            default:
+                break;
         }
     });
     ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event) {
@@ -104,7 +122,7 @@ void DataWindow::displayAssetData()
         switch(_focusedAsset->type().type())
         {
             case AssetType::shader:
-                ImGui::Text("Source: %s", _focusedAsset->json()["source"].asCString());
+                ImGui::Text("Source: %s", _focusedAsset->data()["source"].asCString());
                 break;
             case AssetType::mesh:
                 displayMeshData();
@@ -120,6 +138,9 @@ void DataWindow::displayAssetData()
                 break;
             case AssetType::chunk:
                 displayChunkData();
+                break;
+            case AssetType::script:
+                displayScriptData();
                 break;
             default:
                 ImGui::PushTextWrapPos();
@@ -145,7 +166,7 @@ void DataWindow::displayChunkData()
 
     ImGui::Indent();
     int lodIndex = 0;
-    auto& lods = _focusedAsset->json()["LODs"];
+    auto& lods = _focusedAsset->data()["LODs"];
     int removedLOD = -1;
     for(auto& lod : lods)
     {
@@ -165,30 +186,30 @@ void DataWindow::displayChunkData()
             Json::Value newLod = lod;
             newLod["min"] = dragInt[0];
             newLod["max"] = dragInt[1];
-            _focusedAsset->json().changeValue("LODs/" + std::to_string(lodIndex), newLod);
+            _focusedAsset->data().changeValue("LODs/" + std::to_string(lodIndex), newLod);
         }
         ImGui::SameLine();
-        AssetID assembly(lods[lodIndex]["assembly"].asString());
+        AssetID assembly = AssetID::parse(lods[lodIndex]["assembly"].asString()).ok();
         ImGui::SetNextItemWidth(160);
         if(AssetSelectWidget::draw(assembly, AssetType::assembly))
         {
             Json::Value newLod = lod;
-            newLod["assembly"] = assembly.string();
-            _focusedAsset->json().changeValue("LODs/" + std::to_string(lodIndex), newLod);
+            newLod["assembly"] = assembly.toString();
+            _focusedAsset->data().changeValue("LODs/" + std::to_string(lodIndex), newLod);
         }
-        if(assembly.null())
+        if(assembly.empty())
         {
             ImGui::SameLine();
             if(ImGui::Button("Create Assembly"))
             {
-                std::filesystem::path lodPath = _focusedAsset->file();
+                std::filesystem::path lodPath = _focusedAsset->datafile();
                 lodPath.replace_filename(_focusedAsset->name() + "_LOD" + std::to_string(lodIndex) + ".assembly");
 
                 auto* lodAssembly = new EditorAssemblyAsset(lodPath, _editor.project());
 
                 Json::Value newLod = lod;
-                newLod["assembly"] = lodAssembly->json()["id"];
-                _focusedAsset->json().changeValue("LODs/" + std::to_string(lodIndex), newLod);
+                newLod["assembly"] = lodAssembly->data()["id"];
+                _focusedAsset->data().changeValue("LODs/" + std::to_string(lodIndex), newLod);
                 lodAssembly->save();
                 delete lodAssembly;
             }
@@ -212,26 +233,26 @@ void DataWindow::displayChunkData()
             if(i != removedLOD)
                 newLODList.append(lods[i]);
         }
-        _focusedAsset->json().changeValue("LODs", newLODList);
+        _focusedAsset->data().changeValue("LODs", newLODList);
     }
 
     ImGui::Unindent();
     ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - 13);
     if(ImGui::Button("+", {15, 0}))
     {
-        Json::Value newLODList = _focusedAsset->json()["LODs"];
+        Json::Value newLODList = _focusedAsset->data()["LODs"];
         Json::Value newLod;
         newLod["min"] = 0;
         newLod["max"] = 0;
         newLod["assembly"] = "null";
         newLODList.append(newLod);
-        _focusedAsset->json().changeValue("LODs", newLODList);
+        _focusedAsset->data().changeValue("LODs", newLODList);
     }
 }
 
 void DataWindow::displayAssemblyData()
 {
-    if(_focusedAssetEntity < _focusedAsset->json()["entities"].size())
+    if(_focusedAssetEntity < _focusedAsset->data()["entities"].size())
     {
         displayEntityAssetData();
         return;
@@ -244,9 +265,9 @@ void DataWindow::displayAssemblyData()
             ImGui::Indent();
             int materialIndex = 0;
             std::pair<int, AssetID> changedMaterial = {-1, AssetID()};
-            for(auto& cID : _focusedAsset->json()["dependencies"]["materials"])
+            for(auto& cID : _focusedAsset->data()["dependencies"]["materials"])
             {
-                AssetID materialID(cID.asString());
+                AssetID materialID = AssetID::parse(cID.asString()).ok();
                 ImGui::PushID(materialIndex);
                 if(AssetSelectWidget::draw(materialID, AssetType::material))
                     changedMaterial = {materialIndex, std::move(materialID)};
@@ -264,7 +285,7 @@ void DataWindow::displayAssemblyData()
         if(ImGui::CollapsingHeader("Meshes"))
         {
             ImGui::Indent();
-            for(auto& mID : _focusedAsset->json()["dependencies"]["meshes"])
+            for(auto& mID : _focusedAsset->data()["dependencies"]["meshes"])
             {
                 ImGui::Selectable(mID.asCString());
             }
@@ -272,7 +293,7 @@ void DataWindow::displayAssemblyData()
         }
         ImGui::Unindent();
     }
-    ImGui::Text("Entities: %u", _focusedAsset->json()["entities"].size());
+    ImGui::Text("Entities: %u", _focusedAsset->data()["entities"].size());
     if(ImGui::IsItemHovered())
         ImGui::SetTooltip("Edit in entities window");
 }
@@ -294,10 +315,10 @@ class AddAssetComponentPopup : public GUIPopup
             Runtime::getModule<AssetManager>()
                 ->fetchAsset<ComponentAsset>(_search.currentSelected())
                 .then([this, asset, entity](ComponentAsset* component) {
-                    auto* compDef = Runtime::getModule<EntityManager>()->components().getComponentDef(component);
-                    VirtualComponent newComp(compDef);
-                    _focusedAsset->addEntityComponent(_focusedEntity, EditorAssemblyAsset::componentToJson(newComp));
-                });
+                auto* compDef = Runtime::getModule<EntityManager>()->components().getComponentDef(component);
+                VirtualComponent newComp(compDef);
+                _focusedAsset->addEntityComponent(_focusedEntity, EditorAssemblyAsset::componentToJson(newComp));
+            });
             ImGui::CloseCurrentPopup();
         }
     }
@@ -305,18 +326,18 @@ class AddAssetComponentPopup : public GUIPopup
   public:
     AddAssetComponentPopup(std::shared_ptr<EditorAssemblyAsset> focusedAsset, Json::ArrayIndex focusedEntity)
         : _focusedAsset(std::move(focusedAsset)), _focusedEntity(focusedEntity), _search(AssetType::component),
-          GUIPopup("add component"){};
+          GUIPopup("add component") {};
 };
 
 void DataWindow::displayEntityAssetData()
 {
     auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get());
-    auto& entityAsset = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity];
+    auto& entityAsset = _focusedAsset->data()["entities"][(Json::ArrayIndex)_focusedAssetEntity];
     ImGui::PushFont(_ui.fonts()[1]);
     std::string entityName = entityAsset["name"].asString();
     ImGui::InputText("##EntityName", &entityName);
     if(ImGui::IsItemDeactivatedAfterEdit())
-        _focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/name", entityName);
+        _focusedAsset->data().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/name", entityName);
 
     ImGui::PopFont();
     ImGui::TextDisabled("Index: %u", _focusedAssetEntity);
@@ -373,7 +394,10 @@ void DataWindow::displayEntityAssetData()
                     Json::ArrayIndex matIndex = component["members"][1]["value"][mat].asUInt();
                     ImGui::Text("Material %u (Assembly index %u)", mat, matIndex);
                     ImGui::SameLine();
-                    AssetID matID(_focusedAsset->json()["dependencies"]["materials"].get(matIndex, "null").asString());
+                    AssetID matID =
+                        AssetID::parse(
+                            _focusedAsset->data()["dependencies"]["materials"].get(matIndex, "null").asString())
+                            .ok();
                     if(AssetSelectWidget::draw(matID, AssetType::material))
                     {
                         dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->changeMaterial(matIndex, matID);
@@ -401,7 +425,7 @@ void DataWindow::displayEntityAssetData()
             else
             {
                 Json::Value data = component;
-                auto res = VirtualVariableWidgets::displayAssetComponentData(data, _focusedAsset->json().data());
+                auto res = VirtualVariableWidgets::displayAssetComponentData(data, _focusedAsset->data().data());
                 if(res != UiChangeType::none)
                 {
                     assembly->updateEntityComponent(_focusedAssetEntity, i, data, res != UiChangeType::finished);
@@ -450,18 +474,18 @@ void DataWindow::displayEntityData()
 void DataWindow::displayMaterialData()
 {
     auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
-    AssetID vertexID(material->json()["vertexShader"].asString());
+    AssetID vertexID = AssetID::parse(material->data()["vertexShader"].asString()).ok();
     if(AssetSelectWidget::draw(vertexID, AssetType::shader))
     {
-        material->json().changeValue("vertexShader", vertexID.string());
+        material->data().changeValue("vertexShader", vertexID.toString());
         _editor.reloadAsset(_focusedAsset);
     };
     ImGui::SameLine();
     ImGui::Text("Vertex Shader");
-    AssetID fragmentID(material->json()["fragmentShader"].asString());
+    AssetID fragmentID = AssetID::parse(material->data()["fragmentShader"].asString()).ok();
     if(AssetSelectWidget::draw(fragmentID, AssetType::shader))
     {
-        material->json().changeValue("fragmentShader", fragmentID.string());
+        material->data().changeValue("fragmentShader", fragmentID.toString());
         auto frag = _editor.project().getEditorAsset(fragmentID);
         material->initializeProperties(static_cast<EditorShaderAsset*>(frag.get()));
         _editor.reloadAsset(_focusedAsset);
@@ -472,7 +496,7 @@ void DataWindow::displayMaterialData()
     ImGui::Spacing();
 
     uint32_t samplerIndex = 0;
-    if(!vertexID.null())
+    if(!vertexID.empty())
     {
         ImGui::Text("Vertex Shader:");
         ImGui::Indent();
@@ -482,7 +506,7 @@ void DataWindow::displayMaterialData()
         ImGui::Unindent();
         ImGui::Separator();
     }
-    if(!fragmentID.null())
+    if(!fragmentID.empty())
     {
         ImGui::Text("Fragment Shader:");
         ImGui::Indent();
@@ -494,7 +518,7 @@ void DataWindow::displayMaterialData()
         ImGui::Text("Properties");
         ImGui::Indent();
         size_t propIndex = 0;
-        for(auto& prop : material->json()["properties"])
+        for(auto& prop : material->data()["properties"])
         {
             auto& type = prop["type"];
             if(type == "bool")
@@ -574,19 +598,19 @@ void DataWindow::displayMaterialData()
         ImGui::Separator();
         ImGui::Text("Textures");
         ImGui::Indent();
-        for(auto& sampler : shader->json()["attributes"]["samplers"])
+        for(auto& sampler : shader->data()["attributes"]["samplers"])
         {
             std::string sampName = sampler["name"].asString();
             AssetID imageID;
-            if(material->json()["textures"].isMember(sampName))
-                imageID = material->json()["textures"][sampName]["id"].asString();
+            if(material->data()["textures"].isMember(sampName))
+                imageID = AssetID::parse(material->data()["textures"][sampName]["id"].asString()).ok();
             ImGui::PushID(sampName.c_str());
             if(AssetSelectWidget::draw(imageID, AssetType::image))
             {
                 Json::Value samplerJson;
-                samplerJson["id"] = imageID.string();
+                samplerJson["id"] = imageID.toString();
                 samplerJson["binding"] = sampler["binding"];
-                material->json().changeValue("textures/" + sampName, samplerJson);
+                material->data().changeValue("textures/" + sampName, samplerJson);
                 _editor.reloadAsset(_focusedAsset);
             }
             ImGui::SameLine();
@@ -601,7 +625,7 @@ void DataWindow::displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset
 {
     ImGui::Text("inputs:");
     ImGui::Indent();
-    const auto& attributes = asset->json()["attributes"];
+    const auto& attributes = asset->data()["attributes"];
     for(auto& input : attributes["inputs"])
         ImGui::Text("%s %s", input["layout"].asCString(), input["name"].asCString());
     ImGui::Unindent();
@@ -649,15 +673,15 @@ void DataWindow::displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset
 void DataWindow::displayImageData()
 {
     const char* imageTypes[3] = {"color", "normal map", "linear"};
-    auto imageType = _focusedAsset->json()["imageType"].asUInt();
+    auto imageType = _focusedAsset->data()["imageType"].asUInt();
     if(ImGui::BeginCombo("ImageType", imageTypes[imageType]))
     {
         if(ImGui::Selectable("color"))
-            _focusedAsset->json().changeValue("imageType", 0);
+            _focusedAsset->data().changeValue("imageType", 0);
         if(ImGui::Selectable("normal map"))
-            _focusedAsset->json().changeValue("imageType", 1);
+            _focusedAsset->data().changeValue("imageType", 1);
         if(ImGui::Selectable("linear"))
-            _focusedAsset->json().changeValue("imageType", 2);
+            _focusedAsset->data().changeValue("imageType", 2);
         ImGui::EndCombo();
     }
     if(_imagePreview)
@@ -673,5 +697,32 @@ void DataWindow::displayImageData()
         if(texture)
             _imagePreview = ImGui_ImplVulkan_AddTexture(
                 texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+}
+
+void DataWindow::displayScriptData()
+{
+    auto* script = static_cast<EditorScriptAsset*>(_focusedAsset.get());
+    ImGui::Text("Script content:");
+    ImGui::TextWrapped("%s", _scriptText.c_str());
+
+    if(ImGui::Button("Run Script"))
+    {
+        // Load and run script
+        lua_State* L = luaL_newstate();
+        if(!L)
+        {
+            Runtime::error("Failed to init lua!");
+            return;
+        }
+
+        luaL_openlibs(L);
+
+        if(luaL_dostring(L, _scriptText.c_str()) != LUA_OK)
+        {
+            Runtime::error("Lua error: " + std::string(lua_tostring(L, -1)));
+            lua_pop(L, 1);
+        }
+        lua_close(L);
     }
 }

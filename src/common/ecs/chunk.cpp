@@ -20,7 +20,7 @@ void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& src)
     pool._unused.emplace_back(std::move(src));
 }
 
-ChunkComponentView::ChunkComponentView(byte* data, size_t maxSize, const ComponentDescription* def)
+ChunkComponentView::ChunkComponentView(uint8_t* data, size_t maxSize, const ComponentDescription* def)
     : _data(data), _maxSize(maxSize), _description(def)
 {
     _size = 0;
@@ -70,7 +70,10 @@ VirtualComponentView ChunkComponentView::operator[](size_t index) const
     return VirtualComponentView(_description, dataIndex(index));
 }
 
-byte* ChunkComponentView::dataIndex(size_t index) const { return _data + _description->size() * index; }
+uint8_t* ChunkComponentView::dataIndex(size_t index) const
+{
+    return _data + _description->size() * index;
+}
 
 void ChunkComponentView::createComponent()
 {
@@ -88,11 +91,20 @@ void ChunkComponentView::erase(size_t index)
     _description->deconstruct(dataIndex(_size));
 }
 
-size_t ChunkComponentView::size() const { return _size; }
+size_t ChunkComponentView::size() const
+{
+    return _size;
+}
 
-uint32_t ChunkComponentView::compID() const { return _description->id; }
+uint32_t ChunkComponentView::compID() const
+{
+    return _description->id;
+}
 
-const ComponentDescription* ChunkComponentView::def() { return _description; }
+const ComponentDescription* ChunkComponentView::def()
+{
+    return _description;
+}
 
 void ChunkComponentView::setComponent(size_t index, const VirtualComponentView component)
 {
@@ -106,16 +118,28 @@ void ChunkComponentView::setComponent(size_t index, VirtualComponent&& component
     _description->move(component.data(), dataIndex(index));
 }
 
-byte* ChunkComponentView::getComponentData(size_t index)
+uint8_t* ChunkComponentView::getComponentData(size_t index)
 {
     assert(index < _size);
     return dataIndex(index);
 }
 
-void ChunkComponentView::lockShared() { _mutex.lock_shared(); }
+void ChunkComponentView::lockShared()
+{
+    _mutex.lock_shared();
+}
 
-void ChunkComponentView::unlockShared() { _mutex.unlock_shared(); }
+void ChunkComponentView::unlockShared()
+{
+    _mutex.unlock_shared();
+}
 
-void ChunkComponentView::lock() { _mutex.lock(); }
+void ChunkComponentView::lock()
+{
+    _mutex.lock();
+}
 
-void ChunkComponentView::unlock() { _mutex.unlock(); }
+void ChunkComponentView::unlock()
+{
+    _mutex.unlock();
+}

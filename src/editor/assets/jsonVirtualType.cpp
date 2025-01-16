@@ -6,7 +6,7 @@
 #include "assets/assetID.h"
 #include "utility/jsonTypeUtilities.h"
 
-Json::Value JsonVirtualType::fromVirtual(byte* data, VirtualType::Type type)
+Json::Value JsonVirtualType::fromVirtual(uint8_t* data, VirtualType::Type type)
 {
     switch(type)
     {
@@ -29,7 +29,7 @@ Json::Value JsonVirtualType::fromVirtual(byte* data, VirtualType::Type type)
         case VirtualType::virtualString:
             return *getVirtual<std::string>(data);
         case VirtualType::virtualAssetID:
-            return getVirtual<AssetID>(data)->string();
+            return getVirtual<AssetID>(data)->toString();
         case VirtualType::virtualVec3:
             return toJson(*getVirtual<glm::vec3>(data));
         case VirtualType::virtualVec4:
@@ -53,7 +53,7 @@ Json::Value JsonVirtualType::fromVirtual(byte* data, VirtualType::Type type)
     }
 }
 
-void JsonVirtualType::toVirtual(byte* data, const Json::Value& source, VirtualType::Type type)
+void JsonVirtualType::toVirtual(uint8_t* data, const Json::Value& source, VirtualType::Type type)
 {
     switch(type)
     {
@@ -82,8 +82,14 @@ void JsonVirtualType::toVirtual(byte* data, const Json::Value& source, VirtualTy
             *getVirtual<std::string>(data) = source.asString();
             break;
         case VirtualType::virtualAssetID:
-            *getVirtual<AssetID>(data) = source.asString();
+        {
+            auto res = AssetID::parse(source.asString());
+            if(res)
+                *getVirtual<AssetID>(data) = res.ok();
+            else
+                Runtime::error(std::format("Tried to parse AssetID \"{}\" from json but failed", source.asString()));
             break;
+        }
         case VirtualType::virtualVec3:
             *getVirtual<glm::vec3>(data) = fromJson<glm::vec3>(source);
             break;
@@ -110,6 +116,5 @@ void JsonVirtualType::toVirtual(byte* data, const Json::Value& source, VirtualTy
             break;
         default:
             Runtime::error("Can't convert " + VirtualType::typeToString(type) + " to json!");
-            assert(false);
     }
 }

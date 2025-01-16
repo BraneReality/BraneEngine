@@ -10,12 +10,11 @@
 #include <memory>
 #include <string>
 #include "common/assets/types/meshAsset.h"
-#include "common/byte.h"
 #include "json/json.h"
 
 class GLTFLoader
 {
-    std::vector<byte> _bin;
+    std::vector<uint8_t> _bin;
     Json::Value _json;
     bool _usingFile;
 

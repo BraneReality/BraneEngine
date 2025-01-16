@@ -1,54 +1,31 @@
 #include "assets/assetManager.h"
 #include "testing.h"
 #include <assets/asset.h>
+#include <gtest/gtest.h>
 
-// Edit this function if we need to "load" any assets for testing
-AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
+class TestAssetLoader : public AssetLoader
 {
-    AsyncData<Asset*> asset;
-    asset.setData(nullptr);
-    return asset;
-}
+    AsyncData<Asset*> loadAsset(const AssetID& id, bool incremental) override
+    {
+        AsyncData<Asset*> asset;
+        asset.setData(nullptr);
+        return asset;
+    }
+};
 
-TEST(assets, AssetIDTest)
+TEST(assets, BraneAssetIDTest)
+
 {
-    AssetID aa("server.ip.goes.here/1234A");
-    EXPECT_EQ(aa.
+    auto parseRes = BraneAssetID::parse("Brane://server.ip.goes.here/1ede064a-f742-45c3-aa3b-9688579fc502");
+    EXPECT_TRUE(parseRes);
+    uint8_t uuid[16] = {0x1e, 0xde, 0x06, 0x4a, 0xf7, 0x42, 0x45, 0xc3, 0xaa, 0x3b, 0x96, 0x88, 0x57, 0x9f, 0xc5, 0x02};
 
-              address(),
+    auto aa = parseRes.ok();
 
-              "server.ip.goes.here");
-    EXPECT_EQ(aa.
+    EXPECT_EQ(aa.uuid, UUID(uuid));
+    EXPECT_EQ(aa.domain, "server.ip.goes.here");
 
-              id(),
-
-              0x1234A);
-    EXPECT_EQ(aa.
-
-              string(),
-
-              "server.ip.goes.here/1234A");
-    EXPECT_TRUE(aa == aa);
-    EXPECT_FALSE(aa.
-
-                 null()
-
-    );
-    aa.
-
-        setNull();
-
-    EXPECT_TRUE(aa.
-
-                null()
-
-    );
 
     AssetID null;
-    EXPECT_TRUE(null.
-
-                null()
-
-    );
-    EXPECT_EQ(aa, null);
+    EXPECT_TRUE(null.empty());
 }

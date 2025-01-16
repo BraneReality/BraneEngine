@@ -52,17 +52,17 @@ class ComponentDescription
                          const std::vector<size_t>& offsets,
                          size_t size);
 
-    void construct(byte* component) const;
+    void construct(uint8_t* component) const;
 
-    void deconstruct(byte* component) const;
+    void deconstruct(uint8_t* component) const;
 
-    void serialize(OutputSerializer& sData, byte* component) const;
+    void serialize(OutputSerializer& sData, uint8_t* component) const;
 
-    void deserialize(InputSerializer& sData, byte* component) const;
+    void deserialize(InputSerializer& sData, uint8_t* component) const;
 
-    void copy(byte* src, byte* dest) const;
+    void copy(uint8_t* src, uint8_t* dest) const;
 
-    void move(byte* src, byte* dest) const;
+    void move(uint8_t* src, uint8_t* dest) const;
 
     const std::vector<Member>& members() const;
 
@@ -76,7 +76,7 @@ class VirtualComponentView;
 class VirtualComponent
 {
   protected:
-    byte* _data;
+    uint8_t* _data;
     const ComponentDescription* _description;
 
   public:
@@ -88,7 +88,7 @@ class VirtualComponent
 
     VirtualComponent(const ComponentDescription* definition);
 
-    VirtualComponent(const ComponentDescription* definition, const byte* data);
+    VirtualComponent(const ComponentDescription* definition, const uint8_t* data);
 
     ~VirtualComponent();
 
@@ -120,7 +120,7 @@ class VirtualComponent
         return *(T*)&_data[_description->members()[index].offset];
     }
 
-    byte* data() const;
+    uint8_t* data() const;
 
     const ComponentDescription* description() const;
 };
@@ -128,13 +128,13 @@ class VirtualComponent
 class VirtualComponentView
 {
   protected:
-    byte* _data;
+    uint8_t* _data;
     const ComponentDescription* _description;
 
   public:
     VirtualComponentView(const VirtualComponent& source);
 
-    VirtualComponentView(const ComponentDescription* description, byte* data);
+    VirtualComponentView(const ComponentDescription* description, uint8_t* data);
 
     template<class T>
     T* getVar(size_t index) const
@@ -160,7 +160,7 @@ class VirtualComponentView
         return *(T*)&_data[_description->members()[index].offset];
     }
 
-    byte* data() const;
+    uint8_t* data() const;
 
     const ComponentDescription* description() const;
 };

@@ -18,7 +18,7 @@ class EditorChunkAsset : public EditorAsset
 
     std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;
 
-    Asset* buildAsset(const AssetID& id) const override;
+    Result<std::unique_ptr<Asset>> buildAsset(const AssetID& id) const override;
 };
 
 #endif // BRANEENGINE_EDITORCHUNKASSET_H

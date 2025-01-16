@@ -32,9 +32,9 @@ void EntitiesWindow::displayContent()
     ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
     if(_asset && _asset->type() == AssetType::assembly)
     {
-        _asset->json().beginMultiChange();
-        displayAssetEntities(_asset->json()["rootEntity"].asUInt());
-        _asset->json().endMultiChange();
+        _asset->data().beginMultiChange();
+        displayAssetEntities(_asset->data()["rootEntity"].asUInt());
+        _asset->data().endMultiChange();
     }
     ImGui::PopStyleVar();
     ImGui::Spacing();
@@ -43,9 +43,9 @@ void EntitiesWindow::displayContent()
 void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
 {
     auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_asset.get());
-    auto& entity = _asset->json()["entities"][index];
+    auto& entity = _asset->data()["entities"][index];
     const bool hasChildren = entity.isMember("children") && !entity["children"].empty();
-    const bool isRoot = _asset->json()["rootEntity"].asUInt() == index;
+    const bool isRoot = _asset->data()["rootEntity"].asUInt() == index;
     const float reorderHeight = 4;
     const float indentSpacing = ImGui::GetStyle().IndentSpacing;
     const float reorderWidth = ImGui::GetContentRegionMax().x - ImGui::GetCursorPosX() - indentSpacing - 5;
@@ -112,7 +112,7 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
                 uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
                 Json::ArrayIndex parentIndex = entity["parent"].asUInt();
                 Json::ArrayIndex currentIndex = 0;
-                for(auto& child : _asset->json()["entities"][parentIndex]["children"])
+                for(auto& child : _asset->data()["entities"][parentIndex]["children"])
                 {
                     if(child.asUInt() == index)
                         break;
@@ -135,7 +135,7 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
                     uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
                     Json::ArrayIndex parentIndex = entity["parent"].asUInt();
                     Json::ArrayIndex currentIndex = 0;
-                    for(auto& child : _asset->json()["entities"][parentIndex]["children"])
+                    for(auto& child : _asset->data()["entities"][parentIndex]["children"])
                     {
                         if(child.asUInt() == index)
                             break;

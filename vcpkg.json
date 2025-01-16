@@ -21,6 +21,8 @@
         },
         "imguizmo",
         "tinyfiledialogs",
-        "stb"
+        "stb",
+        "luajit",
+        "efsw"
     ]
 }

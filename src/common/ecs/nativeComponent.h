@@ -5,6 +5,7 @@
 #ifndef BRANEENGINE_NATIVECOMPONENT_H
 #define BRANEENGINE_NATIVECOMPONENT_H
 
+#include "assets/assetID.h"
 #include "component.h"
 #include "structMembers.h"
 
@@ -30,17 +31,35 @@ class NativeComponent
 
     NativeComponent() = default;
 
-    VirtualComponentView toVirtual() const { return VirtualComponentView(_description, (byte*)this); }
+    VirtualComponentView toVirtual() const
+    {
+        return VirtualComponentView(_description, (uint8_t*)this);
+    }
 
-    operator VirtualComponentView() const { return toVirtual(); }
+    operator VirtualComponentView() const
+    {
+        return toVirtual();
+    }
 
-    static T* fromVirtual(byte* data) { return (T*)data; }
+    static T* fromVirtual(uint8_t* data)
+    {
+        return (T*)data;
+    }
 
-    static const T* fromVirtual(const byte* data) { return (const T*)data; }
+    static const T* fromVirtual(const uint8_t* data)
+    {
+        return (const T*)data;
+    }
 
-    static T* fromVirtual(VirtualComponentView component) { return (T*)component.data(); }
+    static T* fromVirtual(VirtualComponentView component)
+    {
+        return (T*)component.data();
+    }
 
-    static ComponentDescription* def() { return _description; }
+    static ComponentDescription* def()
+    {
+        return _description;
+    }
 };
 
 template<class T>

@@ -28,9 +28,12 @@ class RenderWindowAssetReady : public GUIEvent
     AssetID _id;
 
   public:
-    RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready"){};
+    RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready") {};
 
-    const AssetID& id() const { return _id; }
+    const AssetID& id() const
+    {
+        return _id;
+    }
 };
 
 RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
@@ -56,33 +59,32 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusedAssetEntity = -1;
         if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
         {
-            am->fetchAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString()))
+            am->fetchAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
                 .then([this](Assembly* assembly) {
-                    _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
-                })
-                .onError([this](const std::string& error) {
-                    if(_focusedAsset)
-                        Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
-                    else
-                        Runtime::warn("Could not load asset to render: " + error);
-                });
+                _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
+            }).onError([this](const std::string& error) {
+                if(_focusedAsset)
+                    Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
+                else
+                    Runtime::warn("Could not load asset to render: " + error);
+            });
         }
     });
     _ui.addEventListener<RenderWindowAssetReady>(
         "render window asset ready", this, [this, &em](const RenderWindowAssetReady* event) {
-            auto* am = Runtime::getModule<AssetManager>();
-            auto* arm = Runtime::getModule<AssemblyReloadManager>();
-            auto* assembly = am->getAsset<Assembly>(event->id());
-            assert(assembly);
-            EntityID root = arm->instantiate(assembly);
-            _assemblies.push_back(AssemblyContex{assembly, root});
-        });
+        auto* am = Runtime::getModule<AssetManager>();
+        auto* arm = Runtime::getModule<AssemblyReloadManager>();
+        auto* assembly = am->getAsset<Assembly>(event->id());
+        assert(assembly);
+        EntityID root = arm->instantiate(assembly);
+        _assemblies.push_back(AssemblyContex{assembly, root});
+    });
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event) {
         if(!_focusedAsset)
             return;
         auto* am = Runtime::getModule<AssetManager>();
         auto* arm = Runtime::getModule<AssemblyReloadManager>();
-        auto* assembly = am->getAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString()));
+        auto* assembly = am->getAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok());
         if(assembly)
         {
             _focusedAssetEntity = event->entity();
@@ -292,7 +294,7 @@ void RenderWindow::displayContent()
                 if(_focusedAsset && _focusedAssetEntity != -1)
                 {
                     auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get());
-                    assembly->json().beginMultiChange();
+                    assembly->data().beginMultiChange();
                     if(em->hasComponent<TRS>(_focusedEntity))
                     {
                         assembly->updateEntityComponent(_focusedAssetEntity,
@@ -303,7 +305,7 @@ void RenderWindow::displayContent()
                         assembly->updateEntityComponent(_focusedAssetEntity,
                                                         em->getComponent<Transform>(_focusedEntity)->toVirtual());
                     }
-                    assembly->json().endMultiChange();
+                    assembly->data().endMultiChange();
                 }
             }
         }

@@ -5,6 +5,7 @@ add_subdirectory(widgets)
 add_subdirectory(windows)
 add_subdirectory(assets)
 add_subdirectory(graphics)
+add_subdirectory(state)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(BraneEditor
@@ -12,7 +13,8 @@ add_executable(BraneEditor
         main.cpp
         editor.cpp
         editorEvents.cpp
-        braneProject.cpp)
+        braneProject.cpp
+        assetIndexer.cpp)
 if(WIN32)
     set_target_properties(BraneEditor PROPERTIES WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,TRUE,FALSE>)
 endif()
@@ -20,7 +22,7 @@ target_include_directories(BraneEditor PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         )
 target_compile_definitions(BraneEditor PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
-target_link_libraries(BraneEditor PUBLIC ecs networking config graphics assets_client runtime editorWindows systems fileManager editorAssets shaderCompiler)
+target_link_libraries(BraneEditor PUBLIC ecs networking config graphics assets_client runtime editorWindows systems fileManager editorAssets shaderCompiler utility)
 
 install(TARGETS BraneEditor
         RUNTIME_DEPENDENCIES

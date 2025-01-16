@@ -35,7 +35,7 @@ bool AssetSearchWidget::draw()
             _selected = i;
         if(ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("ID: %s", r.first.string().c_str());
+            ImGui::SetTooltip("ID: %s", r.first.toString().c_str());
             if(ImGui::IsMouseDoubleClicked(0))
                 submit = true;
         }

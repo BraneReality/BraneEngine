@@ -100,7 +100,10 @@ void Transforms::updateTRSFromMatrix(EntityID entity, glm::mat4 value)
     _em->setComponent(entity, trs.toVirtual());
 }
 
-const char* Transforms::name() { return "transforms"; }
+const char* Transforms::name()
+{
+    return "transforms";
+}
 
 void Transforms::destroyRecursive(EntityID entity, bool updateParentChildren)
 {
@@ -224,7 +227,7 @@ void TransformSystem::run(EntityManager& _em)
     globalTRS.addComponent(Transform::def()->id);
     globalTRS.addComponent(LocalTransform::def()->id, ComponentFilterFlags_Exclude);
 
-    _em.getEntities(globalTRS).forEachNative([&_em](byte** components) {
+    _em.getEntities(globalTRS).forEachNative([&_em](uint8_t** components) {
         EntityIDComponent* idc = EntityIDComponent::fromVirtual(components[0]);
         TRS* trs = TRS::fromVirtual(components[1]);
         Transform* t = Transform::fromVirtual(components[2]);
@@ -240,7 +243,7 @@ void TransformSystem::run(EntityManager& _em)
     localTRS.addComponent(LocalTransform::def()->id);
     localTRS.addComponent(Transform::def()->id);
 
-    _em.getEntities(localTRS).forEachNative([&_em](byte** components) {
+    _em.getEntities(localTRS).forEachNative([&_em](uint8_t** components) {
         EntityIDComponent* idc = EntityIDComponent::fromVirtual(components[0]);
         TRS* trs = TRS::fromVirtual(components[1]);
         LocalTransform* t = LocalTransform::fromVirtual(components[2]);
@@ -254,7 +257,7 @@ void TransformSystem::run(EntityManager& _em)
     localTransforms.addComponent(Transform::def()->id);
     localTransforms.addComponent(LocalTransform::def()->id, ComponentFilterFlags_Const);
 
-    _em.getEntities(localTransforms).forEachNative([&_em](byte** components) {
+    _em.getEntities(localTransforms).forEachNative([&_em](uint8_t** components) {
         auto* gt = Transform::fromVirtual(components[0]);
         auto* lt = LocalTransform::fromVirtual(components[1]);
         glm::mat4 pt = Transforms::getParentTransform(lt->parent, _em);
@@ -264,9 +267,15 @@ void TransformSystem::run(EntityManager& _em)
     });
 }
 
-glm::vec3 Transform::pos() const { return value[3]; }
+glm::vec3 Transform::pos() const
+{
+    return value[3];
+}
 
-glm::quat Transform::rot() const { return glm::quat_cast(value); }
+glm::quat Transform::rot() const
+{
+    return glm::quat_cast(value);
+}
 
 glm::vec3 Transform::scale() const
 {

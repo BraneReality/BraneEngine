@@ -343,7 +343,7 @@ TEST(ECS, ForEachTest)
         addComponent(TestNativeComponent::def()
 
                          ->id);
-    em.getEntities(filter1).forEachNative([&](byte* components[]) {
+    em.getEntities(filter1).forEachNative([&](uint8_t* components[]) {
         TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
         c1->var1 = false;
         c1->var2 += 32;
@@ -362,7 +362,7 @@ TEST(ECS, ForEachTest)
         addComponent(TestNativeComponent2::def()
 
                          ->id);
-    em.getEntities(filter2).forEachNative([&](byte* components[]) {
+    em.getEntities(filter2).forEachNative([&](uint8_t* components[]) {
         TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
         c1->var1 = true;
         c1->var2 += 42;
@@ -375,7 +375,7 @@ TEST(ECS, ForEachTest)
     //
     // Checking the variables on all the entities with two components
     Stopwatch sw;
-    em.getEntities(filter2).forEachNative([&](byte* components[]) {
+    em.getEntities(filter2).forEachNative([&](uint8_t* components[]) {
         const TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
         const TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[1]);
         EXPECT_EQ(true, c1->var1);
@@ -436,7 +436,7 @@ TEST(ECS, ForEachParellelTest)
 
     em.createEntities(ComponentSet({counterComponent.id}), instances);
     Stopwatch sw;
-    em.forEach({counterComponent.id}, [&](byte *components[]) {
+    em.forEach({counterComponent.id}, [&](uint8_t *components[]) {
         VirtualComponentView counter = VirtualComponentView(&counterComponent, components[0]);
         counter.setVar(0, 64);
     });
@@ -444,7 +444,7 @@ TEST(ECS, ForEachParellelTest)
     std::cout << "For Each took: " << time << std::endl;
 
     Stopwatch sw2;
-    em.forEachParallel({counterComponent.id}, [&](byte *components[]) {
+    em.forEachParallel({counterComponent.id}, [&](uint8_t *components[]) {
         VirtualComponentView counter = VirtualComponentView(&counterComponent, components[0]);
         counter.setVar(0, 420);
     }, instances / 12)->finish();

@@ -12,6 +12,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include "assets/assetID.h"
 #include "config/config.h"
 #include "connection.h"
 #include <shared_mutex>
@@ -132,8 +133,10 @@ class NetworkManager : public Module
     async_connectToAssetServer(const std::string& address, uint16_t port, const std::function<void(bool)>& callback);
 
     AsyncData<Asset*> async_requestAsset(const AssetID& id);
+    AsyncData<Asset*> async_requestAsset(const BraneAssetID& id);
 
     AsyncData<IncrementalAsset*> async_requestAssetIncremental(const AssetID& id);
+    AsyncData<IncrementalAsset*> async_requestAssetIncremental(const BraneAssetID& id);
 
     void addRequestListener(const std::string& name, std::function<void(RequestCTX& ctx)> callback);
 

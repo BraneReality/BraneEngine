@@ -56,24 +56,22 @@ void ChunkLoader::setChunkLOD(const AssetID& chunk, uint32_t lod)
 
     WorldChunk* chunkPtr = cctx.chunk;
 
-    auto cJob = ThreadPool::conditionalEnqueue(
-        [this, chunkPtr, oldLod, lod]() {
+    auto cJob = ThreadPool::conditionalEnqueue([this, chunkPtr, oldLod, lod]() {
         for(auto& callback : _onLODChange)
             callback(chunkPtr, oldLod, lod);
-        },
-        LODsToLoad.size());
+    }, LODsToLoad.size());
 
     auto* am = Runtime::getModule<AssetManager>();
     for(auto& l : LODsToLoad)
     {
         AssetID id = l->assembly;
-        if(id.address().empty())
-            id.setAddress(chunkPtr->id.address());
-        am->fetchAsset<Assembly>(id).then(
-                                        [cJob](Assembly* asset) {
+        am->fetchAsset<Assembly>(id).then([cJob](Assembly* asset) {
             cJob->signal();
         }).onError([](const std::string& error) { Runtime::error("Could not load chunk lod: " + error); });
     }
 }
 
-const char* ChunkLoader::name() { return "chunkLoader"; }
+const char* ChunkLoader::name()
+{
+    return "chunkLoader";
+}

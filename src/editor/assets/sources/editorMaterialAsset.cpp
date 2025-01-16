@@ -16,25 +16,25 @@ EditorMaterialAsset::EditorMaterialAsset(const std::filesystem::path& file, Bran
     // Generate default
     if(!std::filesystem::exists(_file))
     {
-        _json.data()["inputs"] = Json::arrayValue;
-        _json.data()["vertexShader"] = "null"; // TODO default fragment and vertex shaders applied here
-        _json.data()["fragmentShader"] = "null";
+        _data.data()["inputs"] = Json::arrayValue;
+        _data.data()["vertexShader"] = "null"; // TODO default fragment and vertex shaders applied here
+        _data.data()["fragmentShader"] = "null";
     }
 }
 
 Asset* EditorMaterialAsset::buildAsset(const AssetID& id) const
 {
-    assert(id.string() == _json["id"].asString());
+    assert(id.toString() == _data["id"].asString());
     auto* material = new MaterialAsset();
     material->name = name();
-    material->id = _json["id"].asString();
-    material->vertexShader = _json["vertexShader"].asString();
-    material->fragmentShader = _json["fragmentShader"].asString();
-    for(auto& texture : _json["textures"])
+    material->id = AssetID::parse(_data["id"].asString()).ok();
+    material->vertexShader = AssetID::parse(_data["vertexShader"].asString()).ok();
+    material->fragmentShader = AssetID::parse(_data["fragmentShader"].asString()).ok();
+    for(auto& texture : _data["textures"])
     {
         std::pair<uint16_t, AssetID> tb;
         tb.first = texture["binding"].asUInt();
-        tb.second = texture["id"].asString();
+        tb.second = AssetID::parse(texture["id"].asString()).ok();
         material->textures.push_back(tb);
     }
     material->serializedProperties = serializeProperties();
@@ -45,7 +45,7 @@ Asset* EditorMaterialAsset::buildAsset(const AssetID& id) const
 std::vector<std::pair<AssetID, AssetType>> EditorMaterialAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> deps;
-    deps.emplace_back(AssetID{_json["id"].asString()}, AssetType::material);
+    deps.emplace_back(AssetID::parse(_data["id"].asString()).ok(), AssetType::material);
     return std::move(deps);
 }
 
@@ -60,7 +60,7 @@ size_t alignedTo(size_t index, size_t alignment)
 std::vector<uint8_t> EditorMaterialAsset::serializeProperties() const
 {
     std::vector<uint8_t> sp;
-    for(auto& prop : _json["properties"])
+    for(auto& prop : _data["properties"])
     {
         std::string type = prop["type"].asString();
         if(type == "bool")
@@ -104,8 +104,8 @@ std::vector<uint8_t> EditorMaterialAsset::serializeProperties() const
 
 void EditorMaterialAsset::initializeProperties(EditorShaderAsset* shaderAsset)
 {
-    auto& props = _json.data()["properties"];
-    if(!shaderAsset->json()["attributes"]["uniforms"].isMember("MaterialProperties"))
+    auto& props = _data.data()["properties"];
+    if(!shaderAsset->data()["attributes"]["uniforms"].isMember("MaterialProperties"))
     {
         props.clear();
         return;
@@ -115,7 +115,7 @@ void EditorMaterialAsset::initializeProperties(EditorShaderAsset* shaderAsset)
         oldValues.insert({prop["name"].asString(), prop["value"]});
     props.clear();
 
-    for(auto& member : shaderAsset->json()["attributes"]["uniforms"]["MaterialProperties"]["members"])
+    for(auto& member : shaderAsset->data()["attributes"]["uniforms"]["MaterialProperties"]["members"])
     {
         Json::Value newProp;
         std::string name = member["name"].asString();
@@ -215,13 +215,13 @@ void EditorMaterialAsset::changeProperty(size_t index, Json::Value value, bool f
 {
     if(finished)
     {
-        _json.recordChange(std::make_unique<PropertyChange>(
-            index, std::move(value), _sketchyStateholdingVariableBecauseImLazy, this, &_json));
+        _data.recordChange(std::make_unique<PropertyChange>(
+            index, std::move(value), _sketchyStateholdingVariableBecauseImLazy, this, &_data));
         _sketchyStateholdingVariableBecauseImLazy = Json::nullValue;
         return;
     }
     /* Preview change */
-    auto& jsonValue = Json::resolvePath("properties/" + std::to_string(index) + "/value", _json.data());
+    auto& jsonValue = Json::resolvePath("properties/" + std::to_string(index) + "/value", _data.data());
     if(_sketchyStateholdingVariableBecauseImLazy.isNull())
         _sketchyStateholdingVariableBecauseImLazy = jsonValue;
     jsonValue = value;

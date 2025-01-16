@@ -4,8 +4,9 @@ cmake_minimum_required (VERSION 3.23)
 
 project ("BraneEngine")
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # This is on for VIM lsp support  
@@ -38,9 +39,14 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 
 
-if(msvc)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
-endif(msvc)
+if(MSVC)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /wd9002 /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    # For clangd support
+    option(CLANGD_COMPATABILITY OFF "Add -std=c++20 to compile options so clangd can pick up on the c++ version. Causes warning spam from MSVC.")
+    if(${CLANGD_COMPATABILITY})
+        add_compile_options("-std=c++20")
+    endif()
+endif(MSVC)
 
 # Sets an icon for the generated executables that will show up in file browsers
 set(ICON_FILE ${CMAKE_CURRENT_SOURCE_DIR}/media/brane.res)

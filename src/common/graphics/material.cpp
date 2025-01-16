@@ -13,18 +13,14 @@ namespace graphics
     Material::Material(MaterialAsset* asset, VulkanRuntime* vkr) : _asset(asset)
     {
         auto* am = Runtime::getModule<AssetManager>();
-        if(!asset->vertexShader.null())
+        if(!asset->vertexShader.empty())
         {
             AssetID id = asset->vertexShader;
-            if(id.address().empty())
-                id.setAddress(asset->id.address());
             _vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(id)->runtimeID);
         }
-        if(!asset->fragmentShader.null())
+        if(!asset->fragmentShader.empty())
         {
             AssetID id = asset->fragmentShader;
-            if(id.address().empty())
-                id.setAddress(asset->id.address());
             _fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(id)->runtimeID);
         }
 
@@ -513,9 +509,15 @@ namespace graphics
         return &_descriptorSets[frame];
     }
 
-    const ComponentDescription* Material::component() const { return _component; }
+    const ComponentDescription* Material::component() const
+    {
+        return _component;
+    }
 
-    MaterialAsset* Material::asset() const { return _asset; }
+    MaterialAsset* Material::asset() const
+    {
+        return _asset;
+    }
 
     GraphicsBuffer& Material::transformBuffer(size_t frame)
     {
@@ -604,13 +606,25 @@ namespace graphics
         vkUpdateDescriptorSets(device->get(), 1, &instanceDataSet, 0, nullptr);
     }
 
-    Shader* Material::vertexShader() const { return _vertexShader; }
+    Shader* Material::vertexShader() const
+    {
+        return _vertexShader;
+    }
 
-    Shader* Material::fragmentShader() const { return _fragmentShader; }
+    Shader* Material::fragmentShader() const
+    {
+        return _fragmentShader;
+    }
 
-    const std::vector<std::string>& Material::vertexBuffers() const { return _vertexBuffers; }
+    const std::vector<std::string>& Material::vertexBuffers() const
+    {
+        return _vertexBuffers;
+    }
 
-    GraphicsBuffer& Material::materialProperties() { return _materialProperties; }
+    GraphicsBuffer& Material::materialProperties()
+    {
+        return _materialProperties;
+    }
 
     void Material::setMaterialProperties(const std::vector<uint8_t>& data)
     {

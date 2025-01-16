@@ -13,8 +13,10 @@
 #include "PreppedSQLCall.h"
 
 #include "runtime/module.h"
+#include "utility/uuid.h"
 
 class AssetID;
+class BraneAssetID;
 
 class Database : public Module
 {
@@ -29,14 +31,15 @@ class Database : public Module
     PreppedSQLCall<sqlINT> _deleteUserLogin;
     PreppedSQLCall<sqlINT> _deleteUserPermissions;
 
-    PreppedSQLCall<sqlINT> _getAssetInfo;
-    PreppedSQLCall<sqlINT, sqlTEXT, sqlTEXT, sqlTEXT> _updateAssetInfo;
-    PreppedSQLCall<sqlINT, sqlTEXT, sqlTEXT, sqlTEXT> _insertAssetInfo;
-    PreppedSQLCall<sqlINT> _deleteAsset;
-    PreppedSQLCall<sqlINT, sqlINT> _getAssetPermission;
-    PreppedSQLCall<sqlINT, sqlINT, sqlINT> _updateAssetPermission;
-    PreppedSQLCall<sqlINT, sqlINT> _deleteAssetPermission;
+    PreppedSQLCall<sqlBLOB> _getAssetInfo;
+    PreppedSQLCall<sqlBLOB, sqlTEXT, sqlTEXT, sqlTEXT> _updateAssetInfo;
+    PreppedSQLCall<sqlBLOB, sqlTEXT, sqlTEXT, sqlTEXT> _insertAssetInfo;
+    PreppedSQLCall<sqlBLOB> _deleteAsset;
+    PreppedSQLCall<sqlBLOB, sqlINT> _getAssetPermission;
+    PreppedSQLCall<sqlBLOB, sqlINT, sqlINT> _updateAssetPermission;
+    PreppedSQLCall<sqlBLOB, sqlINT> _deleteAssetPermission;
     PreppedSQLCall<sqlINT, sqlINT, sqlTEXT, sqlTEXT> _searchAssets;
+    PreppedSQLCall<sqlINT> _listUserAssets;
     PreppedSQLCall<sqlINT, sqlINT, sqlTEXT> _searchUsers;
 
     static int sqliteCallback(void* callback, int argc, char** argv, char** azColName);
@@ -56,7 +59,7 @@ class Database : public Module
 
     struct AssetSearchResult
     {
-        uint32_t id;
+        UUID id;
         std::string name;
         AssetType type;
     };
@@ -81,13 +84,13 @@ class Database : public Module
 
     std::unordered_set<std::string> userPermissions(int64_t userID);
 
-    AssetInfo getAssetInfo(uint32_t id);
+    AssetInfo getAssetInfo(UUID id);
 
     void updateAssetInfo(const AssetInfo& info);
 
     void insertAssetInfo(AssetInfo& info);
 
-    void deleteAssetInfo(uint32_t id);
+    void deleteAssetInfo(UUID id);
 
     std::vector<AssetSearchResult>
     searchAssets(int start, int count = 0, std::string match = "", AssetType type = AssetType::none);
@@ -100,11 +103,11 @@ class Database : public Module
 
     std::vector<UserSearchResult> searchUsers(int start, int count = 0, std::string match = "");
 
-    AssetPermissionLevel getAssetPermission(uint32_t assetID, uint32_t userID);
+    AssetPermissionLevel getAssetPermission(UUID assetID, uint32_t userID);
 
-    void setAssetPermission(uint32_t assetID, uint32_t userID, AssetPermissionLevel level);
+    void setAssetPermission(UUID assetID, uint32_t userID, AssetPermissionLevel level);
 
-    std::string assetName(AssetID& id);
+    std::string assetName(BraneAssetID& id);
 
     std::vector<AssetInfo> listUserAssets(const uint32_t& userID);
 

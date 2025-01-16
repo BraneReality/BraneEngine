@@ -1,24 +1,19 @@
-//
-// Created by wirewhiz on 20/07/22.
-//
-
 #include "assetBrowserWidget.h"
 #include "assets/assetManager.h"
-#include "fileManager/fileManager.h"
-#include "imgui.h"
-#include "imgui_stdlib.h"
-#include "ui/IconsFontAwesome6.h"
-#include "utility/strCaseCompare.h"
-// #include "editor/windows/createAssetWindow.h"
 #include "ecs/entity.h"
-#include "editor/assets/editorAsset.h"
 #include "editor/assets/types/editorChunkAsset.h"
 #include "editor/assets/types/editorMaterialAsset.h"
+#include "editor/assets/types/editorScriptAsset.h"
 #include "editor/assets/types/editorShaderAsset.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
+#include "fileManager/fileManager.h"
 #include "graphics/graphics.h"
+#include "imgui.h"
 #include "imgui_internal.h"
+#include "imgui_stdlib.h"
+#include "ui/IconsFontAwesome6.h"
+#include "utility/strCaseCompare.h"
 
 class CreateDirectoryPopup : public GUIPopup
 {
@@ -78,6 +73,14 @@ class CreateAssetPopup : public GUIPopup
                     asset =
                         new EditorChunkAsset(_widget.currentDirectory() / (_assetName + ".chunk"), editor->project());
                     break;
+                case AssetType::script:
+                {
+                    auto scriptAsset =
+                        new EditorScriptAsset(_widget.currentDirectory() / (_assetName + ".script"), editor->project());
+                    scriptAsset->createDefaultSource();
+                    asset = scriptAsset;
+                }
+                break;
                 case AssetType::material:
                     asset = new EditorMaterialAsset(_widget.currentDirectory() / (_assetName + ".material"),
                                                     editor->project());
@@ -113,7 +116,10 @@ AssetBrowserWidget::AssetBrowserWidget(GUI& ui, bool allowEdits) : _ui(ui), _all
     setDirectory(_root.get());
 }
 
-void AssetBrowserWidget::displayDirectoryTree() { displayDirectoriesRecursive(_root.get()); }
+void AssetBrowserWidget::displayDirectoryTree()
+{
+    displayDirectoriesRecursive(_root.get());
+}
 
 void AssetBrowserWidget::displayDirectoriesRecursive(FileManager::Directory* dir)
 {
@@ -202,6 +208,8 @@ void AssetBrowserWidget::displayFiles()
                             editor->project().getEditorAsset(currentDirectory() / file);
                         if(asset)
                             _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+                        else
+                            Runtime::warn("Could not find clicked asset!");
                     }
                     if(type == FileType::directory)
                     {
@@ -267,6 +275,8 @@ void AssetBrowserWidget::displayFiles()
                     _ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
                 if(ImGui::Selectable(ICON_FA_CUBE " Chunk"))
                     _ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::chunk));
+                if(ImGui::Selectable(ICON_FA_SCROLL " Script"))
+                    _ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::script));
                 if(ImGui::Selectable(ICON_FA_SPRAY_CAN_SPARKLES " Material"))
                     _ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::material));
                 if(ImGui::Selectable(ICON_FA_FIRE " Shader"))
@@ -281,7 +291,9 @@ void AssetBrowserWidget::displayFiles()
 #elif __unix__
                 const std::string fileBrowser = "xdg-open \"";
 #endif
-                system((fileBrowser + currentDirectory().string() + "\"").c_str());
+                std::string command = (fileBrowser + currentDirectory().string() + "\"");
+                Logging::pushLog("running " + command, Logging::LogLevel::log);
+                system(command.c_str());
             }
             if(_selectedFiles.x != -1)
             {
@@ -316,7 +328,10 @@ void AssetBrowserWidget::displayFiles()
     }
 }
 
-std::filesystem::path AssetBrowserWidget::currentDirectory() { return _rootPath / _currentDir->path(); }
+std::filesystem::path AssetBrowserWidget::currentDirectory()
+{
+    return _rootPath / _currentDir->path();
+}
 
 void AssetBrowserWidget::displayFullBrowser()
 {
@@ -358,7 +373,10 @@ void AssetBrowserWidget::displayFullBrowser()
     }
 }
 
-void AssetBrowserWidget::reloadCurrentDirectory() { setDirectory(_currentDir); }
+void AssetBrowserWidget::reloadCurrentDirectory()
+{
+    setDirectory(_currentDir);
+}
 
 const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
 {
@@ -369,6 +387,8 @@ const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
         return ICON_FA_FIRE;
     if(ext == ".material")
         return ICON_FA_SPRAY_CAN_SPARKLES;
+    if(ext == ".script")
+        return ICON_FA_SCROLL;
     if(ext == ".png")
         return ICON_FA_FILE_IMAGE;
     if(ext == ".image")
@@ -381,7 +401,7 @@ const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
         return ICON_FA_TABLE_CELLS;
     if(ext == ".bin")
         return ICON_FA_BOX_ARCHIVE;
-    if(ext == ".vert" || ext == ".frag")
+    if(ext == ".vert" || ext == ".frag" || ext == ".lua")
         return ICON_FA_CODE;
     return ICON_FA_FILE;
 }
@@ -393,9 +413,11 @@ AssetBrowserWidget::FileType AssetBrowserWidget::getFileType(const std::filesyst
     if(file.is_regular_file())
     {
         auto ext = file.path().extension();
-        if(ext == ".shader" || ext == ".assembly" || ext == ".chunk" || ext == ".material" || ext == ".image")
+        if(ext == ".shader" || ext == ".assembly" || ext == ".chunk" || ext == ".material" || ext == ".image" ||
+           ext == ".script")
             return FileType::asset;
-        if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin" || ext == ".png")
+        if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin" || ext == ".png" ||
+           ext == ".lua")
             return FileType::source;
         return FileType::normal;
     }

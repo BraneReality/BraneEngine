@@ -91,11 +91,15 @@ void SelectProjectWindow::displayContent()
     if(ImGui::Button("Open From File"))
     {
         const char* filters[] = {"*.brane"};
-        std::string path = tinyfd_openFileDialog("Select Brane File", nullptr, 1, filters, "Brane Project Files", 0);
-        _recentProjects.insert(_recentProjects.begin(), {"no name (This is a bug)", path});
-        _selectedProject = 0;
-        saveRecents();
-        Runtime::getModule<Editor>()->loadProject(_recentProjects[_selectedProject].path);
+        const char* openRes = tinyfd_openFileDialog("Select Brane File", nullptr, 1, filters, "Brane Project Files", 0);
+        if(openRes)
+        {
+            std::string path = openRes;
+            _recentProjects.insert(_recentProjects.begin(), {"no name (This is a bug)", path});
+            _selectedProject = 0;
+            saveRecents();
+            Runtime::getModule<Editor>()->loadProject(_recentProjects[_selectedProject].path);
+        }
     }
     ImGui::PopStyleVar();
 }

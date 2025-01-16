@@ -7,11 +7,10 @@
 
 #include <filesystem>
 #include <string>
+#include "assets/assetID.h"
 #include "json/value.h"
 
 class Asset;
-
-class AssetID;
 
 class BraneProject;
 

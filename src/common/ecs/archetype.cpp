@@ -3,7 +3,10 @@
 #include "chunk.h"
 #include "entitySet.h"
 
-size_t Archetype::chunkIndex(size_t entity) const { return entity / (Chunk::allocationSize() / _entitySize); }
+size_t Archetype::chunkIndex(size_t entity) const
+{
+    return entity / (Chunk::allocationSize() / _entitySize);
+}
 
 Archetype::Archetype(const std::vector<const ComponentDescription*>& components,
                      std::shared_ptr<ChunkPool>& chunkAllocator)
@@ -27,9 +30,15 @@ Archetype::~Archetype()
     }
 }
 
-bool Archetype::hasComponent(ComponentID component) const { return _components.contains(component); }
+bool Archetype::hasComponent(ComponentID component) const
+{
+    return _components.contains(component);
+}
 
-bool Archetype::hasComponents(const ComponentSet& comps) const { return _components.contains(comps); }
+bool Archetype::hasComponents(const ComponentSet& comps) const
+{
+    return _components.contains(comps);
+}
 
 bool Archetype::hasComponents(const ComponentFilter& filter) const
 {
@@ -84,7 +93,7 @@ bool Archetype::isChildOf(const Archetype* parent, ComponentID& connectingCompon
 {
     connectingComponent = -1;
     assert(_components.size() + 1 == parent->_components.size()); // Make sure this is a valid comparison
-    byte missCount = 0;
+    uint8_t missCount = 0;
     for(auto& c : parent->_components)
     {
         if(!_components.contains(c))
@@ -97,15 +106,30 @@ bool Archetype::isChildOf(const Archetype* parent, ComponentID& connectingCompon
     return true;
 }
 
-const ComponentSet& Archetype::components() const { return _components; }
+const ComponentSet& Archetype::components() const
+{
+    return _components;
+}
 
-const std::vector<const ComponentDescription*>& Archetype::componentDescriptions() { return _componentDescriptions; }
+const std::vector<const ComponentDescription*>& Archetype::componentDescriptions()
+{
+    return _componentDescriptions;
+}
 
-std::unordered_map<ComponentID, Archetype*>& Archetype::addEdges() { return _addEdges; }
+std::unordered_map<ComponentID, Archetype*>& Archetype::addEdges()
+{
+    return _addEdges;
+}
 
-std::unordered_map<ComponentID, Archetype*>& Archetype::removeEdges() { return _removeEdges; }
+std::unordered_map<ComponentID, Archetype*>& Archetype::removeEdges()
+{
+    return _removeEdges;
+}
 
-size_t Archetype::size() const { return _size; }
+size_t Archetype::size() const
+{
+    return _size;
+}
 
 size_t Archetype::createEntity()
 {
@@ -142,9 +166,15 @@ size_t Archetype::moveEntity(size_t index, Archetype* destination)
     return newIndex;
 }
 
-Chunk* Archetype::getChunk(size_t entity) const { return _chunks[chunkIndex(entity)].get(); }
+Chunk* Archetype::getChunk(size_t entity) const
+{
+    return _chunks[chunkIndex(entity)].get();
+}
 
-size_t Archetype::entitySize() const { return _entitySize; }
+size_t Archetype::entitySize() const
+{
+    return _entitySize;
+}
 
 void Archetype::removeEntity(size_t index)
 {
@@ -170,7 +200,10 @@ void Archetype::removeEntity(size_t index)
     }
 }
 
-const std::vector<std::unique_ptr<Chunk>>& Archetype::chunks() const { return _chunks; }
+const std::vector<std::unique_ptr<Chunk>>& Archetype::chunks() const
+{
+    return _chunks;
+}
 
 void Archetype::setComponentVersion(size_t entity, ComponentID component, uint32_t version)
 {

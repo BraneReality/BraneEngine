@@ -19,11 +19,11 @@ class EditorAssemblyAsset : public EditorAsset
     Json::Value _componentBefore = Json::nullValue;
 
   public:
-    EditorAssemblyAsset(const std::filesystem::path& file, BraneProject& project);
+    EditorAssemblyAsset(const std::filesystem::path& file);
 
     std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;
 
-    Asset* buildAsset(const AssetID& id) const override;
+    Result<std::unique_ptr<Asset>> buildAsset(const AssetID& id) const override;
 
     void linkToGLTF(const std::filesystem::path& file);
 
@@ -45,7 +45,7 @@ class EditorAssemblyAsset : public EditorAsset
 
     static Json::Value componentToJson(VirtualComponentView component);
 
-    static VirtualComponent jsonToComponent(Json::Value component);
+    static Result<VirtualComponent> jsonToComponent(Json::Value component);
 };
 
 #endif // BRANEENGINE_EDITORASSEMBLYASSET_H

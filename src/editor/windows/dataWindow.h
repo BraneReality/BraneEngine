@@ -53,6 +53,9 @@ class DataWindow : public EditorWindow
 
     void displayMaterialData();
 
+    std::string _scriptText;
+    void displayScriptData();
+
     ImageAsset* _previewImageAsset = nullptr;
     VkDescriptorSet _imagePreview = VK_NULL_HANDLE;
 

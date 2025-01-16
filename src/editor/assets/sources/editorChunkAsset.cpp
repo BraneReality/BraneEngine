@@ -5,8 +5,7 @@
 #include "editorChunkAsset.h"
 #include "assets/chunk.h"
 
-EditorChunkAsset::EditorChunkAsset(const std::filesystem::path& file, BraneProject& project)
-    : EditorAsset(file, project)
+EditorChunkAsset::EditorChunkAsset(const std::filesystem::path& file) : EditorAsset(file)
 {
     // Generate default
     if(!std::filesystem::exists(_file))
@@ -15,28 +14,34 @@ EditorChunkAsset::EditorChunkAsset(const std::filesystem::path& file, BraneProje
         defaultLOD["assembly"] = "null";
         defaultLOD["min"] = 0;
         defaultLOD["max"] = 0;
-        _json.data()["LODs"].append(defaultLOD);
+        _data.data()["LODs"].append(defaultLOD);
     }
 }
 
 std::vector<std::pair<AssetID, AssetType>> EditorChunkAsset::containedAssets() const
 {
     std::vector<std::pair<AssetID, AssetType>> c;
-    c.emplace_back(AssetID(_json["id"].asString()), AssetType::chunk);
+    auto res = AssetID::parse(_data["id"].asString());
+    if(!res)
+    {
+        Runtime::error(std::format("Script Asset at {} has invalid id", _file.string()));
+        return c;
+    }
+    c.emplace_back(res.ok(), AssetType::chunk);
     return std::move(c);
 }
 
-Asset* EditorChunkAsset::buildAsset(const AssetID& id) const
+Result<Asset> EditorChunkAsset::buildAsset() const
 {
-    WorldChunk* chunk = new WorldChunk();
+    std::unique_ptr<WorldChunk> chunk = std::make_unique<WorldChunk>();
 
     chunk->name = name();
-    chunk->id = _json["id"].asString();
+    chunk->id = AssetID::parse(_data["id"].asString()).ok();
     chunk->maxLOD = 0;
-    for(auto& lod : _json["LODs"])
+    for(auto& lod : _data["LODs"])
     {
         WorldChunk::LOD newLOD;
-        newLOD.assembly = lod["assembly"].asString();
+        newLOD.assembly = AssetID::parse(lod["assembly"].asString()).ok();
         newLOD.min = lod["min"].asUInt();
         newLOD.max = lod["max"].asUInt();
         chunk->maxLOD = std::max(chunk->maxLOD, newLOD.max);

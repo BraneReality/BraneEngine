@@ -34,6 +34,7 @@ BraceWrapping:
 AlwaysBreakAfterReturnType: None
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakTemplateDeclarations: Yes
+AllowShortFunctionsOnASingleLine: Empty
 
 # Alignments
 PointerAlignment: Left

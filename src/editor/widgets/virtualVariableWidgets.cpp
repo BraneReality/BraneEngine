@@ -36,7 +36,7 @@ UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponen
 
 UiChangeType VirtualVariableWidgets::displayVirtualVariable(const char* name,
                                                             VirtualType::Type type,
-                                                            byte* data,
+                                                            uint8_t* data,
                                                             const Json::Value& assembly)
 {
     assert(name);
@@ -122,14 +122,14 @@ UiChangeType VirtualVariableWidgets::displayVirtualVariable(const char* name,
             break;
         case VirtualType::virtualAssetID:
         {
-            std::string id = ((AssetID*)data)->string();
+            std::string id = ((AssetID*)data)->toString();
             ImGui::InputText(name, &id);
             if(ImGui::IsItemEdited())
                 changed = UiChangeType::ongoing;
             if(ImGui::IsItemDeactivatedAfterEdit())
                 changed = UiChangeType::finished;
             if(ImGui::IsItemDeactivatedAfterEdit())
-                *((AssetID*)data) = id;
+                *((AssetID*)data) = AssetID::parse(id).ok();
         }
         break;
         case VirtualType::virtualVec3:
@@ -232,7 +232,7 @@ UiChangeType VirtualVariableWidgets::displayAssetComponentData(Json::Value& comp
     for(auto& member : component["members"])
     {
         VirtualType::Type type = VirtualType::stringToType(member["type"].asString());
-        byte* data = (byte*)STACK_ALLOCATE(VirtualType::size(type));
+        uint8_t* data = (uint8_t*)STACK_ALLOCATE(VirtualType::size(type));
         VirtualType::construct(type, data);
         JsonVirtualType::toVirtual(data, member["value"], type);
         changed = (UiChangeType)std::max(
