@@ -80,7 +80,10 @@ AsyncData<Asset*> FileManager::async_readUnknownAsset(const std::filesystem::pat
     return asset;
 }
 
-const char* FileManager::name() { return "fileManager"; }
+const char* FileManager::name()
+{
+    return "fileManager";
+}
 
 FileManager::FileManager() {}
 
@@ -91,10 +94,10 @@ std::vector<std::filesystem::directory_entry> FileManager::getDirectoryContents(
         paths.push_back(file);
     std::sort(
         paths.begin(), paths.end(), [](std::filesystem::directory_entry& p1, std::filesystem::directory_entry& p2) {
-            if(p1.is_directory() != p2.is_directory())
-                return std::filesystem::is_directory(p1);
-            return strCaseCompare(p1.path().filename().string(), p2.path().filename().string());
-        });
+        if(p1.is_directory() != p2.is_directory())
+            return std::filesystem::is_directory(p1);
+        return strCaseCompare(p1.path().filename().string(), p2.path().filename().string());
+    });
 
     return paths;
 }
@@ -149,9 +152,15 @@ void FileManager::refreshDirectoryTree(Directory* dir, const std::filesystem::pa
     std::sort(children.begin(), children.end(), [](auto& a, auto& b) { return strCaseCompare(a->name, b->name); });
 }
 
-void FileManager::createDirectory(const std::filesystem::path& path) { std::filesystem::create_directories(path); }
+void FileManager::createDirectory(const std::filesystem::path& path)
+{
+    std::filesystem::create_directories(path);
+}
 
-bool FileManager::deleteFile(const std::filesystem::path& path) { return std::filesystem::remove_all(path); }
+bool FileManager::deleteFile(const std::filesystem::path& path)
+{
+    return std::filesystem::remove_all(path);
+}
 
 void FileManager::moveFile(const std::filesystem::path& source, const std::filesystem::path& destination)
 {
@@ -166,7 +175,7 @@ std::string FileManager::requestLocalFilePath(const std::string& title, const st
     return std::string(path);
 }
 
-std::string FileManager::fileHash(const std::filesystem::path& filename)
+std::string FileManager::checksum(const std::filesystem::path& filename)
 {
     std::vector<unsigned char> fileContents;
     readFile(filename, fileContents);

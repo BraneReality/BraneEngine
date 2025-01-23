@@ -1,4 +1,5 @@
-find_package(jsoncpp CONFIG REQUIRED)
-
-add_library(state STATIC versioning.cpp)
-target_link_libraries(state PUBLIC JsonCpp::JsonCpp utility)
+add_library(editorState STATIC 
+    versioning.cpp 
+    trackedValue.cpp 
+    trackedObject.cpp)
+target_link_libraries(editorState PUBLIC utility)

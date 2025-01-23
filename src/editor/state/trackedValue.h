@@ -5,54 +5,24 @@
 #include "editor/state/versioning.h"
 #include "utility/assert.h"
 #include "utility/event.h"
+#include "utility/jsonSerializer.h"
 #include "utility/mutex.h"
 
 class TrackedType : public std::enable_shared_from_this<TrackedType>
 {
     std::weak_ptr<TrackedType> _parent;
 
-  protected:
-    /// Called by children to notify parents of a change
-    virtual void childChanged(EditorActionType at) = 0;
-
   public:
-    TrackedType(std::weak_ptr<TrackedType> parent);
-
     Option<std::shared_ptr<TrackedType>> parent();
-};
 
-template<class T>
-class Tracked
-{
-    static_assert(std::is_base_of<TrackedType, T>(), "Tracked<T> requires that T be derived from TrackedType");
-    std::shared_ptr<T> _value;
+    // We can't get shared_ptr references in teh constructor
+    virtual void initMembers(Option<std::shared_ptr<TrackedType>> parent);
 
-  public:
-    Tracked(T defaultValue, Option<std::shared_ptr<TrackedType>> parent)
-    {
-        _value = std::make_shared<T>(defaultValue,
-                                     parent.map<std::weak_ptr<TrackedType>>([](auto parent) { return parent; }));
-    }
-
-    T& operator*()
-    {
-        return *_value;
-    }
-
-    const T& operator*() const
-    {
-        return *_value;
-    }
-
-    T& operator->()
-    {
-        return *_value;
-    }
-
-    const T& operator->() const
-    {
-        return *_value;
-    }
+    /// Called by children to notify parents of a change
+    virtual void onChildForward(EditorActionType at) = 0;
+    virtual void onChildBack(EditorActionType at) = 0;
+    /// Called to notify savable objects that a new change has been created, and to no longer treat a delta as savable
+    virtual void onNewChange() = 0;
 };
 
 template<class T>
@@ -66,47 +36,76 @@ class TrackedValue : public TrackedType
         std::shared_ptr<TrackedValue<T>> trackedValue;
         T before;
         T after;
+        bool isNewChange = true;
     };
 
   public:
-    TrackedValue(T init) : _value(std::move(init)) {};
+    TrackedValue(T init) : _value(Mutex<T>(std::move(init))) {};
 
-    const Mutex<T>::Lock value() const
+    const typename Mutex<T>::ConstLock value() const
     {
         return _value.lock();
     }
 
     EditorAction set(T value)
     {
-        auto ctx = std::make_unique<ActionCtx>();
-        ctx->trackedValue = shared_from_this();
-        ctx->before = _value;
+        auto ctx = std::make_shared<ActionCtx>();
+        ctx->trackedValue = std::static_pointer_cast<TrackedValue<T>>(shared_from_this());
+        ctx->before = *_value.lock();
         ctx->after = value;
-        return EditorAction{
-            .context = ctx, .forwardAction = [](std::shared_ptr<EditorActionContext> ctx, EditorActionType type) {
+
+        return EditorAction(ctx, [](std::shared_ptr<EditorActionContext> ctx, EditorActionType type) {
             auto actx = std::static_pointer_cast<ActionCtx>(ctx);
-            auto v = actx->trackedValue._value.lock();
+            auto v = actx->trackedValue->_value.lock();
             *v = actx->after;
-            actx->trackedValue._onChange.invoke(*v, type);
-            if(auto p = actx->trackedValue.parent())
-                p->childChanged(type);
-        }, .backAction = [](std::shared_ptr<EditorActionContext> ctx, EditorActionType type) {
+            actx->trackedValue->_onChange.invoke(*v, type);
+            if(auto p = actx->trackedValue->parent())
+            {
+                // Once per-change, this has to go in here since we don't know if it's a preview change or if the action
+                // gets lost until here in execution
+                if(actx->isNewChange && type == EditorActionType::Standard)
+                {
+                    actx->isNewChange = false;
+                    p.value()->onNewChange();
+                }
+                p.value()->onChildForward(type);
+            }
+        }, [](std::shared_ptr<EditorActionContext> ctx, EditorActionType type) {
             auto actx = std::static_pointer_cast<ActionCtx>(ctx);
-            auto v = actx->trackedValue._value.lock();
+            auto v = actx->trackedValue->_value.lock();
             *v = actx->before;
-            actx->trackedValue._onChange.invoke(*v, type);
-            if(auto p = actx->trackedValue.parent())
-                p->childChanged(type);
-        }};
+            actx->trackedValue->_onChange.invoke(*v, type);
+            if(auto p = actx->trackedValue->parent())
+                p.value()->onChildBack(type);
+        });
     }
 
     Event<T, EditorActionType>::Handle addListener(Event<T, EditorActionType>::EventCallback f) const
+
     {
         return _onChange.addListener(std::move(f));
     }
 
-    void childChanged(EditorActionType at) override
+  protected:
+    void onChildForward(EditorActionType at) override {};
+    void onChildBack(EditorActionType at) override {};
+    void onNewChange() override {};
+};
+
+template<class T>
+struct JsonSerializer<TrackedValue<T>>
+{
+    static Result<void, JsonSerializerError> read(const Json::Value& s, TrackedValue<T>& value)
     {
-        BRANE_ASSERT(false, "Cannot call childChanged on TrackedValue!");
+        T data;
+        JsonSerializer<T>::read(s, data);
+        value.set(data).forward();
+        return Ok<void>();
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& s, const TrackedValue<T>& value)
+    {
+        JsonSerializer<T>::write(s, *value.value());
+        return Ok<void>();
     }
 };

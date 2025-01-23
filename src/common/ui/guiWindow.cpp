@@ -4,19 +4,33 @@
 
 #include "guiWindow.h"
 #include "gui.h"
+#include "imgui_internal.h"
+#include "imgui_stdlib.h"
 #include "runtime/runtime.h"
 
 size_t GUIWindow::_instanceCounter = 0;
 
-GUIWindow::GUIWindow(GUI& ui) : _ui(ui) { _instance = _instanceCounter++; }
+GUIWindow::GUIWindow(GUI& ui) : _ui(ui)
+{
+    _instance = _instanceCounter++;
+}
 
 void GUIWindow::update() {}
 
-bool GUIWindow::isOpen() const { return _open; }
+bool GUIWindow::isOpen() const
+{
+    return _open;
+}
 
-void GUIWindow::close() { _open = false; }
+void GUIWindow::close()
+{
+    _open = false;
+}
 
-std::string GUIWindow::name() const { return _name + "##" + std::to_string(_instance); }
+std::string GUIWindow::name() const
+{
+    return _name + "##" + std::to_string(_instance);
+}
 
 void GUIWindow::draw()
 {
@@ -30,4 +44,7 @@ void GUIWindow::draw()
     ImGui::End();
 }
 
-void GUIWindow::resizeDefault() { _resetSize = true; }
+void GUIWindow::resizeDefault()
+{
+    _resetSize = true;
+}

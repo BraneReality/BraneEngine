@@ -9,21 +9,43 @@
 template<class T>
 class Mutex
 {
-    T value;
-    mutable std::mutex m;
+    struct Inner
+    {
+        T value;
+        mutable std::mutex m;
+
+        Inner() = default;
+
+        Inner(T value) : value(std::move(value)) {}
+    };
+
+    // We have this in a pointer so the base class is movable
+    std::unique_ptr<Inner> _inner;
 
   public:
+    Mutex()
+    {
+        _inner = std::make_unique<Inner>();
+    }
+
+    template<class... Args>
+    Mutex(Args... args)
+    {
+        _inner = std::make_unique<Inner>(T(args...));
+    }
+
     class Lock
     {
         std::lock_guard<std::mutex> lock;
         T* value;
 
-        Lock(T* value, std::mutex& m) : value(value), lock(m, std::adopt_lock) {}
 
       public:
-        T& operator->()
+        Lock(T* value, std::mutex& m) : value(value), lock(m, std::adopt_lock) {}
+
+        T* operator->()
         {
-            return *value;
+            return value;
         }
 
         T& operator*()
@@ -31,9 +53,29 @@ class Mutex
             return *value;
         }
 
-        const T& operator->() const
+        const T* operator->() const
+        {
+            return value;
+        }
+
+        const T& operator*() const
         {
             return *value;
+        }
+    };
+
+    class ConstLock
+    {
+        std::lock_guard<std::mutex> lock;
+        const T* value;
+
+
+      public:
+        ConstLock(const T* value, std::mutex& m) : value(value), lock(m, std::adopt_lock) {}
+
+        const T* operator->() const
+        {
+            return value;
         }
 
         const T& operator*() const
@@ -44,28 +86,28 @@ class Mutex
 
     Lock lock()
     {
-        m.lock();
-        return Lock(&value, m);
+        _inner->m.lock();
+        return Lock(&_inner->value, _inner->m);
     }
 
-    const Lock lock() const
+    ConstLock lock() const
     {
-        m.lock();
-        return Lock(&value, m);
+        _inner->m.lock();
+        return ConstLock(&_inner->value, _inner->m);
     }
 
     Option<Lock> try_lock()
     {
-        if(m.try_lock())
-            return Some(Lock(&value, m));
+        if(_inner->m.try_lock())
+            return Some(Lock(&_inner->value, _inner->m));
         else
             return None();
     }
 
     Option<const Lock> try_lock() const
     {
-        if(m.try_lock())
-            return Some(Lock(&value, m));
+        if(_inner->m.try_lock())
+            return Some(Lock(&_inner->value, _inner->m));
         else
             return None();
     }
@@ -74,21 +116,42 @@ class Mutex
 template<class T>
 class RwMutex
 {
-    T value;
-    mutable std::shared_mutex m;
+
+    struct Inner
+    {
+        T value;
+        mutable std::shared_mutex m;
+
+        Inner() = default;
+
+        Inner(T value) : value(std::move(value)) {}
+    };
+
+    std::unique_ptr<Inner> _inner;
 
   public:
+    RwMutex()
+    {
+        _inner = std::make_unique<Inner>();
+    }
+
+    template<class... Args>
+    RwMutex(Args... args)
+    {
+        _inner = std::make_unique<Inner>(T(args...));
+    }
+
     class Lock
     {
         std::unique_lock<std::shared_mutex> lock;
         T* value;
 
+      public:
         Lock(T* value, std::shared_mutex& m) : value(value), lock(m, std::adopt_lock) {}
 
-      public:
-        T& operator->()
+        T* operator->()
         {
-            return *value;
+            return value;
         }
 
         T& operator*()
@@ -96,9 +159,9 @@ class RwMutex
             return *value;
         }
 
-        const T& operator->() const
+        const T* operator->() const
         {
-            return *value;
+            return value;
         }
 
         const T& operator*() const
@@ -110,14 +173,14 @@ class RwMutex
     class SharedLock
     {
         std::shared_lock<std::shared_mutex> lock;
-        T* value;
-
-        SharedLock(T* value, std::shared_mutex& m) : value(value), lock(m, std::adopt_lock) {}
+        const T* value;
 
       public:
-        const T& operator->() const
+        SharedLock(const T* value, std::shared_mutex& m) : value(value), lock(m, std::adopt_lock) {}
+
+        const T* operator->() const
         {
-            return *value;
+            return value;
         }
 
         const T& operator*() const
@@ -128,42 +191,42 @@ class RwMutex
 
     Lock lock()
     {
-        m.lock();
-        return Lock(&value, m);
+        _inner->m.lock();
+        return Lock(&_inner->value, _inner->m);
     }
 
     const Lock lock() const
     {
-        m.lock();
-        return Lock(&value, m);
+        _inner->m.lock();
+        return Lock(&_inner->value, _inner->m);
     }
 
     Option<Lock> try_lock()
     {
-        if(m.try_lock())
-            return Some(Lock(&value, m));
+        if(_inner->m.try_lock())
+            return Some(Lock(&_inner->value, _inner->m));
         else
             return None();
     }
 
     Option<const Lock> try_lock() const
     {
-        if(m.try_lock())
-            return Some(Lock(&value, m));
+        if(_inner->m.try_lock())
+            return Some(Lock(&_inner->value, _inner->m));
         else
             return None();
     }
 
     const SharedLock lockShared() const
     {
-        m.lock_shared();
-        return Lock(&value, m);
+        _inner->m.lock_shared();
+        return SharedLock(&_inner->value, _inner->m);
     }
 
     Option<const SharedLock> try_lock_shared() const
     {
-        if(m.try_lock_shared())
-            return Some<const SharedLock>(SharedLock(&value, m));
+        if(_inner->m.try_lock_shared())
+            return Some<const SharedLock>(SharedLock(&_inner->value, _inner->m));
         else
             return None();
     }

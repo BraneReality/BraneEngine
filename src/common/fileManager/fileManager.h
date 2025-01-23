@@ -95,7 +95,7 @@ class FileManager : public Module
 
     AsyncData<Asset*> async_readUnknownAsset(const std::filesystem::path& filename);
 
-    static std::string fileHash(const std::filesystem::path& filename);
+    static std::string checksum(const std::filesystem::path& filename);
 
     static bool readFile(const std::filesystem::path& filename, std::string& data);
 

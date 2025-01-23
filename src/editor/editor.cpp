@@ -20,9 +20,9 @@
 #include "assets/types/shaderAsset.h"
 #include "editorEvents.h"
 #include "fileManager/fileManager.h"
-#include "fileManager/fileWatcher.h"
 #include "graphics/graphics.h"
 #include "graphics/material.h"
+#include "imgui_internal.h"
 #include "networking/networking.h"
 
 #include "tinyfiledialogs.h"
@@ -45,47 +45,54 @@ class EditorAssetLoader : public AssetLoader
 
         Editor* editor = Runtime::getModule<Editor>();
 
-        if(editor->cache().hasAsset(id))
+        if(editor->cache().hasAsset(*id))
         {
             ThreadPool::enqueue([this, editor, asset, id]() {
-                Asset* cachedAsset = editor->cache().getAsset(id);
+                Asset* cachedAsset = editor->cache().getAsset(*id);
                 asset.setData(cachedAsset);
             });
             return asset;
         }
 
-        std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
-        if(editorAsset)
+        auto project = editor->project();
+        if(project)
         {
-            ThreadPool::enqueue([this, editorAsset, editor, asset, id]() {
-                Asset* a = editorAsset->buildAsset(id);
-                if(!a)
-                {
-                    asset.setError("Could not build " + id.toString() + " from " + editorAsset->name());
-                    return;
-                }
-                editor->cache().cacheAsset(a);
-                asset.setData(a);
-            });
-            return asset;
+            auto editorAsset = project.value()->getEditorAsset(*id);
+            if(editorAsset)
+            {
+                ThreadPool::enqueue([this, editorAsset, editor, asset, id]() {
+                    auto aRes = editorAsset.value()->buildAsset(*id);
+                    if(!aRes)
+                    {
+                        asset.setError("Could not build " + id->toString() + " from " + editorAsset.value()->name() +
+                                       " reason: " + aRes.err());
+                        return;
+                    }
+                    auto a = aRes.ok();
+
+                    editor->cache().cacheAsset(a.get());
+                    asset.setData(a.get());
+                });
+                return asset;
+            }
         }
 
-        if(id.domain.empty())
+        if(id->domain.empty())
         {
-            asset.setError("Asset with id " + std::string(id.toString()) +
+            asset.setError("Asset with id " + std::string(id->toString()) +
                            " was not found and can not be remotely fetched since it lacks a server address");
             return asset;
         }
         auto* nm = Runtime::getModule<NetworkManager>();
         if(incremental)
         {
-            nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr) {
+            nm->async_requestAssetIncremental(*id).then([this, asset](Asset* ptr) {
                 asset.setData(ptr);
             }).onError([asset](std::string error) { asset.setError(error); });
         }
         else
         {
-            nm->async_requestAsset(id).then([this, asset](Asset* ptr) {
+            nm->async_requestAsset(*id).then([this, asset](Asset* ptr) {
                 asset.setData(ptr);
             }).onError([asset](std::string error) { asset.setError(error); });
         }
@@ -109,13 +116,13 @@ void Editor::start()
         }
     });
     Runtime::getModule<graphics::VulkanRuntime>()->onWindowClosed([this]() {
-        if(!_project.loaded())
+        if(!_project)
             return true;
-        if(!_project.unsavedChanges())
+        if(!_project.value().unsavedChanges())
             return true;
         int input = tinyfd_messageBox(nullptr, "Unsaved changes! Do you want to save?", "yesnocancel", "warning", 1);
         if(input == 1)
-            _project.save();
+            _project.value().save();
         else
             Runtime::log("User chose not to save on exit");
         return input != 0;
@@ -195,51 +202,65 @@ void Editor::drawMenu()
         if(ImGui::IsKeyPressed(ImGuiKey_Z))
         {
             if(!ImGui::IsKeyDown(ImGuiKey_ModShift))
-                _jsonTracker.undo();
+                _actionManager.stepBack();
             else
-                _jsonTracker.redo();
+                _actionManager.stepForward();
         }
         else if(ImGui::IsKeyPressed(ImGuiKey_Y))
-            _jsonTracker.redo();
+            _actionManager.stepForward();
         else if(ImGui::IsKeyPressed(ImGuiKey_S))
-            _project.save();
+        {
+            if(_project)
+                _project.value().save();
+        }
     }
 }
 
-BraneProject& Editor::project()
+Option<BraneProject*> Editor::project()
 {
-    return _project;
+    if(_project)
+        return Some<BraneProject*>(&_project.value());
+    return None();
 }
 
 void Editor::loadProject(const std::filesystem::path& filepath)
 {
-    _project.load(filepath);
-    Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this]() {
-        if(_project.fileWatcher())
-            _project.fileWatcher()->scanForChanges();
-    });
+    auto loadRes = BraneProject::load(filepath);
+    if(!loadRes)
+    {
+        Runtime::error("Failed to load project! " + loadRes.err());
+        return;
+    }
+    _project = Some(std::move(loadRes.ok()));
+    // Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this]() {
+    //     if(_project.fileWatcher())
+    //         _project.fileWatcher()->scanForChanges();
+    // });
     _ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
 }
 
 void Editor::createProject(const std::string& name, const std::filesystem::path& directory)
 {
-    _project.create(name, directory);
-    Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this]() {
-        if(_project.fileWatcher())
-            _project.fileWatcher()->scanForChanges();
-    });
+    auto loadRes = BraneProject::create(name, directory);
+    if(!loadRes)
+    {
+        Runtime::error("Failed to load project! " + loadRes.err());
+        return;
+    }
+    _project = Some(loadRes.ok());
+    // Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this]() {
+    //     if(_project.fileWatcher())
+    //         _project.fileWatcher()->scanForChanges();
+    // });
     _ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
 }
 
-JsonVersionTracker& Editor::jsonTracker()
+EditorActionManager& Editor::actionManager()
 {
-    return _jsonTracker;
+    return _actionManager;
 }
 
-Editor::Editor() : _project(*this)
-{
-    _cache.setProject(&_project);
-}
+Editor::Editor() {}
 
 AssetCache& Editor::cache()
 {
@@ -253,33 +274,36 @@ ShaderCompiler& Editor::shaderCompiler()
 
 void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 {
-    AssetID id = AssetID::parse(asset->data()["id"].asString()).ok();
-    _cache.deleteCachedAsset(id);
-    auto* am = Runtime::getModule<AssetManager>();
-    if(!am->hasAsset(id))
-        return;
-    Asset* newAsset = asset->buildAsset(id);
-    if(!newAsset)
-    {
-        Runtime::error("Could not reload asset " + id.toString() + "!");
-        return;
-    }
-    am->reloadAsset(newAsset);
-    delete newAsset;
+    Runtime::error("Haven't fixed asset reloading yet...");
+    /*
+        AssetID id = AssetID::parse(asset->data()["id"].asString()).ok();
+        _cache.deleteCachedAsset(id);
+        auto* am = Runtime::getModule<AssetManager>();
+        if(!am->hasAsset(id))
+            return;
+        Asset* newAsset = asset->buildAsset(id);
+        if(!newAsset)
+        {
+            Runtime::error("Could not reload asset " + id.toString() + "!");
+            return;
+        }
+        am->reloadAsset(newAsset);
+        delete newAsset;
 
-    switch(asset->type().type())
-    {
-        case AssetType::material:
-        case AssetType::shader:
-            am->fetchAsset<Asset>(id).then([&am](Asset* asset) {
-                // Manually fetch dependencies, since it skips that step if an asset is already fully loaded
-                am->fetchDependencies(asset, [asset](bool success) {
-                    if(success)
-                        Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
-                    else
-                        Runtime::warn("Could not reload " + asset->name);
+        switch(asset->type().type())
+        {
+            case AssetType::material:
+            case AssetType::shader:
+                am->fetchAsset<Asset>(id).then([&am](Asset* asset) {
+                    // Manually fetch dependencies, since it skips that step if an asset is already fully loaded
+                    am->fetchDependencies(asset, [asset](bool success) {
+                        if(success)
+                            Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
+                        else
+                            Runtime::warn("Could not reload " + asset->name);
+                    });
                 });
-            });
-            break;
-    }
+                break;
+        }
+    */
 }

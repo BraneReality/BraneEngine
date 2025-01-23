@@ -19,7 +19,8 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
     if(id.empty())
         name = "null";
     else
-        name = Runtime::getModule<Editor>()->project().getAssetName(id);
+        name = id.toString(); // Runtime::getModule<Editor>()->project().getAssetName(id); // TODO convert back to human
+                              // readable value
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.2);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, {0.1, 0.1, 0.1, 1});
     ImGui::InputText(("##" + name).c_str(), &name, ImGuiInputTextFlags_ReadOnly);

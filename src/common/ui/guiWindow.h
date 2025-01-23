@@ -5,10 +5,9 @@
 #ifndef BRANEENGINE_GUIWINDOW_H
 #define BRANEENGINE_GUIWINDOW_H
 
+#include <string>
 #include "IconsFontAwesome6.h"
 #include "imgui.h"
-#include "imgui_internal.h"
-#include "imgui_stdlib.h"
 #include <unordered_map>
 
 class GUI;

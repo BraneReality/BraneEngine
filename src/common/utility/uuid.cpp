@@ -37,7 +37,7 @@ Result<UUID> UUID::generate()
     res.data.clk_seq_low = random_bytes[3];
     std::memcpy(res.data.node, &random_bytes[4], 6);
 
-    return Ok(res);
+    return Ok<UUID>(std::move(res));
 }
 
 Result<UUID> UUID::fromString(std::string_view text)
@@ -70,7 +70,7 @@ Result<UUID> UUID::fromString(std::string_view text)
                              &ret.data.node[5]);
     if(res != 11)
         return Err(std::string("failed to parse uuid"));
-    return Ok(ret);
+    return Ok<UUID>(std::move(ret));
 }
 
 bool UUID::operator==(const UUID& o) const

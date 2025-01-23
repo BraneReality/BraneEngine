@@ -21,9 +21,8 @@ class Event
 
         void removeListener(EventHandleId id)
         {
-            auto it = std::remove(callbacks.begin(), callbacks.end(), [id](auto& c) { return c.first == id; });
-            auto r = callbacks.end() - it;
-            callbacks.erase(it, callbacks.end());
+            callbacks.erase(
+                std::remove_if(callbacks.begin(), callbacks.end(), [id](auto& c) { return c.first == id; }));
         }
     };
 
@@ -31,6 +30,11 @@ class Event
 
 
   public:
+    Event()
+    {
+        _inner = std::make_shared<Mutex<EventInner>>();
+    }
+
     class Handle
     {
         EventHandleId _id;
@@ -45,6 +49,8 @@ class Event
             old._id = std::numeric_limits<EventHandleId>::max();
         }
 
+        Handle(EventHandleId id, std::shared_ptr<Mutex<EventInner>> parent) : _id(id), _parent(parent) {};
+
         ~Handle()
         {
             if(_id != std::numeric_limits<EventHandleId>::max())
@@ -57,13 +63,16 @@ class Event
         auto i = _inner->lock();
         auto id = i->counter++;
         i->callbacks.emplace_back(id, std::move(f));
-        return Handle{id, _inner};
+        return Handle(id, _inner);
     }
 
     void invoke(Args... args)
     {
-        auto inner = _inner.lock();
-        for(auto& c : inner.callbacks)
-            ThreadPool::enqueue([c, args...]() { c(args...); });
+        auto inner = _inner->lock();
+        for(auto& c : inner->callbacks)
+        {
+            auto f = c.second;
+            ThreadPool::enqueue([f, args...]() { f(args...); });
+        }
     }
 };

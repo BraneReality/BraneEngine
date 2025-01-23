@@ -15,7 +15,7 @@ void AssetCache::setProject(BraneProject* project)
 std::filesystem::path AssetCache::getPath(const AssetID& id)
 {
     assert(_project);
-    return _project->projectDirectory() / "cache" / (id.toString() + ".bin");
+    return _project->root() / "cache" / (id.toString() + ".bin");
 }
 
 void AssetCache::cacheAsset(const Asset* asset)
@@ -53,5 +53,5 @@ bool AssetCache::hasAsset(const AssetID& asset)
 
 std::string AssetCache::getAssetHash(const AssetID& asset)
 {
-    return FileManager::fileHash(getPath(asset));
+    return FileManager::checksum(getPath(asset));
 }

@@ -19,17 +19,16 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
+#include "imgui_stdlib.h"
+#include <imgui_internal.h>
 
 GUI::GUI()
 {
     Runtime::timeline().addBlockBefore("gui", "draw");
-    Runtime::timeline().addTask(
-        "updateUI",
-        [&] {
-        _windows.erase(std::remove_if(
-                           _windows.begin(),
-                           _windows.end(),
-                           [this](auto& window) {
+    Runtime::timeline().addTask("updateUI", [&] {
+        _windows.erase(std::remove_if(_windows.begin(),
+                                      _windows.end(),
+                                      [this](auto& window) {
             if(window->isOpen())
                 return false;
             // Remove listeners first
@@ -47,17 +46,19 @@ GUI::GUI()
                     ++la;
             }
             return true;
-                           }),
+        }),
                        _windows.end());
         for(auto& w : _windows)
         {
             w->update();
         }
-        },
-        "gui");
+    }, "gui");
 }
 
-const char* GUI::name() { return "editorUI"; }
+const char* GUI::name()
+{
+    return "editorUI";
+}
 
 void GUI::drawUI()
 {
@@ -268,7 +269,10 @@ void GUI::cleanupImGui()
     ImGui::DestroyContext();
 }
 
-VkDescriptorPool GUI::descriptorPool() { return _imGuiDescriptorPool; }
+VkDescriptorPool GUI::descriptorPool()
+{
+    return _imGuiDescriptorPool;
+}
 
 void GUI::stop()
 {
@@ -276,7 +280,10 @@ void GUI::stop()
     cleanupImGui();
 }
 
-void GUI::setMainMenuCallback(std::function<void()> drawMenu) { _drawMenu = drawMenu; }
+void GUI::setMainMenuCallback(std::function<void()> drawMenu)
+{
+    _drawMenu = drawMenu;
+}
 
 void GUI::start()
 {
@@ -288,9 +295,15 @@ void GUI::start()
     setupImGui(*vkr);
 }
 
-void GUI::openPopup(std::unique_ptr<GUIPopup>&& popup) { _popup = std::move(popup); }
+void GUI::openPopup(std::unique_ptr<GUIPopup>&& popup)
+{
+    _popup = std::move(popup);
+}
 
-void GUI::closePopup() { _popup = nullptr; }
+void GUI::closePopup()
+{
+    _popup = nullptr;
+}
 
 void GUI::clearWindows()
 {
@@ -308,6 +321,12 @@ void GUI::clearWindows()
     }
 }
 
-void GUI::pushHeaderFont() const { ImGui::PushFont(_fonts[1]); }
+void GUI::pushHeaderFont() const
+{
+    ImGui::PushFont(_fonts[1]);
+}
 
-void GUI::pushMonoFont() const { ImGui::PushFont(_fonts[2]); }
+void GUI::pushMonoFont() const
+{
+    ImGui::PushFont(_fonts[2]);
+}

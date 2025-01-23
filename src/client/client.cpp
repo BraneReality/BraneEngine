@@ -29,23 +29,23 @@ class ClientAssetLoader : public AssetLoader
             asset.setError("Can only load BraneAssetID");
             return asset;
         }
-        auto id = castId.value();
-        if(id.domain.empty())
+        auto* id = castId.value();
+        if(id->domain.empty())
         {
-            asset.setError("Asset with id " + id.toString() +
+            asset.setError("Asset with id " + id->toString() +
                            " was not found and can not be remotely fetched since it lacks a server address");
             return asset;
         }
         auto* nm = Runtime::getModule<NetworkManager>();
         if(incremental)
         {
-            nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr) {
+            nm->async_requestAssetIncremental(*id).then([this, asset](Asset* ptr) {
                 asset.setData(ptr);
             }).onError([this, asset](std::string error) { asset.setError(error); });
         }
         else
         {
-            nm->async_requestAsset(id).then([this, asset](Asset* ptr) {
+            nm->async_requestAsset(*id).then([this, asset](Asset* ptr) {
                 asset.setData(ptr);
             }).onError([this, asset](std::string error) { asset.setError(error); });
         }

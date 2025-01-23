@@ -31,7 +31,7 @@ class AssetServerLoader : public AssetLoader
         auto* fm = Runtime::getModule<FileManager>();
 
         auto path = std::filesystem::current_path() / Config::json()["data"]["asset_path"].asString() /
-                    ((std::string)id.uuid.toString() + ".bin");
+                    ((std::string)id->uuid.toString() + ".bin");
         if(std::filesystem::exists(path))
         {
             fm->async_readUnknownAsset(path).then([this, asset](Asset* ptr) {
@@ -137,7 +137,7 @@ void AssetServer::createAssetListeners()
             rc.res << "Asset server can only fetch assets that use the Brane protocol";
             return;
         }
-        _fm.readFile(assetPath(castId.value()), rc.responseData.vector());
+        _fm.readFile(assetPath(*castId.value()), rc.responseData.vector());
     });
 
     _nm.addRequestListener("incrementalAsset", [this](auto& rc) {
@@ -242,7 +242,7 @@ void AssetServer::createEditorListeners()
         rc.res << assetsWithDiff;
     });
 
-    _nm.addRequestListener("updateAsset", [this](auto& rc) {
+    _nm.addRequestListener("updateAsset", [this](RequestCTX& rc) {
         auto ctx = getContext(rc.sender);
         if(!validatePermissions(ctx, {"edit assets"}))
         {
@@ -260,9 +260,9 @@ void AssetServer::createEditorListeners()
         auto id = castId.value();
 
 
-        auto assetInfo = _db.getAssetInfo(id.uuid);
+        auto assetInfo = _db.getAssetInfo(id->uuid);
 
-        auto path = assetPath(id);
+        auto path = assetPath(*id);
         bool assetExists = true;
         if(assetInfo.hash.empty())
         {
@@ -270,10 +270,10 @@ void AssetServer::createEditorListeners()
         }
 
         FileManager::writeAsset(asset, path);
-        assetInfo.id = id.uuid;
+        assetInfo.id = id->uuid;
         assetInfo.name = asset->name;
         assetInfo.type = asset->type;
-        assetInfo.hash = FileManager::fileHash(path);
+        assetInfo.hash = FileManager::checksum(path);
 
         if(assetExists)
             _db.updateAssetInfo(assetInfo);

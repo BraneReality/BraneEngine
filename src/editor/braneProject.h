@@ -8,10 +8,10 @@
 #include <filesystem>
 #include <string>
 #include "assets/assetID.h"
-#include "assets/assetType.h"
-#include "editor/assetIndexer.h"
+#include "editor/assets/assetIndexer.h"
+#include "editor/assets/sources/assetSource.h"
 #include "editor/state/trackedObject.h"
-#include "utility/jsonVersioner.h"
+#include "utility/sptr.h"
 #include <json/json.h>
 #include <unordered_map>
 
@@ -21,48 +21,57 @@ class EditorAsset;
 
 class Editor;
 
-struct BraneProjectData : public TrackedObject
+struct BraneProjectData;
+
+struct BraneAssetServerInfo : public TrackedObject
 {
-    Tracked<TrackedValue<std::string>> name;
+    SPtr<TrackedValue<std::string>> address;
+    SPtr<TrackedValue<uint32_t>> port;
+    BraneAssetServerInfo();
+    void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
+};
+
+struct BraneProjectData : public SaveableObject
+{
+    SPtr<TrackedValue<std::string>> name;
+    SPtr<BraneAssetServerInfo> assetServer;
+    BraneProjectData();
+    void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
 };
 
 // This file stores everything to do with our connection to the server
 class BraneProject
-
 {
-    Editor& _editor;
-    bool _loaded = false;
-    std::filesystem::path _filepath;
-    BraneProjectData _data;
+    std::filesystem::path _root;
+    SPtr<BraneProjectData> _data;
     AssetIndexer _indexer;
-    RwMutex<std::unordered_map<std::string, std::shared_ptr<EditorAsset>>> _openAssets;
-
-    void loadDefault();
+    RwMutex<std::unordered_map<AssetSourceID, std::shared_ptr<EditorAsset>>> _openAssets;
 
     void initLoaded();
 
   public:
-    BraneProject(Editor& editor);
+    BraneProject(std::filesystem::path root);
+    BraneProject(BraneProject&&) = default;
+    BraneProject& operator=(BraneProject&&) = default;
 
     ~BraneProject();
 
-    bool loaded() const;
+    static Result<BraneProject> load(const std::filesystem::path& filepath, bool initProject = true);
 
-    bool load(const std::filesystem::path& filepath);
-
-    void create(const std::string& projectName, const std::filesystem::path& directory);
+    static Result<BraneProject> create(const std::string& projectName, const std::filesystem::path& directory);
 
     void save();
 
     bool unsavedChanges() const;
 
-    std::filesystem::path projectDirectory();
+    std::filesystem::path root();
+
+    Option<std::shared_ptr<EditorAsset>> getEditorAsset(const AssetID& id);
+    Option<std::shared_ptr<EditorAsset>> getEditorAsset(const std::filesystem::path& path);
 
     BraneProjectData& data();
 
-    Editor& editor();
-
-    FileWatcher* fileWatcher();
+    AssetIndexer& indexer();
 };
 
 #endif // BRANEENGINE_BRANEPROJECT_H

@@ -1,12 +1,8 @@
 {
-    "info" : {
-        "name" : "",
-        "version" : "0.0.0"
-    },
-    "settings" : {
-        "assetServer" : {
-            "address" : "",
-            "port" : 0,
-        }
-    },
+    "name" : "",
+    "version" : "0.0.0",
+    "assetServer" : {
+        "address" : "localhost",
+        "port" : 2001,
+    }
 }

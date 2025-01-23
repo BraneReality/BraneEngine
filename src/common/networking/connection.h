@@ -37,7 +37,10 @@ namespace net
         ResponseCode code;
         SerializedData rawData;
 
-        inline InputSerializer data() const { return {rawData}; }
+        inline InputSerializer data() const
+        {
+            return {rawData};
+        }
     };
 
     class Connection
@@ -242,7 +245,7 @@ namespace net
                     disconnect();
                 }
                 async_writeBody(chunkIndex + 1);
-                });
+            });
         }
 
       public:
@@ -284,14 +287,20 @@ namespace net
             });
         }
 
-        bool connected() override { return _socket.lowest_layer().is_open(); }
+        bool connected() override
+        {
+            return _socket.lowest_layer().is_open();
+        }
     };
 
     template<class socket_t>
     class ServerConnection : public ConnectionBase<socket_t>
     {
       public:
-        ServerConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket)) { connectToClient(); }
+        ServerConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
+        {
+            connectToClient();
+        }
 
         void connectToClient();
     };

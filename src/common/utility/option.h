@@ -2,6 +2,7 @@
 #include <functional>
 #include <variant>
 #include "serializedData.h"
+#include <type_traits>
 
 struct None
 {
@@ -12,18 +13,17 @@ struct Some
 {
     T value;
 
-    Some(T val)
-        : value([](T val) -> T {
-              if constexpr(std::is_reference<T>())
-                  return val;
-              else
-                  return std::move(val);
-          }(val))
-    {}
+    Some(Some&&) = default;
+    Some(const Some&) = default;
+    Some& operator=(Some&&) = default;
+    Some& operator=(const Some&) = default;
+
+    Some(T val) : value(std::move(val)) {}
 };
 
 template<class V>
 class Option
+
 {
     using Value = std::variant<None, Some<V>>;
     Value _value;
@@ -54,15 +54,15 @@ class Option
         return isSome();
     }
 
-    Option<V>& operator=(Some<V> s)
+    Option<V>& operator=(Some<V>&& s)
     {
-        _value = s;
+        _value = std::move(s);
         return *this;
     }
 
     Option<V>& operator=(None n)
     {
-        _value = n;
+        _value = std::move(n);
         return *this;
     }
 
@@ -81,14 +81,14 @@ class Option
     {
         return MATCHV(std::move(_value), [&](Some<V> value) {
             return Option<T>(Some<T>(f(std::move(value.value))));
-        }, [](None none) { return Option(none); });
+        }, [](None none) { return Option<T>(none); });
     }
 
     V valueOrDefault(V defaultValue)
     {
         return MATCHV(std::move(_value), [&](Some<V> value) {
             return std::move(value.value);
-        }, [defaultValue](None none) { return std::forward(defaultValue); });
+        }, [defaultValue](None none) { return std::move(defaultValue); });
     }
 };
 
@@ -107,7 +107,7 @@ struct Serializer<Option<T>>
                 return res;
             value = Some(data);
         }
-        return Ok();
+        return Ok<void>();
     }
 
     static Result<void, SerializerError> write(OutputSerializer& s, const Option<T>& value)
@@ -116,6 +116,6 @@ struct Serializer<Option<T>>
         s << hasValue;
         if(hasValue)
             return Serializer<T>::write(s, value.value());
-        return Ok();
+        return Ok<void>();
     }
 };

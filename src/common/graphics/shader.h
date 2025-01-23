@@ -1,8 +1,5 @@
 #pragma once
 
-#include <fstream>
-#include <iostream>
-#include <memory>
 #include "assets/types/shaderAsset.h"
 #include <vulkan/vulkan.h>
 

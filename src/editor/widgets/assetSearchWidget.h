@@ -12,6 +12,7 @@
 #include <vector>
 #include "assets/assetID.h"
 #include "assets/assetType.h"
+#include "editor/assets/assetIndexer.h"
 
 class BraneProject;
 
@@ -22,7 +23,7 @@ class AssetSearchWidget
     AssetType _assetType;
 
     BraneProject* _project;
-    std::vector<std::pair<AssetID, std::filesystem::path>> _searchResults;
+    std::vector<AssetLocation> _searchResults;
     int _selected = -1;
 
   public:

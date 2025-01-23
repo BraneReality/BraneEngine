@@ -1,15 +1,14 @@
 # src/common/utlity
-
-find_package(jsoncpp CONFIG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(jsoncpp CONFIG REQUIRED)
 
 set(SOURCES
 		clock.cpp
 		threadPool.cpp
 		sharedRecursiveMutex.cpp
 		serializedData.cpp
-		jsonVersioner.cpp 
+        jsonSerializer.cpp
         uuid.cpp)
 
 add_library(utility STATIC ${SOURCES} jsonTypeUtilities.h)

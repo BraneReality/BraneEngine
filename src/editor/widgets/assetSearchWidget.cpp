@@ -13,8 +13,9 @@ AssetSearchWidget::AssetSearchWidget(AssetType type, size_t searchIncrement)
 {
     _assetType = type;
     _searchIncrement = searchIncrement;
-    _project = &Runtime::getModule<Editor>()->project();
-    _searchResults = _project->searchAssets("", type);
+    assert(Runtime::getModule<Editor>()->project());
+    _project = Runtime::getModule<Editor>()->project().value();
+    _searchResults = _project->indexer().searchExporetedAssets("", Some(type));
 }
 
 bool AssetSearchWidget::draw()
@@ -23,7 +24,7 @@ bool AssetSearchWidget::draw()
     if(ImGui::InputText("search", &_searchText))
     {
         _selected = -1;
-        _searchResults = _project->searchAssets(_searchText, _assetType);
+        _searchResults = _project->indexer().searchExporetedAssets(_searchText, Some(_assetType));
     }
     ImGui::Separator();
 
@@ -31,11 +32,12 @@ bool AssetSearchWidget::draw()
     for(size_t i = 0; i < _searchResults.size(); ++i)
     {
         auto& r = _searchResults[i];
-        if(ImGui::Selectable(r.second.stem().string().c_str(), _selected == i, ImGuiSelectableFlags_DontClosePopups))
+        if(ImGui::Selectable(
+               r.sourcePath.stem().string().c_str(), _selected == i, ImGuiSelectableFlags_DontClosePopups))
             _selected = i;
         if(ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("ID: %s", r.first.toString().c_str());
+            ImGui::SetTooltip("ID: %s", r.id.toString().c_str());
             if(ImGui::IsMouseDoubleClicked(0))
                 submit = true;
         }
@@ -53,5 +55,5 @@ bool AssetSearchWidget::draw()
 const AssetID& AssetSearchWidget::currentSelected()
 {
     assert(_selected >= 0);
-    return _searchResults[_selected].first;
+    return _searchResults[_selected].id;
 }

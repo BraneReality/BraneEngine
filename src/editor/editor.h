@@ -9,8 +9,8 @@
 #include "assets/assetCache.h"
 #include "assets/assetID.h"
 #include "braneProject.h"
+#include "editor/state/versioning.h"
 #include "graphics/shaderCompiler.h"
-#include "utility/jsonVersioner.h"
 #include <runtime/module.h>
 #include <unordered_map>
 
@@ -30,10 +30,10 @@ class Editor : public Module
     GUI* _ui;
     GUIWindow* _selectProjectWindow = nullptr;
 
-    JsonVersionTracker _jsonTracker;
     AssetCache _cache;
-    BraneProject _project;
+    Option<BraneProject> _project;
     ShaderCompiler _shaderCompiler;
+    EditorActionManager _actionManager;
 
     void addMainWindows();
 
@@ -50,9 +50,9 @@ class Editor : public Module
 
     void reloadAsset(std::shared_ptr<EditorAsset> asset);
 
-    BraneProject& project();
+    Option<BraneProject*> project();
 
-    JsonVersionTracker& jsonTracker();
+    EditorActionManager& actionManager();
 
     AssetCache& cache();
 

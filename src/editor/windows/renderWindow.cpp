@@ -19,7 +19,6 @@
 #include "ecs/nativeComponent.h"
 #include "ecs/nativeTypes/assetComponents.h"
 #include "editor/assets/assemblyReloadManager.h"
-#include "editor/assets/types/editorAssemblyAsset.h"
 #include "imgui_impl_vulkan.h"
 #include <systems/transforms.h>
 
@@ -45,30 +44,32 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
     _renderer->setClearColor({.2, .2, .2, 1});
     _swapChain = vkr.swapChain();
     _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event) {
-        if(event->asset()->type() != AssetType::assembly)
-            return;
-        if(!_assemblies.empty())
-        {
-            auto* arm = Runtime::getModule<AssemblyReloadManager>();
-            for(auto& e : _assemblies)
-                arm->destroy(e.assembly, e.root);
-            _assemblies.resize(0);
-        }
-        auto* am = Runtime::getModule<AssetManager>();
-        _focusedAsset = event->asset();
-        _focusedAssetEntity = -1;
-        if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
-        {
-            am->fetchAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
-                .then([this](Assembly* assembly) {
-                _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
-            }).onError([this](const std::string& error) {
-                if(_focusedAsset)
-                    Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
-                else
-                    Runtime::warn("Could not load asset to render: " + error);
-            });
-        }
+        /*
+    if(event->asset()->type() != AssetType::assembly)
+        return;
+    if(!_assemblies.empty())
+    {
+        auto* arm = Runtime::getModule<AssemblyReloadManager>();
+        for(auto& e : _assemblies)
+            arm->destroy(e.assembly, e.root);
+        _assemblies.resize(0);
+    }
+    auto* am = Runtime::getModule<AssetManager>();
+    _focusedAsset = event->asset();
+    _focusedAssetEntity = -1;
+    if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
+    {
+        am->fetchAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
+            .then([this](Assembly* assembly) {
+            _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
+        }).onError([this](const std::string& error) {
+            if(_focusedAsset)
+                Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
+            else
+                Runtime::warn("Could not load asset to render: " + error);
+        });
+    }
+    */
     });
     _ui.addEventListener<RenderWindowAssetReady>(
         "render window asset ready", this, [this, &em](const RenderWindowAssetReady* event) {
@@ -80,19 +81,21 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _assemblies.push_back(AssemblyContex{assembly, root});
     });
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event) {
-        if(!_focusedAsset)
-            return;
-        auto* am = Runtime::getModule<AssetManager>();
-        auto* arm = Runtime::getModule<AssemblyReloadManager>();
-        auto* assembly = am->getAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok());
-        if(assembly)
-        {
-            _focusedAssetEntity = event->entity();
-            if(event->entity() >= 0)
-                _focusedEntity = arm->getEntity(assembly, 0, event->entity());
-            else
-                _focusedEntity = EntityID();
-        }
+        /*
+    if(!_focusedAsset)
+        return;
+    auto* am = Runtime::getModule<AssetManager>();
+    auto* arm = Runtime::getModule<AssemblyReloadManager>();
+    auto* assembly = am->getAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok());
+    if(assembly)
+    {
+        _focusedAssetEntity = event->entity();
+        if(event->entity() >= 0)
+            _focusedEntity = arm->getEntity(assembly, 0, event->entity());
+        else
+            _focusedEntity = EntityID();
+    }
+    */
     });
     _ui.addEventListener<FocusEntityEvent>(
         "focus entity", this, [this](const FocusEntityEvent* event) { _focusedEntity = event->id(); });
@@ -293,6 +296,7 @@ void RenderWindow::displayContent()
                 _manipulating = false;
                 if(_focusedAsset && _focusedAssetEntity != -1)
                 {
+                    /*
                     auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get());
                     assembly->data().beginMultiChange();
                     if(em->hasComponent<TRS>(_focusedEntity))
@@ -306,6 +310,7 @@ void RenderWindow::displayContent()
                                                         em->getComponent<Transform>(_focusedEntity)->toVirtual());
                     }
                     assembly->data().endMultiChange();
+                    */
                 }
             }
         }

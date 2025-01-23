@@ -259,7 +259,7 @@ struct Serializer<InlineArray<T, C>>
         if(!res)
             return res;
         if(count == 0)
-            return Ok();
+            return Ok<void>();
         while(value.size() < count)
             value.push_back(T());
 
@@ -270,7 +270,7 @@ struct Serializer<InlineArray<T, C>>
                 return res;
         }
 
-        return Ok();
+        return Ok<void>();
     }
 
     static Result<void, SerializerError> write(OutputSerializer& s, const InlineArray<T, C>& value)
@@ -280,7 +280,7 @@ struct Serializer<InlineArray<T, C>>
         if(!res)
             return res;
         if(count == 0)
-            return Ok();
+            return Ok<void>();
 
         for(const auto& e : value)
         {
@@ -288,7 +288,7 @@ struct Serializer<InlineArray<T, C>>
             if(!res)
                 return res;
         }
-        return Ok();
+        return Ok<void>();
     }
 };
 

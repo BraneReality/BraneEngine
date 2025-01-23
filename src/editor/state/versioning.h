@@ -22,8 +22,13 @@ struct EditorAction
     EditorActionExecutor forwardAction;
     EditorActionExecutor backAction;
 
-    void forward(EditorActionType type);
-    void back(EditorActionType type);
+    inline EditorAction(std::shared_ptr<EditorActionContext> context,
+                        EditorActionExecutor forwardAction,
+                        EditorActionExecutor backAction)
+        : context(context), forwardAction(forwardAction), backAction(backAction) {};
+
+    void forward(EditorActionType type = EditorActionType::Standard);
+    void back(EditorActionType type = EditorActionType::Standard);
 };
 
 class EditorActionManager

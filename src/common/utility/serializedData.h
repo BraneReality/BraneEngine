@@ -41,9 +41,9 @@ class OutputSerializer;
 template<class T>
 struct Serializer
 {
-    static Result<void, SerializerError> read(InputSerializer& s, T& value);
+    static Result<void, SerializerError> read(InputSerializer s, T& value);
 
-    static Result<void, SerializerError> write(OutputSerializer& s, const T& value);
+    static Result<void, SerializerError> write(OutputSerializer s, const T& value);
 };
 
 class SerializedData
@@ -122,7 +122,7 @@ class InputSerializer
         return _ctx->data;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const InputSerializer& s)
+    friend std::ostream& operator<<(std::ostream& os, const InputSerializer s)
     {
         os << " Serialized Data: ";
         for(int i = 0; i < s._ctx->data.size(); ++i)
@@ -144,7 +144,7 @@ class InputSerializer
         std::memcpy(value, (void*)(_ctx->data.data() + _ctx->index), count);
 
         _ctx->index += count;
-        return Ok();
+        return Ok<void>();
     }
 
     template<typename T>
@@ -194,7 +194,7 @@ class OutputSerializer
         size_t index = _data.size();
         _data.resize(index + size);
         std::memcpy(&_data[index], src, size);
-        return Ok();
+        return Ok<void>();
     }
 
     Result<void, SerializerError> replace(size_t pos, const void* src, size_t size)
@@ -202,7 +202,7 @@ class OutputSerializer
         if(pos + size >= _data.size())
             return Err(SerializerError(SerializerError::NotEnoughData));
         std::memcpy(&_data[pos], src, size);
-        return Ok();
+        return Ok<void>();
     }
 
     size_t size() const
@@ -212,7 +212,7 @@ class OutputSerializer
 };
 
 template<class T>
-Result<void, SerializerError> Serializer<T>::read(InputSerializer& s, T& value)
+Result<void, SerializerError> Serializer<T>::read(InputSerializer s, T& value)
 {
     static_assert(std::is_trivially_copyable<T>(),
                   "Default serializer is only implemented for trivially copyable types, consider creating a custom "
@@ -221,7 +221,7 @@ Result<void, SerializerError> Serializer<T>::read(InputSerializer& s, T& value)
 }
 
 template<class T>
-Result<void, SerializerError> Serializer<T>::write(OutputSerializer& s, const T& value)
+Result<void, SerializerError> Serializer<T>::write(OutputSerializer s, const T& value)
 {
     static_assert(std::is_trivially_copyable<T>(),
                   "Default serializer is only implemented for trivially copyable types, consider creating a custom "
@@ -232,7 +232,7 @@ Result<void, SerializerError> Serializer<T>::write(OutputSerializer& s, const T&
 template<>
 struct Serializer<std::string>
 {
-    static Result<void, SerializerError> read(InputSerializer& s, std::string& value)
+    static Result<void, SerializerError> read(InputSerializer s, std::string& value)
     {
         uint32_t count;
         auto res = Serializer<uint32_t>::read(s, count);
@@ -240,18 +240,18 @@ struct Serializer<std::string>
             return res;
         value.resize(count);
         if(count == 0)
-            return Ok();
+            return Ok<void>();
         return s.read(value.data(), count);
     }
 
-    static Result<void, SerializerError> write(OutputSerializer& s, const std::string& value)
+    static Result<void, SerializerError> write(OutputSerializer s, const std::string& value)
     {
         auto count = static_cast<uint32_t>(value.size());
         auto res = Serializer<uint32_t>::write(s, count);
         if(!res)
             return res;
         if(count == 0)
-            return Ok();
+            return Ok<void>();
         return s.write(value.data(), count);
     }
 };
@@ -259,7 +259,7 @@ struct Serializer<std::string>
 template<class T>
 struct Serializer<std::vector<T>>
 {
-    static Result<void, SerializerError> read(InputSerializer& s, std::vector<T>& value)
+    static Result<void, SerializerError> read(InputSerializer s, std::vector<T>& value)
     {
         uint32_t count;
         auto res = Serializer<uint32_t>::read(s, count);
@@ -267,7 +267,7 @@ struct Serializer<std::vector<T>>
             return res;
         value.resize(count);
         if(count == 0)
-            return Ok();
+            return Ok<void>();
         if constexpr(std::is_trivially_copyable<T>())
             return s.read(value.data(), sizeof(T) * count);
 
@@ -278,17 +278,17 @@ struct Serializer<std::vector<T>>
                 return res;
         }
 
-        return Ok();
+        return Ok<void>();
     }
 
-    static Result<void, SerializerError> write(OutputSerializer& s, const std::vector<T>& value)
+    static Result<void, SerializerError> write(OutputSerializer s, const std::vector<T>& value)
     {
         auto count = static_cast<uint32_t>(value.size());
         auto res = Serializer<uint32_t>::write(s, count);
         if(!res)
             return res;
         if(count == 0)
-            return Ok();
+            return Ok<void>();
         if constexpr(std::is_trivially_copyable<T>())
             return s.write(value.data(), count * sizeof(T));
 
@@ -298,14 +298,14 @@ struct Serializer<std::vector<T>>
             if(!res)
                 return res;
         }
-        return Ok();
+        return Ok<void>();
     }
 };
 
 template<>
 struct Serializer<Json::Value>
 {
-    static Result<void, SerializerError> read(InputSerializer& s, Json::Value& value)
+    static Result<void, SerializerError> read(InputSerializer s, Json::Value& value)
     {
         std::string jsonString;
         auto res = Serializer<std::string>::read(s, jsonString);
@@ -321,10 +321,10 @@ struct Serializer<Json::Value>
         if(!success)
             return Err(SerializerError(SerializerError::WrongFormat));
 
-        return Ok();
+        return Ok<void>();
     }
 
-    static Result<void, SerializerError> write(OutputSerializer& s, const Json::Value& value)
+    static Result<void, SerializerError> write(OutputSerializer s, const Json::Value& value)
     {
         Json::FastWriter writer;
         std::string jsonString = writer.write(value);
@@ -334,25 +334,25 @@ struct Serializer<Json::Value>
 };
 
 template<typename T>
-Result<InputSerializer&, SerializerError> operator>>(Result<InputSerializer&, SerializerError> r, T& data)
+Result<InputSerializer, SerializerError> operator>>(Result<InputSerializer, SerializerError> r, T& data)
 {
     if(r)
     {
-        InputSerializer& s = r.ok();
+        InputSerializer s = r.ok();
         s >> data;
-        return Ok<InputSerializer&>(s);
+        return Ok<InputSerializer>(s);
     }
     return r;
 }
 
 template<typename T>
-Result<OutputSerializer&, SerializerError> operator<<(Result<OutputSerializer&, SerializerError> r, const T& data)
+Result<OutputSerializer, SerializerError> operator<<(Result<OutputSerializer, SerializerError> r, const T& data)
 {
     if(r)
     {
-        OutputSerializer& s = r.ok();
+        OutputSerializer s = r.ok();
         s << data;
-        return Ok<OutputSerializer&>(s);
+        return Ok<OutputSerializer>(s);
     }
     return r;
 }
@@ -364,7 +364,7 @@ struct Serializer<std::variant<Args...>>
     using IndexType = std::conditional_t<(indexCount < 256), uint8_t, uint16_t>;
 
     template<size_t ArgIndex, class T, class... Remaining>
-    static Result<std::variant<Args...>, SerializerError> readT(InputSerializer& s, size_t typeIndex)
+    static Result<std::variant<Args...>, SerializerError> readT(InputSerializer s, size_t typeIndex)
     {
         if(typeIndex == ArgIndex)
         {
@@ -382,7 +382,7 @@ struct Serializer<std::variant<Args...>>
 
     template<size_t ArgIndex, class T, class... Remaining>
     static Result<void, SerializerError>
-    writeT(OutputSerializer& s, size_t typeIndex, const std::variant<Args...>& value)
+    writeT(OutputSerializer s, size_t typeIndex, const std::variant<Args...>& value)
     {
         if(typeIndex == ArgIndex)
             return Serializer<T>::write(s, std::get<ArgIndex>(value));
@@ -392,7 +392,7 @@ struct Serializer<std::variant<Args...>>
         return Err(SerializerError(SerializerError::WrongFormat));
     }
 
-    static Result<void, SerializerError> read(InputSerializer& s, std::variant<Args...>& value)
+    static Result<void, SerializerError> read(InputSerializer s, std::variant<Args...>& value)
     {
         IndexType index;
         s >> index;
@@ -402,10 +402,10 @@ struct Serializer<std::variant<Args...>>
         if(!res)
             return Err(res.err());
         value = res.ok();
-        return Ok();
+        return Ok<void>();
     }
 
-    static Result<void, SerializerError> write(OutputSerializer& s, const std::variant<Args...>& value)
+    static Result<void, SerializerError> write(OutputSerializer s, const std::variant<Args...>& value)
     {
         IndexType index = value.index();
         s << index;
@@ -414,13 +414,13 @@ struct Serializer<std::variant<Args...>>
 };
 
 template<typename T>
-Result<InputSerializer&, SerializerError> operator>>(InputSerializer& s, T& data)
+Result<InputSerializer, SerializerError> operator>>(InputSerializer s, T& data)
 {
-    return Serializer<T>::read(s, data).template map<InputSerializer&>([&]() -> InputSerializer& { return s; });
+    return Serializer<T>::read(s, data).template map<InputSerializer>([&]() -> InputSerializer { return s; });
 }
 
 template<typename T>
-Result<OutputSerializer&, SerializerError> operator<<(OutputSerializer& s, const T& data)
+Result<OutputSerializer, SerializerError> operator<<(OutputSerializer s, const T& data)
 {
-    return Serializer<T>::write(s, data).template map<OutputSerializer&>([&]() -> OutputSerializer& { return s; });
+    return Serializer<T>::write(s, data).template map<OutputSerializer>([&]() -> OutputSerializer { return s; });
 }

@@ -7,12 +7,13 @@
 
 class TrackedObject : public TrackedType
 {
+  protected:
     Event<EditorActionType> _onChange;
 
   public:
-    TrackedObject(Option<std::shared_ptr<TrackedType>> parent);
-
     Event<EditorActionType>::Handle addListener(Event<EditorActionType>::EventCallback f);
 
-    void childChanged(EditorActionType at) override;
+    void onChildForward(EditorActionType at) override;
+    void onChildBack(EditorActionType at) override;
+    void onNewChange() override;
 };

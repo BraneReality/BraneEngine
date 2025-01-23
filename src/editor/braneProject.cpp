@@ -3,250 +3,158 @@
 //
 
 #include "braneProject.h"
-#include <fstream>
 #include "assets/assetManager.h"
 #include "assets/editorAsset.h"
-#include "assets/types/editorAssemblyAsset.h"
-#include "assets/types/editorImageAsset.h"
-#include "assets/types/editorScriptAsset.h"
-#include "assets/types/editorShaderAsset.h"
 #include "editor.h"
 #include "fileManager/fileManager.h"
-#include "fileManager/fileWatcher.h"
 #include "runtime/runtime.h"
-#include "utility/hex.h"
 
-BraneProject::BraneProject(Editor& editor) : _editor(editor), _data(editor.jsonTracker()) {}
+BraneAssetServerInfo::BraneAssetServerInfo() : address("localhost"), port(2001) {};
+
+void BraneAssetServerInfo::initMembers(Option<std::shared_ptr<TrackedType>> parent)
+{
+    TrackedType::initMembers(parent);
+    auto p = Some(shared_from_this());
+    address->initMembers(p);
+    port->initMembers(p);
+}
+
+BraneProjectData::BraneProjectData() : name("New project") {}
+
+void BraneProjectData::initMembers(Option<std::shared_ptr<TrackedType>> parent)
+{
+    TrackedType::initMembers(parent);
+    auto p = Some(shared_from_this());
+    name->initMembers(p);
+    assetServer->initMembers(p);
+}
+
+BraneProject::BraneProject(std::filesystem::path root) : _root(root), _indexer(), _data()
+{
+    _data->initMembers(None());
+}
 
 BraneProject::~BraneProject() {}
 
-void BraneProject::loadDefault()
+template<>
+struct JsonSerializer<BraneAssetServerInfo>
 {
-    Json::Value file;
-    try
+    static Result<void, JsonSerializerError> read(const Json::Value& json, BraneAssetServerInfo& data)
     {
-        if(!FileManager::readFile("defaultAssets/defaultProjectFile.brane", file))
-        {
-            Runtime::error("Could not open default project file");
-            throw std::runtime_error("Could not open default project file");
-        }
+        CHECK_RESULT(JsonParseUtil::read(json["address"], data.address));
+        CHECK_RESULT(JsonParseUtil::read(json["port"], data.port));
+        return Ok<void>();
     }
-    catch(const std::exception& e)
-    {
-        Runtime::error("Error parsing default project file: " + (std::string)e.what());
-        throw std::runtime_error("Error  parsing default project file!");
-    }
-    _data.initialize(file);
-}
 
-bool BraneProject::load(const std::filesystem::path& filepath)
+    static Result<void, JsonSerializerError> write(Json::Value& json, const BraneAssetServerInfo& data)
+    {
+        CHECK_RESULT(JsonParseUtil::write(json["address"], data.address));
+        CHECK_RESULT(JsonParseUtil::write(json["port"], data.address));
+        return Ok<void>();
+    }
+};
+
+template<>
+struct JsonSerializer<BraneProjectData>
 {
-    _filepath = filepath;
+    static Result<void, JsonSerializerError> read(const Json::Value& json, BraneProjectData& data)
+    {
+
+        CHECK_RESULT(JsonParseUtil::read(json["name"], data.name));
+        CHECK_RESULT(JsonParseUtil::read(json["assetServer"], data.assetServer));
+        return Ok<void>();
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& json, const BraneProjectData& data)
+    {
+        CHECK_RESULT(JsonParseUtil::write(json["name"], data.name));
+        CHECK_RESULT(JsonParseUtil::write(json["assetServer"], data.assetServer));
+        return Ok<void>();
+    }
+};
+
+Result<BraneProject> BraneProject::load(const std::filesystem::path& filepath, bool initProject)
+{
+    BraneProject proj(filepath.parent_path());
     Json::Value file;
     try
     {
         if(!FileManager::readFile(filepath.string(), file))
         {
-            Runtime::error("Could not open " + filepath.string());
-            return false;
+            return Err("Could not open " + filepath.string());
         }
     }
     catch(const std::exception& e)
     {
-        Runtime::error("Error opening " + filepath.string() + ". " + e.what());
-        return false;
+        return Err("Error opening " + filepath.string() + ". " + e.what());
     }
-    _data.initialize(file);
-    initLoaded();
-    return true;
+
+    auto res = JsonSerializer<BraneProjectData>::read(file, &proj._data);
+    if(!res)
+        return Err(res.err().toString());
+    if(initProject)
+        proj.initLoaded();
+
+    return Ok(std::move(proj));
 }
 
-void BraneProject::create(const std::string& projectName, const std::filesystem::path& directory)
+Result<BraneProject> BraneProject::create(const std::string& projectName, const std::filesystem::path& directory)
 {
-    loadDefault();
-    _data.data()["info"]["name"] = projectName;
-    _filepath = directory;
-    _filepath = _filepath / projectName / (projectName + ".brane");
+    Json::Value file;
+    auto defaultProjRes = BraneProject::load("defaultAssets/defaultProjectFile.brane", false);
+    if(!defaultProjRes)
+        return Err("Could not load default project! " + defaultProjRes.err());
 
-    std::filesystem::create_directories(projectDirectory());
-    std::filesystem::create_directory(projectDirectory() / "assets");
-    std::filesystem::create_directory(projectDirectory() / "cache");
-    initLoaded();
-    save();
+    auto proj = defaultProjRes.ok();
+    proj._data->name->set(projectName).forward();
+    proj._root = directory / projectName;
+
+    std::filesystem::create_directories(proj.root());
+    std::filesystem::create_directory(proj.root() / "assets");
+    std::filesystem::create_directory(proj.root() / "cache");
+    proj.initLoaded();
+    proj.save();
+    return Ok(std::move(proj));
 }
 
 void BraneProject::save()
 {
-    if(!_loaded)
-        return;
-    auto openAsset = _openAssets.begin();
-    while(openAsset != _openAssets.end())
+    auto openAssets = _openAssets.lock();
+    auto openAsset = openAssets->begin();
+    while(openAsset != openAssets->end())
     {
         if((*openAsset).second->unsavedChanges())
             (*openAsset).second->save();
         if((*openAsset).second.use_count() <= 1)
-            openAsset = _openAssets.erase(openAsset);
+            openAsset = openAssets->erase(openAsset);
         else
             ++openAsset;
     }
 
-    FileManager::writeFile(_filepath.string(), _data.data());
-    _data.markClean();
+    Json::Value jsonData;
+    auto serializeRes = JsonSerializer<BraneProjectData>::write(jsonData, &_data);
+    assert(serializeRes);
+
+    FileManager::writeFile((_root / (*_data->name->value() + ".brane")).string(), jsonData);
 }
 
-bool BraneProject::loaded() const
+std::filesystem::path BraneProject::root()
 {
-    return _loaded;
-}
-
-std::filesystem::path BraneProject::projectDirectory()
-{
-    return _filepath.parent_path();
+    return _root;
 }
 
 void BraneProject::initLoaded()
 {
-    refreshAssets();
-
-    Json::Value& assets = _data.data()["assets"];
-    if(!_data.data().isMember("assetIdCounter"))
-        _data.data()["assetIdCounter"] = 0;
-
-    _fileWatcher = std::make_unique<FileWatcher>();
-    _fileWatcher->loadCache(projectDirectory() / "cache" / "changeCache");
-    _fileWatcher->watchDirectory(projectDirectory() / "assets");
-    _fileWatcher->addFileWatcher(".gltf", [this](const std::filesystem::path& path) {
-        Runtime::log("loading gltf: " + path.string());
-        std::filesystem::path assetPath = path;
-        assetPath.replace_extension(".assembly");
-
-        bool isOpen = false;
-        EditorAssemblyAsset* assembly;
-        if(_openAssets.count(assetPath.string()))
-        {
-            assembly = (EditorAssemblyAsset*)_openAssets.at(assetPath.string()).get();
-            isOpen = true;
-        }
-        else
-            assembly = new EditorAssemblyAsset(assetPath, *this);
-
-        assembly->linkToGLTF(path);
-
-        registerAssetLocation(assembly);
-        _editor.cache().deleteCachedAsset(AssetID::parse(assembly->data()["id"].asString()).ok());
-
-        if(!isOpen)
-            delete assembly;
-    });
-    _fileWatcher->addFileWatcher(".glb", [this](const std::filesystem::path& path) {
-        Runtime::log("loading gltf: " + path.string());
-        std::filesystem::path assetPath = path;
-        assetPath.replace_extension(".assembly");
-
-        bool isOpen = false;
-        EditorAssemblyAsset* assembly;
-        if(_openAssets.count(assetPath.string()))
-        {
-            assembly = (EditorAssemblyAsset*)_openAssets.at(assetPath.string()).get();
-            isOpen = true;
-        }
-        else
-            assembly = new EditorAssemblyAsset(assetPath, *this);
-
-        assembly->linkToGLTF(path);
-
-        registerAssetLocation(assembly);
-        _editor.cache().deleteCachedAsset(AssetID::parse(assembly->data()["id"].asString()).ok());
-
-        if(!isOpen)
-            delete assembly;
-    });
-    _fileWatcher->addFileWatcher(".vert", [this](const std::filesystem::path& path) {
-        Runtime::log("loading fragment shader: " + path.string());
-        std::filesystem::path assetPath = path;
-        assetPath.replace_extension(".shader");
-
-        bool isOpen = _openAssets.count(assetPath.string());
-        if(!isOpen)
-            _openAssets.insert({assetPath.string(), std::make_shared<EditorShaderAsset>(assetPath, *this)});
-        std::shared_ptr<EditorShaderAsset> shaderAsset =
-            std::dynamic_pointer_cast<EditorShaderAsset>(_openAssets.at(assetPath.string()));
-
-        shaderAsset->updateSource(path);
-
-        registerAssetLocation(shaderAsset.get());
-        _editor.reloadAsset(shaderAsset);
-
-        if(!isOpen)
-            _openAssets.erase(assetPath.string());
-    });
-    _fileWatcher->addFileWatcher(".frag", [this](const std::filesystem::path& path) {
-        Runtime::log("loading vertex shader: " + path.string());
-        std::filesystem::path assetPath = path;
-        assetPath.replace_extension(".shader");
-
-        bool isOpen = _openAssets.count(assetPath.string());
-        if(!isOpen)
-            _openAssets.insert({assetPath.string(), std::make_shared<EditorShaderAsset>(assetPath, *this)});
-        std::shared_ptr<EditorShaderAsset> shaderAsset =
-            std::dynamic_pointer_cast<EditorShaderAsset>(_openAssets.at(assetPath.string()));
-
-        shaderAsset->updateSource(path);
-
-        registerAssetLocation(shaderAsset.get());
-        _editor.reloadAsset(shaderAsset);
-
-        if(!isOpen)
-            _openAssets.erase(assetPath.string());
-    });
-    _fileWatcher->addFileWatcher(".png", [this](const std::filesystem::path& path) {
-        Runtime::log("loading image: " + path.string());
-        std::filesystem::path assetPath = path;
-        assetPath.replace_extension(".image");
-
-        bool isOpen = _openAssets.count(assetPath.string());
-        if(!isOpen)
-            _openAssets.insert({assetPath.string(), std::make_shared<EditorImageAsset>(assetPath, *this)});
-        std::shared_ptr<EditorImageAsset> imageAsset =
-            std::dynamic_pointer_cast<EditorImageAsset>(_openAssets.at(assetPath.string()));
-
-        imageAsset->updateSource(path);
-
-        registerAssetLocation(imageAsset.get());
-        _editor.reloadAsset(imageAsset);
-
-        if(!isOpen)
-            _openAssets.erase(assetPath.string());
-    });
-    _fileWatcher->addFileWatcher(".lua", [this](const std::filesystem::path& path) {
-        Runtime::log("loading script: " + path.string());
-        std::filesystem::path assetPath = path;
-        assetPath.replace_extension(".script");
-
-        bool isOpen = _openAssets.count(assetPath.string());
-        if(!isOpen)
-            _openAssets.insert({assetPath.string(), std::make_shared<EditorScriptAsset>(assetPath, *this)});
-        std::shared_ptr<EditorScriptAsset> scriptAsset =
-            std::dynamic_pointer_cast<EditorScriptAsset>(_openAssets.at(assetPath.string()));
-
-        scriptAsset->updateSource(path);
-
-        registerAssetLocation(scriptAsset.get());
-        _editor.reloadAsset(scriptAsset);
-
-        if(!isOpen)
-            _openAssets.erase(assetPath.string());
-    });
-    _fileWatcher->scanForChanges(true);
-    _loaded = true;
+    _indexer.start(_root / "assets");
     save();
 }
 
 bool BraneProject::unsavedChanges() const
 {
-    if(_data.dirty())
+    if(_data->unsavedChanges())
         return true;
-    for(auto& asset : _openAssets)
+    auto openAssets = _openAssets.lockShared();
+    for(auto& asset : *openAssets)
     {
         if(asset.second->unsavedChanges())
             return true;
@@ -254,52 +162,33 @@ bool BraneProject::unsavedChanges() const
     return false;
 }
 
-VersionedJson& BraneProject::json()
+BraneProjectData& BraneProject::data()
 {
-    return _data;
+    return &_data;
 }
 
-std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(const AssetID& id)
+Option<std::shared_ptr<EditorAsset>> BraneProject::getEditorAsset(const AssetID& id)
 {
     if(id.empty())
-        return nullptr;
-    if(!_data["assets"].isMember(id.toString()))
-        return nullptr;
-    std::filesystem::path path = projectDirectory() / "assets" / _data["assets"][id.toString()]["path"].asString();
-    return getEditorAsset(path);
+        return None();
+    auto path = _indexer.getAssetPath(id);
+    if(!path)
+        return None();
+    return getEditorAsset(path.value());
 }
 
-std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(const std::filesystem::path& path)
+Option<std::shared_ptr<EditorAsset>> BraneProject::getEditorAsset(const std::filesystem::path& path)
 {
-    if(_openAssets.count(path.string()))
-        return _openAssets.at(path.string());
-    auto asset = std::shared_ptr<EditorAsset>(EditorAsset::loadAsset(path, *this));
-    if(asset)
-        _openAssets.insert({path.string(), asset});
-    return asset;
+    auto loadRes = EditorAsset::loadAsset(path);
+    if(!loadRes)
+    {
+        Runtime::error(std::format("Failed to load asset: {}", loadRes.err()));
+        return None();
+    }
+    return Some<std::shared_ptr<EditorAsset>>(loadRes.ok());
 }
 
-Editor& BraneProject::editor()
+AssetIndexer& BraneProject::indexer()
 {
-    return _editor;
-}
-
-AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset, AssetType type)
-{
-    Json::Value& assets = _data.data()["assets"];
-    auto id = _data["assetIdCounter"].asUInt();
-    std::string testID = "/" + toHex(id);
-    while(assets.isMember(testID))
-        testID = "/" + toHex(++id);
-    _data.data()["assetIdCounter"] = id;
-
-    assets[testID]["path"] = std::filesystem::relative(editorAsset, projectDirectory() / "assets").string();
-    assets[testID]["type"] = type.toString();
-
-    return AssetID::parse(testID).ok();
-}
-
-FileWatcher* BraneProject::fileWatcher()
-{
-    return _fileWatcher.get();
+    return _indexer;
 }

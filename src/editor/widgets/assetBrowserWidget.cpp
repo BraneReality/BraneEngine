@@ -1,10 +1,10 @@
 #include "assetBrowserWidget.h"
 #include "assets/assetManager.h"
 #include "ecs/entity.h"
-#include "editor/assets/types/editorChunkAsset.h"
-#include "editor/assets/types/editorMaterialAsset.h"
-#include "editor/assets/types/editorScriptAsset.h"
-#include "editor/assets/types/editorShaderAsset.h"
+// #include "editor/assets/types/editorChunkAsset.h"
+// #include "editor/assets/types/editorMaterialAsset.h"
+// #include "editor/assets/types/editorScriptAsset.h"
+// #include "editor/assets/types/editorShaderAsset.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
 #include "fileManager/fileManager.h"
@@ -65,6 +65,8 @@ class CreateAssetPopup : public GUIPopup
         if(enter || ImGui::Button("create"))
         {
             ImGui::CloseCurrentPopup();
+
+            /*
             EditorAsset* asset = nullptr;
             Editor* editor = Runtime::getModule<Editor>();
             switch(_type.type())
@@ -97,6 +99,9 @@ class CreateAssetPopup : public GUIPopup
             asset->save();
             editor->project().registerAssetLocation(asset);
             delete asset;
+
+            */
+            Runtime::warn("This button is unimplemented due to refactors, yes, report this");
             _widget.reloadCurrentDirectory();
         }
     }
@@ -111,7 +116,7 @@ class CreateAssetPopup : public GUIPopup
 
 AssetBrowserWidget::AssetBrowserWidget(GUI& ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits)
 {
-    _rootPath = Runtime::getModule<Editor>()->project().projectDirectory() / "assets";
+    _rootPath = Runtime::getModule<Editor>()->project().value()->root() / "assets";
     _root = FileManager::getDirectoryTree(_rootPath);
     setDirectory(_root.get());
 }
@@ -204,10 +209,9 @@ void AssetBrowserWidget::displayFiles()
                     {
                         // Make sure to construct the focus asset event on the main thread
                         auto editor = Runtime::getModule<Editor>();
-                        std::shared_ptr<EditorAsset> asset =
-                            editor->project().getEditorAsset(currentDirectory() / file);
+                        auto asset = editor->project().value()->getEditorAsset(currentDirectory() / file);
                         if(asset)
-                            _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+                            _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset.value()));
                         else
                             Runtime::warn("Could not find clicked asset!");
                     }

@@ -29,8 +29,7 @@ class SyncWindow : public EditorWindow
     static net::Connection* _syncServer;
 
     void drawConnected();
-
-    void displayContent() override;
+    void displayContent();
 
     struct AssetDiff
     {

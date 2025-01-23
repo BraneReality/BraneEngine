@@ -9,7 +9,6 @@
 #include "ecs/entity.h"
 #include "editor/assets/assemblyReloadManager.h"
 #include "editor/assets/editorAsset.h"
-#include "editor/assets/types/editorAssemblyAsset.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
 #include "systems/transforms.h"
@@ -30,18 +29,21 @@ EntitiesWindow::EntitiesWindow(GUI& ui, Editor& editor) : EditorWindow(ui, edito
 void EntitiesWindow::displayContent()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
+    /*
     if(_asset && _asset->type() == AssetType::assembly)
     {
         _asset->data().beginMultiChange();
         displayAssetEntities(_asset->data()["rootEntity"].asUInt());
         _asset->data().endMultiChange();
     }
+    */
     ImGui::PopStyleVar();
     ImGui::Spacing();
 }
 
 void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
 {
+    /*
     auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_asset.get());
     auto& entity = _asset->data()["entities"][index];
     const bool hasChildren = entity.isMember("children") && !entity["children"].empty();
@@ -160,4 +162,5 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
         ImGui::TreePop();
     }
     ImGui::PopID();
+    */
 }

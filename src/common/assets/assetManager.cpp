@@ -137,12 +137,12 @@ AsyncData<Result<void>> AssetManager::loadDepsInternal(Asset* asset)
     _assetLock.unlock();
     if(dependenciesLoaded(asset))
     {
-        promise.setData(Ok());
+        promise.setData(Ok<void>());
         return promise;
     }
     fetchDependencies(asset, [asset, promise](bool success) {
         if(success)
-            promise.setData(Ok());
+            promise.setData(Ok<void>());
         else
             promise.setError("Failed to load dependency for: " + asset->name);
     });

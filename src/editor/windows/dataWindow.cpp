@@ -10,9 +10,9 @@
 #include "assets/types/meshAsset.h"
 #include "common/ecs/entity.h"
 #include "editor/assets/editorAsset.h"
-#include "editor/assets/types/editorAssemblyAsset.h"
-#include "editor/assets/types/editorMaterialAsset.h"
-#include "editor/assets/types/editorShaderAsset.h"
+// #include "editor/assets/types/editorAssemblyAsset.h"
+// #include "editor/assets/types/editorMaterialAsset.h"
+// #include "editor/assets/types/editorShaderAsset.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
 #include "systems/transforms.h"
@@ -30,7 +30,6 @@
 #include "ui/guiPopup.h"
 
 #include "assets/types/imageAsset.h"
-#include "lua.hpp"
 #include "utility/jsonTypeUtilities.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
@@ -41,6 +40,7 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusMode = FocusMode::asset;
         _focusedAssetEntity = -1;
 
+        /*
         switch(_focusedAsset->type().type())
         {
             case AssetType::image:
@@ -78,6 +78,7 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
             default:
                 break;
         }
+        */
     });
     ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event) {
         _focusedAssetEntity = event->entity();
@@ -110,6 +111,7 @@ void DataWindow::displayAssetData()
     if(!_focusedAsset)
         return;
 
+    /*
     ImGui::PushFont(_ui.fonts()[1]);
     ImGui::Text("%s%s", _focusedAsset->name().c_str(), (_focusedAsset->unsavedChanges()) ? " *" : "");
     ImGui::PopFont();
@@ -155,10 +157,12 @@ void DataWindow::displayAssetData()
         ImGui::TextColored({1, 0, 0, 1}, "Error displaying asset: %s", e.what());
     }
 #endif
+*/
 }
 
 void DataWindow::displayChunkData()
 {
+    /*
     ImGui::Text("LODs:");
 
     ImGui::Indent();
@@ -245,10 +249,12 @@ void DataWindow::displayChunkData()
         newLODList.append(newLod);
         _focusedAsset->data().changeValue("LODs", newLODList);
     }
+    */
 }
 
 void DataWindow::displayAssemblyData()
 {
+    /*
     if(_focusedAssetEntity < _focusedAsset->data()["entities"].size())
     {
         displayEntityAssetData();
@@ -293,10 +299,12 @@ void DataWindow::displayAssemblyData()
     ImGui::Text("Entities: %u", _focusedAsset->data()["entities"].size());
     if(ImGui::IsItemHovered())
         ImGui::SetTooltip("Edit in entities window");
+        */
 }
 
 void DataWindow::displayMeshData() {}
 
+/*
 class AddAssetComponentPopup : public GUIPopup
 {
     AssetSearchWidget _search;
@@ -307,6 +315,7 @@ class AddAssetComponentPopup : public GUIPopup
     {
         if(_search.draw())
         {
+            /*
             auto asset = _focusedAsset;
             auto entity = _focusedEntity;
             Runtime::getModule<AssetManager>()
@@ -322,12 +331,14 @@ class AddAssetComponentPopup : public GUIPopup
 
   public:
     AddAssetComponentPopup(std::shared_ptr<EditorAssemblyAsset> focusedAsset, Json::ArrayIndex focusedEntity)
-        : _focusedAsset(std::move(focusedAsset)), _focusedEntity(focusedEntity), _search(AssetType::component),
-          GUIPopup("add component") {};
+        : _focusedAsset(std::move(focusedAsset)),
+          _focusedEntity(focusedEntity), _search(AssetType::component), GUIPopup("add component") {};
 };
+*/
 
 void DataWindow::displayEntityAssetData()
 {
+    /*
     auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get());
     auto& entityAsset = _focusedAsset->data()["entities"][(Json::ArrayIndex)_focusedAssetEntity];
     ImGui::PushFont(_ui.fonts()[1]);
@@ -378,7 +389,7 @@ void DataWindow::displayEntityAssetData()
         source);
             }
             ImGui::EndDragDropTarget();
-        }*/
+        }*//*
         if(displaying)
         {
             ImGui::Indent();
@@ -444,6 +455,7 @@ void DataWindow::displayEntityAssetData()
 
     if(deleteComponent != -1)
         assembly->removeEntityComponent(_focusedAssetEntity, deleteComponent);
+        */
 }
 
 void DataWindow::displayEntityData()
@@ -470,6 +482,7 @@ void DataWindow::displayEntityData()
 
 void DataWindow::displayMaterialData()
 {
+    /*
     auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
     AssetID vertexID = AssetID::parse(material->data()["vertexShader"].asString()).ok();
     if(AssetSelectWidget::draw(vertexID, AssetType::shader))
@@ -616,10 +629,12 @@ void DataWindow::displayMaterialData()
         }
         ImGui::Unindent();
     }
+*/
 }
 
 void DataWindow::displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset* material)
 {
+    /*
     ImGui::Text("inputs:");
     ImGui::Indent();
     const auto& attributes = asset->data()["attributes"];
@@ -665,10 +680,12 @@ void DataWindow::displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset
         }
         ImGui::Unindent();
     }
+    */
 }
 
 void DataWindow::displayImageData()
 {
+    /*
     const char* imageTypes[3] = {"color", "normal map", "linear"};
     auto imageType = _focusedAsset->data()["imageType"].asUInt();
     if(ImGui::BeginCombo("ImageType", imageTypes[imageType]))
@@ -695,4 +712,5 @@ void DataWindow::displayImageData()
             _imagePreview = ImGui_ImplVulkan_AddTexture(
                 texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
+    */
 }

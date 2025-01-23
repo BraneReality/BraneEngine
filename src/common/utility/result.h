@@ -3,26 +3,23 @@
 #define H_BRANE_RESULT
 
 #include <functional>
+#include <stdexcept>
 #include <string>
 #include <variant>
-#include "assert.h"
 #include "variantMatch.h"
+#include <type_traits>
 
-template<typename T = void>
+#define CHECK_RESULT(result)                                                                                           \
+    if(result.isErr())                                                                                                 \
+        return Err(result.err());
+
+template<class T = void>
 struct Ok
 {
+    static_assert(std::negation<std::is_reference<T>>(), "Results cannot contain references");
     T value;
 
-    Ok() = default;
-
-    Ok(T val)
-        : value([](T val) -> T {
-              if constexpr(std::is_reference<T>())
-                  return val;
-              else
-                  return std::move(val);
-          }(val))
-    {}
+    Ok(T val) : value(std::move(val)) {}
 };
 
 // Specialization for void
@@ -41,15 +38,19 @@ struct Err
 template<class V = void, class E = std::string>
 class Result
 {
+  public:
     using Value = std::variant<Ok<V>, Err<E>>;
 
+  private:
     Value _value;
 
   public:
-    Result(Value value) : _value(std::move(value)) {}
+    Result(Value&& value) : _value(std::forward<Value>(value)) {};
+    Result(Ok<V>&& ok) : Result(Value(std::forward<Ok<V>>(ok))) {};
+    Result(Err<E>&& err) : Result(Value(std::forward<Err<E>>(err))) {};
 
-    Result(Ok<V> ok) : Result(Value(ok)) {};
-    Result(Err<E> err) : Result(Value(err)) {};
+    Result(Result&&) = default;
+    Result(const Result&) = default;
 
     ~Result()
     {
@@ -75,12 +76,13 @@ class Result
     V ok()
         requires std::negation_v<std::is_void<V>>
     {
-        return MATCHV(std::move(_value), [](Ok<V> ok) -> V {
+        if(std::holds_alternative<Ok<V>>(_value))
             if constexpr(std::is_reference<V>() || std::is_pointer<V>())
-                return ok.value;
+                return std::get<Ok<V>>(_value).value;
             else
-                return std::move(ok.value);
-        }, [](Err<E> err) -> V { throw std::runtime_error("ok() called on result that contained an err value!"); });
+                return std::move(std::get<Ok<V>>(_value).value);
+        else
+            throw std::runtime_error("ok() called on result that contained an err value!");
     };
 
     /// consumes the result

@@ -9,6 +9,7 @@
 #include "editor/assets/editorAsset.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
+#include "imgui_stdlib.h"
 #include "networking/networking.h"
 #include "ui/gui.h"
 #include "ui/guiPopup.h"
@@ -24,10 +25,10 @@ SyncWindow::SyncWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Sync";
 
-    auto& project = _editor.project().json().data();
-    _serverAddress = project["server"].get("address", "localhost").asString();
-    _port = project["server"].get("port", "2001").asString();
-    _username = project["server"].get("username", "").asString();
+    auto& project = _editor.project().value()->data();
+    _serverAddress = *project.assetServer->address->value();
+    _port = *project.assetServer->port->value();
+    _username = "";
 }
 
 void SyncWindow::displayContent()
@@ -59,7 +60,8 @@ void SyncWindow::drawSetupConnection()
         _loggingIn = true;
         _feedbackMessage = "Connecting...";
         NetworkManager* nm = Runtime::getModule<NetworkManager>();
-        nm->async_connectToAssetServer(_serverAddress, std::stoi(_port), [this, nm](bool success) {
+        auto port = std::stoi(_port);
+        nm->async_connectToAssetServer(_serverAddress, port, [this, port, nm](bool success) {
             if(success)
             {
                 _feedbackMessage = "Connected, logging in...";
@@ -69,7 +71,7 @@ void SyncWindow::drawSetupConnection()
 
                 auto* server = nm->getServer(_serverAddress);
                 server->sendRequest(
-                    "login", std::move(req), [this, server](net::ResponseCode code, InputSerializer sData) {
+                    "login", std::move(req), [this, port, server](net::ResponseCode code, InputSerializer sData) {
                     if(code != net::ResponseCode::success)
                     {
                         _loggingIn = false;
@@ -84,10 +86,9 @@ void SyncWindow::drawSetupConnection()
                     _loggedIn = true;
                     _loggingIn = false;
 
-                    auto& project = _editor.project().json().data();
-                    project["server"]["address"] = _serverAddress;
-                    project["server"]["port"] = _port;
-                    project["server"]["username"] = _username;
+                    auto& project = _editor.project().value()->data();
+                    project.assetServer->address->set(_serverAddress).forward();
+                    project.assetServer->port->set(port).forward();
 
                     _syncServer = server;
                     _syncServer->onDisconnect([]() {
@@ -147,7 +148,8 @@ void SyncWindow::syncAssets()
         ThreadPool::enqueue([this] {
             SerializedData assetHashes;
             OutputSerializer s(assetHashes);
-            std::vector<std::pair<AssetID, std::string>> hashes = _editor.project().getAssetHashes();
+            std::vector<std::pair<AssetID, std::string>> hashes; // = _editor.project().getAssetHashes();
+            Runtime::warn("Syncing broken right now");
 
             uint32_t diffs = hashes.size();
             s << diffs;
@@ -194,7 +196,7 @@ void SyncWindow::syncAssets()
     for(auto& asset : _assetDiffs)
     {
         ImGui::PushID(&asset.id);
-        ImGui::Text("%s: %s", _editor.project().getAssetName(asset.id).c_str(), asset.id.toString().c_str());
+        ImGui::Text("%s: %s", asset.id.toString().c_str(), asset.id.toString().c_str());
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 20);
         if(ImGui::Button(ICON_FA_CLOUD_ARROW_UP))
         {
@@ -218,9 +220,15 @@ void SyncWindow::updateAsset(const AssetID& asset)
         _editor.cache().getAsset(asset)->serialize(s);
     else
     {
-        Asset* a = _editor.project().getEditorAsset(asset)->buildAsset(asset);
+        auto buildRes = _editor.project().value()->getEditorAsset(asset).value()->buildAsset(asset);
+        if(!buildRes)
+        {
+            Runtime::error(std::format("Failed to build {}", asset.toString()));
+            return;
+        }
+        auto a = buildRes.ok();
         a->serialize(s);
-        _editor.cache().cacheAsset(a);
+        _editor.cache().cacheAsset(a.get());
     }
     _syncServer->sendRequest("updateAsset", std::move(assetData), [asset](auto ec, InputSerializer res) {
         if(ec == net::ResponseCode::success)

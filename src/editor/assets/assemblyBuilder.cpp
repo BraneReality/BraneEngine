@@ -99,7 +99,7 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
             VirtualComponent mc(MeshRendererComponent::def());
             mc.setVar(0, meshIndex);
             inlineUIntArray& materials = *mc.getVar<inlineUIntArray>(1);
-            for(auto& primitive : loader.data()["meshes"][meshIndex]["primitives"])
+            for(auto& primitive : loader.json()["meshes"][meshIndex]["primitives"])
                 materials.push_back(0); // primitive["material"].asUInt()); TODO: extract materials
 
             entity.components.push_back(std::move(mc));

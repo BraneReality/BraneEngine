@@ -1,5 +1,6 @@
 #include "assetID.h"
 #include <cassert>
+#include <type_traits>
 #include <utility/hex.h>
 
 std::string BraneAssetID::toString() const
@@ -53,7 +54,11 @@ Result<FileAssetID, std::string> FileAssetID::parse(std::string_view text)
 Result<AssetID, std::string> AssetID::parse(std::string_view text)
 {
     if(text == "null" || text == "NULL")
+    {
+        static_assert(std::is_copy_constructible<AssetID>());
         return Ok(AssetID());
+    }
+
 
     // Find the "://" delimiter to isolate protocol
     auto protocol_end = text.find("://");

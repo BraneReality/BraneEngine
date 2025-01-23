@@ -18,7 +18,8 @@ namespace Logging
 {
     bool printToConsole = true;
     std::ofstream _logFile;
-    std::vector<std::function<void(const Log&)>> _logListeners;
+    std::vector<std::pair<size_t, std::function<void(const Log&)>>> _logListeners;
+    size_t _logListenerIdCounter = 0;
     AsyncQueue<Log> _logEvents;
 
 #if _WIN32
@@ -97,12 +98,16 @@ namespace Logging
 
     size_t addListener(std::function<void(const Log&)> callback)
     {
-        size_t index = _logListeners.size();
-        _logListeners.push_back(std::move(callback));
-        return index;
+        size_t id = ++_logListenerIdCounter;
+        _logListeners.push_back({id, std::move(callback)});
+        return id;
     }
 
-    void removeListener(size_t index) { _logListeners.erase(_logListeners.begin() + index); }
+    void removeListener(size_t id)
+    {
+        _logListeners.erase(
+            std::remove_if(_logListeners.begin(), _logListeners.end(), [&](auto& e) { return id == e.first; }));
+    }
 
     void callListeners()
     {
@@ -113,7 +118,7 @@ namespace Logging
             {
                 try
                 {
-                    f(event);
+                    f.second(event);
                 }
                 catch(const std::exception& e)
                 {
