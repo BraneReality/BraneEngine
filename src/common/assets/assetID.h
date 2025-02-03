@@ -17,14 +17,21 @@ struct BraneAssetID
     static Result<BraneAssetID> parse(std::string_view text);
 
     std::string toString() const;
+
+    bool operator==(const BraneAssetID&) const = default;
+    bool operator!=(const BraneAssetID&) const = default;
 };
 
 struct FileAssetID
 {
     std::string path;
+
     static Result<FileAssetID> parse(std::string_view text);
 
     std::string toString() const;
+
+    bool operator==(const FileAssetID&) const = default;
+    bool operator!=(const FileAssetID&) const = default;
 };
 
 static_assert(std::is_move_assignable<BraneAssetID>());
@@ -105,9 +112,7 @@ struct std::hash<AssetID>
     std::size_t operator()(const AssetID& id) const
     {
         if(!id.value)
-        {
             return 0;
-        }
         return MATCHV(id.value.value(), [](const BraneAssetID& id) {
             return std::hash<BraneAssetID>()(id);
         }, [](const FileAssetID& id) { return std::hash<FileAssetID>()(id); });

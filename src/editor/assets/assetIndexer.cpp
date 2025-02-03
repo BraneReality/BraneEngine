@@ -79,6 +79,7 @@ void AssetIndexer::indexAssets()
 
             for(auto& ca : asset->exportedAssets())
             {
+                Runtime::log(std::format("Found asset in project at {} ", entry.path().string()));
                 (*paths).insert({ca.first, {ca.first, entry, ca.second}});
             }
         }
@@ -88,10 +89,15 @@ void AssetIndexer::indexAssets()
 Option<std::filesystem::path> AssetIndexer::getAssetPath(const AssetID& id)
 {
     auto paths = _assetPaths.lockShared();
-    auto path = (*paths).find(id);
-    if(path == (*paths).end())
-        return None();
-    return Some(path->second.sourcePath);
+    for(auto& p : *paths)
+        Runtime::log(std::format("possible path {} is match = {} && isHashMatch = {}",
+                                 p.first.toString(),
+                                 p.first == id ? "true" : "false",
+                                 std::hash<AssetID>()(p.first) == std::hash<AssetID>()(id) ? "true" : "false"));
+    auto path = paths->find(id);
+    if(path != paths->end())
+        return Some(path->second.sourcePath);
+    return None();
 }
 
 std::vector<AssetLocation> AssetIndexer::searchExporetedAssets(std::string_view name, Option<AssetType> type) const

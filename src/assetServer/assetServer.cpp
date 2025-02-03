@@ -12,10 +12,10 @@
 
 class AssetServerLoader : public AssetLoader
 {
-    AsyncData<Asset*> loadAsset(const AssetID& assetId, bool incremental) override
+    AsyncData<Shared<Asset>> loadAsset(const AssetID& assetId, bool incremental) override
     {
 
-        AsyncData<Asset*> asset;
+        AsyncData<Shared<Asset>> asset;
         if(std::holds_alternative<BraneAssetID>(assetId.value.value()))
             const BraneAssetID& id = std::get<BraneAssetID>(assetId.value.value());
 
@@ -34,8 +34,9 @@ class AssetServerLoader : public AssetLoader
                     ((std::string)id->uuid.toString() + ".bin");
         if(std::filesystem::exists(path))
         {
-            fm->async_readUnknownAsset(path).then([this, asset](Asset* ptr) {
-                asset.setData(ptr);
+            fm->async_readUnknownAsset(path)
+                .then([this, asset](Asset* ptr) {
+                asset.setData(std::shared_ptr<Asset>(ptr));
             }).onError([asset](auto& err) { asset.setError(err); });
             return asset;
         }
@@ -160,8 +161,8 @@ void AssetServer::createAssetListeners()
             return;
         }
         auto ctxPtr = std::make_shared<RequestCTX>(std::move(rc));
-        auto f = [this, ctxPtr, streamID](Asset* asset) mutable {
-            auto* ia = dynamic_cast<IncrementalAsset*>(asset);
+        auto f = [this, ctxPtr, streamID](Shared<Asset> asset) mutable {
+            auto ia = std::dynamic_pointer_cast<IncrementalAsset>(std::shared_ptr<Asset>(asset));
             if(ia)
             {
                 std::cout << "Sending header for: " << ia->id << std::endl;
@@ -182,9 +183,9 @@ void AssetServer::createAssetListeners()
                 std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
         };
 
-        Asset* asset = _am.getAsset<Asset>(id);
+        Option<Shared<Asset>> asset = _am.getAsset<Asset>(id);
         if(asset)
-            f(asset);
+            f(asset.value());
         else
             _am.fetchAsset<Asset>(id).then(f);
     });

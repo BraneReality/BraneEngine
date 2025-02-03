@@ -9,6 +9,7 @@
 #include <list>
 #include "assets/asset.h"
 #include "database/database.h"
+#include "utility/shared.h"
 #include <utility/asyncData.h>
 
 class AssetManager;
@@ -22,8 +23,8 @@ namespace net
 
 struct IncrementalAssetSender
 {
-    std::unique_ptr<IncrementalAsset::SerializationContext> iteratorData;
-    IncrementalAsset* asset = nullptr;
+    std::shared_ptr<IncrementalAsset::SerializationContext> iteratorData;
+    std::shared_ptr<IncrementalAsset> asset = nullptr;
     uint32_t streamID;
     net::Connection* connection = nullptr;
 };

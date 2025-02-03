@@ -53,7 +53,7 @@ Result<UUID> UUID::fromString(std::string_view text)
     char buffer[37];
     for(size_t i = 0; i < 37; ++i)
         buffer[i] = '\0';
-    std::memcpy(buffer, text.data(), 36);
+    std::memcpy(buffer, text.data(), 37);
     UUID ret;
     size_t res = std::sscanf(buffer,
                              "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
@@ -86,10 +86,10 @@ bool UUID::operator!=(const UUID& o) const
 std::string UUID::toString() const
 {
     std::string buffer;
-    buffer.resize(38);
+    buffer.resize(37);
 
     snprintf(buffer.data(),
-             38,
+             37,
              "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
              data.time_low,
              data.time_mid,
@@ -102,6 +102,7 @@ std::string UUID::toString() const
              data.node[3],
              data.node[4],
              data.node[5]);
+    buffer.resize(36);
     return buffer;
 }
 

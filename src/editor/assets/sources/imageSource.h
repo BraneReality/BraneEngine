@@ -1,7 +1,7 @@
 #pragma once
 #include "assets/types/imageAsset.h"
 #include "assetSource.h"
-#include "utility/sptr.h"
+#include "utility/shared.h"
 
 struct ImageAssetSource : public AssetSource
 {
@@ -15,7 +15,7 @@ struct ImageAssetSource : public AssetSource
 
 struct ImageAssetMetadata : public AssetMetadata
 {
-    SPtr<TrackedValue<ImageAsset::ImageType>> colorSpace;
+    Shared<TrackedValue<ImageAsset::ImageType>> colorSpace;
     void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
     std::string typeName() const override;
     Result<Json::Value> serialize() const override;
@@ -49,6 +49,7 @@ struct JsonSerializer<ImageAsset::ImageType>
     static Result<void, JsonSerializerError> read(const Json::Value& s, ImageAsset::ImageType& value)
     {
         std::string text;
+        CHECK_RESULT(JsonParseUtil::read(s, text));
         if(text == "color")
             value = ImageAsset::color;
         else if(text == "normal")

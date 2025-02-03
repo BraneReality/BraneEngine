@@ -15,7 +15,6 @@ namespace net
 {
     class Connection;
 }
-class ServerDirectory;
 
 class LoginEvent : public GUIEvent
 {
@@ -24,17 +23,10 @@ class LoginEvent : public GUIEvent
   public:
     LoginEvent(net::Connection* server);
 
-    inline net::Connection* server() const { return _server; }
-};
-
-class DirectoryUpdateEvent : public GUIEvent
-{
-    ServerDirectory* _dir;
-
-  public:
-    DirectoryUpdateEvent(ServerDirectory* dir);
-
-    ServerDirectory* directory() const;
+    inline net::Connection* server() const
+    {
+        return _server;
+    }
 };
 
 class AssetReloadEvent : public GUIEvent
@@ -54,35 +46,5 @@ class EntityAssetReloadEvent : public GUIEvent
 };
 
 class EditorAsset;
-
-class FocusAssetEvent : public GUIEvent
-{
-    std::shared_ptr<EditorAsset> _asset;
-
-  public:
-    FocusAssetEvent(std::shared_ptr<EditorAsset> asset);
-
-    std::shared_ptr<EditorAsset> asset() const;
-};
-
-class FocusEntityAssetEvent : public GUIEvent
-{
-    int _index;
-
-  public:
-    FocusEntityAssetEvent(int index);
-
-    int entity() const;
-};
-
-class FocusEntityEvent : public GUIEvent
-{
-    EntityID _id;
-
-  public:
-    FocusEntityEvent(EntityID id);
-
-    EntityID id() const;
-};
 
 #endif // BRANEENGINE_EDITOREVENTS_H

@@ -6,7 +6,12 @@
 #define BRANEENGINE_DATAWINDOW_H
 
 #include <memory>
+#include "dataViews/dataView.h"
+#include "editor/state/versioning.h"
 #include "editorWindow.h"
+#include "utility/event.h"
+#include "utility/option.h"
+#include "utility/shared.h"
 #include "vulkan/vulkan.hpp"
 
 #include "ecs/entityID.h"
@@ -21,14 +26,18 @@ class EditorMaterialAsset;
 
 class DataWindow : public EditorWindow
 {
+    Option<Event<Option<Shared<EditorAsset>>, EditorActionType>::Handle> _onFocusHandle;
+
     enum class FocusMode
     {
         asset,
         entity
     };
     FocusMode _focusMode;
-    std::shared_ptr<EditorAsset> _focusedAsset;
+    Option<Shared<EditorAsset>> _focusedAsset;
     uint32_t _focusedAssetEntity = 0;
+
+    std::vector<Shared<DataView>> _views;
 
     struct DraggedComponent
     {
@@ -53,8 +62,6 @@ class DataWindow : public EditorWindow
 
     void displayMaterialData();
 
-    ImageAsset* _previewImageAsset = nullptr;
-    VkDescriptorSet _imagePreview = VK_NULL_HANDLE;
 
     void displayImageData();
 

@@ -3,6 +3,7 @@
 #include <string>
 #include <typeinfo>
 #include "result.h"
+#include "runtime/runtime.h"
 #include <json/json.h>
 
 struct JsonSerializerError
@@ -287,6 +288,7 @@ struct JsonParseUtil
     template<class T>
     static Result<void, JsonSerializerError> write(Json::Value& json, const T& value)
     {
-        return JsonSerializer<T>::write(json, value);
+        auto res = JsonSerializer<T>::write(json, value);
+        return res;
     }
 };

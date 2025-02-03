@@ -56,14 +56,14 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
         if(newData.description() == MeshRendererComponent::def())
         {
             auto* renderer = MeshRendererComponent::fromVirtual(newData);
-            renderer->mesh = am->getAsset<MeshAsset>(assembly->meshes[renderer->mesh])->runtimeID;
+            renderer->mesh = am->getAsset<MeshAsset>(assembly->meshes[renderer->mesh]).value()->runtimeID;
             for(auto& material : renderer->materials)
             {
                 AssetID id;
                 if(material < assembly->materials.size())
                     id = assembly->materials[material];
                 if(!id.empty())
-                    material = am->getAsset<MaterialAsset>(id)->runtimeID;
+                    material = am->getAsset<MaterialAsset>(id).value()->runtimeID;
                 else
                     material = -1;
             }

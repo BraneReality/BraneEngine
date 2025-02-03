@@ -5,10 +5,10 @@
 
 class TestAssetLoader : public AssetLoader
 {
-    AsyncData<Asset*> loadAsset(const AssetID& id, bool incremental) override
+    AsyncData<Shared<Asset>> loadAsset(const AssetID& id, bool incremental) override
     {
-        AsyncData<Asset*> asset;
-        asset.setData(nullptr);
+        AsyncData<Shared<Asset>> asset;
+        asset.setError("Not implemented");
         return asset;
     }
 };

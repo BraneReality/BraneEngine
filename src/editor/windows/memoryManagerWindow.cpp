@@ -46,7 +46,8 @@ void MemoryManagerWindow::displayContent()
                 auto* name = EntityName::fromVirtual(components[1]);
                 if(ImGui::Selectable((name->name.empty()) ? ("##" + std::to_string((size_t)name)).c_str()
                                                           : name->name.c_str()))
-                    _ui.sendEvent(std::make_unique<FocusEntityEvent>(id->id));
+                    Runtime::error("IMPLEMENT FOCUSED ENTITY!");
+                //_ui.sendEvent(std::make_unique<FocusEntityEvent>(id->id));
             });
             ComponentFilter unnamedEntities(ctx);
             unnamedEntities.addComponent(EntityIDComponent::def()->id, ComponentFilterFlags_Const);
@@ -54,7 +55,10 @@ void MemoryManagerWindow::displayContent()
             _em->getEntities(unnamedEntities).forEachNative([this](uint8_t** components) {
                 auto* id = EntityIDComponent::fromVirtual(components[0]);
                 if(ImGui::Selectable(("Unnamed " + std::to_string(id->id.id)).c_str()))
-                    _ui.sendEvent(std::make_unique<FocusEntityEvent>(id->id));
+                {
+                    Runtime::error("IMPLEMENT FOCUSED ENTITY!");
+                    //_ui.sendEvent(std::make_unique<FocusEntityEvent>(id->id));
+                }
             });
             ImGui::PopStyleVar();
             ImGui::Unindent(16);

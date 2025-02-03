@@ -46,8 +46,11 @@ class Event
         Handle(Handle&& old)
         {
             _id = old._id;
+            _parent = old._parent;
             old._id = std::numeric_limits<EventHandleId>::max();
         }
+
+        Handle& operator=(Handle&&) = default;
 
         Handle(EventHandleId id, std::shared_ptr<Mutex<EventInner>> parent) : _id(id), _parent(parent) {};
 

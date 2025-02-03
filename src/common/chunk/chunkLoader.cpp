@@ -65,7 +65,7 @@ void ChunkLoader::setChunkLOD(const AssetID& chunk, uint32_t lod)
     for(auto& l : LODsToLoad)
     {
         AssetID id = l->assembly;
-        am->fetchAsset<Assembly>(id).then([cJob](Assembly* asset) {
+        am->fetchAsset<Assembly>(id).then([cJob](Shared<Assembly> asset) {
             cJob->signal();
         }).onError([](const std::string& error) { Runtime::error("Could not load chunk lod: " + error); });
     }

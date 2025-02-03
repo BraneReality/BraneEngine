@@ -52,7 +52,7 @@ void Assembly::EntityAsset::deserialize(InputSerializer& message,
         if(componentIDIndex >= assembly.components.size())
             throw std::runtime_error("Component ID index invalid");
         const ComponentDescription* description =
-            cm.getComponentDef(am.getAsset<ComponentAsset>(assembly.components[componentIDIndex])->componentID);
+            cm.getComponentDef(am.getAsset<ComponentAsset>(assembly.components[componentIDIndex]).value()->componentID);
         if(componentSize != description->serializationSize())
         {
             Runtime::error("Component size " + std::to_string(componentSize) + " does not match size of component " +
@@ -168,17 +168,28 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
         if(entity.hasComponent(MeshRendererComponent::def()))
         {
             auto* renderer = em.getComponent<MeshRendererComponent>(entityMap[i]);
-            auto* mesh = am->getAsset<MeshAsset>(meshes[renderer->mesh]);
-            renderer->mesh = mesh->runtimeID;
-            for(auto& mID : renderer->materials)
+            auto mesh = am->getAsset<MeshAsset>(meshes[renderer->mesh]);
+            if(mesh)
             {
-                if(materials.size() <= mID || materials[mID].empty())
+
+                renderer->mesh = mesh.value()->runtimeID;
+                for(auto& mID : renderer->materials)
                 {
-                    mID = -1;
-                    continue;
+                    if(materials.size() <= mID || materials[mID].empty())
+                    {
+                        mID = -1;
+                        continue;
+                    }
+                    auto material = am->getAsset<MaterialAsset>(materials[mID]);
+                    if(material)
+                        mID = material.value()->runtimeID;
+                    else
+                        Runtime::warn("Could not load material for assembly!");
                 }
-                auto* material = am->getAsset<MaterialAsset>(materials[mID]);
-                mID = material->runtimeID;
+            }
+            else
+            {
+                Runtime::warn("Could not load mesh for assembly!");
             }
         }
 #endif

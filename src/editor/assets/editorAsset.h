@@ -3,7 +3,7 @@
 
 #include "assets/asset.h"
 #include "editor/assets/sources/imageSource.h"
-#include "utility/sptr.h"
+#include "utility/shared.h"
 #include <utility/serializedData.h>
 
 class BraneProject;
@@ -12,8 +12,8 @@ class BraneProject;
 class EditorAsset : public TrackedObject
 {
   protected:
-    SPtr<AssetSource> _source;
-    std::unordered_map<AssetSourceID, SPtr<AssetMetadata>> _metadata;
+    Shared<AssetSource> _source;
+    std::unordered_map<AssetSourceID, Shared<AssetMetadata>> _metadata;
     std::unordered_map<AssetID, AssetSourceID> _exportedToSource;
 
   public:
@@ -25,12 +25,16 @@ class EditorAsset : public TrackedObject
 
     ~EditorAsset() = default;
 
+    Shared<AssetSource> source() const;
+    const std::unordered_map<AssetSourceID, Shared<AssetMetadata>>& metadata() const;
+    Option<Shared<AssetMetadata>> getMetadata(AssetSourceID id) const;
+    Option<Shared<AssetMetadata>> getMetadata(AssetID id) const;
+
     std::vector<std::pair<AssetID, AssetType>> exportedAssets() const;
     Result<std::shared_ptr<Asset>> buildAsset(const AssetID& id) const;
     Result<std::shared_ptr<Asset>> buildAsset(const AssetSourceID& id) const;
 
     std::string hash() const;
-
     std::string name() const;
 
     const std::filesystem::path& sourcePath() const;

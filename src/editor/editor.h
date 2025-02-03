@@ -11,6 +11,7 @@
 #include "braneProject.h"
 #include "editor/state/versioning.h"
 #include "graphics/shaderCompiler.h"
+#include "state/trackedObject.h"
 #include <runtime/module.h>
 #include <unordered_map>
 
@@ -25,6 +26,14 @@ class GUIWindow;
 
 class EditorAsset;
 
+struct EditorState : public TrackedObject
+{
+    Shared<TrackedValue<Option<Shared<EditorAsset>>>> focusedAsset;
+    EditorState();
+
+    void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
+};
+
 class Editor : public Module
 {
     GUI* _ui;
@@ -34,6 +43,8 @@ class Editor : public Module
     Option<BraneProject> _project;
     ShaderCompiler _shaderCompiler;
     EditorActionManager _actionManager;
+
+    Shared<EditorState> _state;
 
     void addMainWindows();
 
@@ -48,9 +59,11 @@ class Editor : public Module
 
     void createProject(const std::string& name, const std::filesystem::path& directory);
 
-    void reloadAsset(std::shared_ptr<EditorAsset> asset);
+    void reloadAsset(Shared<EditorAsset> asset);
 
     Option<BraneProject*> project();
+
+    Shared<EditorState> state() const;
 
     EditorActionManager& actionManager();
 

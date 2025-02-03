@@ -16,12 +16,12 @@ namespace graphics
         if(!asset->vertexShader.empty())
         {
             AssetID id = asset->vertexShader;
-            _vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(id)->runtimeID);
+            _vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(id).value()->runtimeID);
         }
         if(!asset->fragmentShader.empty())
         {
             AssetID id = asset->fragmentShader;
-            _fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(id)->runtimeID);
+            _fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(id).value()->runtimeID);
         }
 
         _materialProperties.setFlags(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -80,8 +80,8 @@ namespace graphics
 
         for(auto& textureBinding : asset->textures)
         {
-            auto* image = am->getAsset<ImageAsset>(textureBinding.second);
-            Texture* texture = vkr->getTexture(image->runtimeID);
+            auto image = am->getAsset<ImageAsset>(textureBinding.second);
+            Texture* texture = vkr->getTexture(image.value()->runtimeID);
             _textures.push_back({texture, textureBinding.first});
         }
 

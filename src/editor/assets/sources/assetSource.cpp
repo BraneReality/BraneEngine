@@ -61,7 +61,7 @@ void SaveableObject::onNewChange()
 AssetSource::AssetSource(std::filesystem::path path) : path(path) {}
 
 AssetMetadata::AssetMetadata(AssetSourceID sourceId, AssetID exportId)
-    : sourceId(std::move(sourceId)), exportId(std::move(exportId))
+    : sourceId(std::move(sourceId)), exportId(std::make_shared<TrackedValue<AssetID>>(std::move(exportId)))
 {}
 
 void AssetMetadata::initMembers(Option<std::shared_ptr<TrackedType>> parent)

@@ -9,7 +9,9 @@
 #include "fileManager/fileManager.h"
 #include "runtime/runtime.h"
 
-BraneAssetServerInfo::BraneAssetServerInfo() : address("localhost"), port(2001) {};
+BraneAssetServerInfo::BraneAssetServerInfo()
+    : address(std::make_shared<TrackedValue<std::string>>("localhost")),
+      port(std::make_shared<TrackedValue<uint32_t>>(2001)) {};
 
 void BraneAssetServerInfo::initMembers(Option<std::shared_ptr<TrackedType>> parent)
 {
@@ -19,7 +21,10 @@ void BraneAssetServerInfo::initMembers(Option<std::shared_ptr<TrackedType>> pare
     port->initMembers(p);
 }
 
-BraneProjectData::BraneProjectData() : name("New project") {}
+BraneProjectData::BraneProjectData()
+    : name(std::make_shared<TrackedValue<std::string>>("New project")),
+      assetServer(std::make_shared<BraneAssetServerInfo>())
+{}
 
 void BraneProjectData::initMembers(Option<std::shared_ptr<TrackedType>> parent)
 {
@@ -29,7 +34,8 @@ void BraneProjectData::initMembers(Option<std::shared_ptr<TrackedType>> parent)
     assetServer->initMembers(p);
 }
 
-BraneProject::BraneProject(std::filesystem::path root) : _root(root), _indexer(), _data()
+BraneProject::BraneProject(std::filesystem::path root)
+    : _root(root), _indexer(), _data(std::make_shared<BraneProjectData>())
 {
     _data->initMembers(None());
 }
@@ -49,7 +55,7 @@ struct JsonSerializer<BraneAssetServerInfo>
     static Result<void, JsonSerializerError> write(Json::Value& json, const BraneAssetServerInfo& data)
     {
         CHECK_RESULT(JsonParseUtil::write(json["address"], data.address));
-        CHECK_RESULT(JsonParseUtil::write(json["port"], data.address));
+        CHECK_RESULT(JsonParseUtil::write(json["port"], data.port));
         return Ok<void>();
     }
 };

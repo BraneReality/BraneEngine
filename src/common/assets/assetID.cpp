@@ -11,6 +11,7 @@ std::string BraneAssetID::toString() const
 Result<BraneAssetID, std::string> BraneAssetID::parse(std::string_view text)
 {
     // Find the '/' delimiter to separate domain and UUID
+    Runtime::log(std::format("BraneAssetID parsing: {}", text));
     auto uuid_start = text.find('/', 0);
     if(uuid_start == std::string_view::npos)
     {
@@ -59,16 +60,16 @@ Result<AssetID, std::string> AssetID::parse(std::string_view text)
         return Ok(AssetID());
     }
 
-
     // Find the "://" delimiter to isolate protocol
-    auto protocol_end = text.find("://");
+    std::string_view protocolDelim = "://";
+    auto protocol_end = text.find(protocolDelim);
     if(protocol_end == std::string_view::npos)
     {
         return Err(std::string("Invalid format: Missing protocol delimiter '://'"));
     }
 
     std::string_view protocol_str = text.substr(0, protocol_end);
-    std::string_view content_str = text.substr(protocol_end + 1);
+    std::string_view content_str = text.substr(protocol_end + protocolDelim.size());
     if(protocol_str == "brane")
         return BraneAssetID::parse(content_str).map<AssetID, BraneAssetID>([](auto id) { return std::move(id); });
     else if(protocol_str == "file")
@@ -79,6 +80,19 @@ Result<AssetID, std::string> AssetID::parse(std::string_view text)
     }
 }
 
+bool AssetID::operator==(const AssetID& o) const
+{
+    bool shouldWork = o.value == value;
+    bool willWork = o.toString() == toString();
+    assert(shouldWork == willWork);
+    return willWork;
+}
+
+bool AssetID::operator!=(const AssetID& o) const
+{
+    return !(o.value == value);
+}
+
 bool AssetID::empty() const
 {
     return value.isNone();
@@ -87,16 +101,6 @@ bool AssetID::empty() const
 void AssetID::clear()
 {
     value = None();
-}
-
-bool AssetID::operator==(const AssetID& o) const
-{
-    return o.value == value;
-}
-
-bool AssetID::operator!=(const AssetID& o) const
-{
-    return !(o == *this);
 }
 
 std::string AssetID::toString() const

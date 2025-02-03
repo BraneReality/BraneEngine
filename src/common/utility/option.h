@@ -2,7 +2,6 @@
 #include <functional>
 #include <variant>
 #include "serializedData.h"
-#include <type_traits>
 
 struct None
 {
@@ -19,6 +18,16 @@ struct Some
     Some& operator=(const Some&) = default;
 
     Some(T val) : value(std::move(val)) {}
+
+    bool operator==(const Some<T>& o) const
+    {
+        return value == o.value;
+    }
+
+    bool operator!=(const Some<T>& o) const
+    {
+        return value != o.value;
+    }
 };
 
 template<class V>
@@ -89,6 +98,20 @@ class Option
         return MATCHV(std::move(_value), [&](Some<V> value) {
             return std::move(value.value);
         }, [defaultValue](None none) { return std::move(defaultValue); });
+    }
+
+    bool operator==(const Option<V> o) const
+    {
+        if(_value.index() != o._value.index())
+            return false;
+        if(isNone())
+            return true;
+        return value() == o.value();
+    }
+
+    bool operator!=(const Option<V> o) const
+    {
+        return !(*this == o);
     }
 };
 

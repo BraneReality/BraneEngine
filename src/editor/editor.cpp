@@ -27,14 +27,22 @@
 
 #include "tinyfiledialogs.h"
 
+EditorState::EditorState() : focusedAsset(std::make_shared<TrackedValue<Option<Shared<EditorAsset>>>>(None())) {}
+
+void EditorState::initMembers(Option<std::shared_ptr<TrackedType>> parent)
+{
+    TrackedType::initMembers(parent);
+    focusedAsset->initMembers(Some(shared_from_this()));
+}
+
 // The editor specific fetch asset function
 class EditorAssetLoader : public AssetLoader
 {
 
-    AsyncData<Asset*> loadAsset(const AssetID& inId, bool incremental) override
+    AsyncData<Shared<Asset>> loadAsset(const AssetID& inId, bool incremental) override
     {
         assert(!inId.empty());
-        AsyncData<Asset*> asset;
+        AsyncData<Shared<Asset>> asset;
         auto castId = inId.as<BraneAssetID>();
         if(!castId)
         {
@@ -71,7 +79,7 @@ class EditorAssetLoader : public AssetLoader
                     auto a = aRes.ok();
 
                     editor->cache().cacheAsset(a.get());
-                    asset.setData(a.get());
+                    asset.setData(a);
                 });
                 return asset;
             }
@@ -223,6 +231,11 @@ Option<BraneProject*> Editor::project()
     return None();
 }
 
+Shared<EditorState> Editor::state() const
+{
+    return _state;
+}
+
 void Editor::loadProject(const std::filesystem::path& filepath)
 {
     auto loadRes = BraneProject::load(filepath);
@@ -232,6 +245,7 @@ void Editor::loadProject(const std::filesystem::path& filepath)
         return;
     }
     _project = Some(std::move(loadRes.ok()));
+    _cache.setProject(&_project.value());
     // Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this]() {
     //     if(_project.fileWatcher())
     //         _project.fileWatcher()->scanForChanges();
@@ -248,6 +262,7 @@ void Editor::createProject(const std::string& name, const std::filesystem::path&
         return;
     }
     _project = Some(loadRes.ok());
+    _cache.setProject(&_project.value());
     // Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this]() {
     //     if(_project.fileWatcher())
     //         _project.fileWatcher()->scanForChanges();
@@ -260,7 +275,10 @@ EditorActionManager& Editor::actionManager()
     return _actionManager;
 }
 
-Editor::Editor() {}
+Editor::Editor() : _state(std::make_shared<EditorState>())
+{
+    _state->initMembers(None());
+}
 
 AssetCache& Editor::cache()
 {
@@ -272,7 +290,7 @@ ShaderCompiler& Editor::shaderCompiler()
     return _shaderCompiler;
 }
 
-void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
+void Editor::reloadAsset(Shared<EditorAsset> asset)
 {
     Runtime::error("Haven't fixed asset reloading yet...");
     /*

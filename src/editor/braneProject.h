@@ -11,7 +11,7 @@
 #include "editor/assets/assetIndexer.h"
 #include "editor/assets/sources/assetSource.h"
 #include "editor/state/trackedObject.h"
-#include "utility/sptr.h"
+#include "utility/shared.h"
 #include <json/json.h>
 #include <unordered_map>
 
@@ -25,16 +25,16 @@ struct BraneProjectData;
 
 struct BraneAssetServerInfo : public TrackedObject
 {
-    SPtr<TrackedValue<std::string>> address;
-    SPtr<TrackedValue<uint32_t>> port;
+    Shared<TrackedValue<std::string>> address;
+    Shared<TrackedValue<uint32_t>> port;
     BraneAssetServerInfo();
     void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
 };
 
 struct BraneProjectData : public SaveableObject
 {
-    SPtr<TrackedValue<std::string>> name;
-    SPtr<BraneAssetServerInfo> assetServer;
+    Shared<TrackedValue<std::string>> name;
+    Shared<BraneAssetServerInfo> assetServer;
     BraneProjectData();
     void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
 };
@@ -43,7 +43,7 @@ struct BraneProjectData : public SaveableObject
 class BraneProject
 {
     std::filesystem::path _root;
-    SPtr<BraneProjectData> _data;
+    Shared<BraneProjectData> _data;
     AssetIndexer _indexer;
     RwMutex<std::unordered_map<AssetSourceID, std::shared_ptr<EditorAsset>>> _openAssets;
 

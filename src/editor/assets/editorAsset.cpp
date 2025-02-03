@@ -21,6 +21,32 @@ void EditorAsset::initMembers()
         md.second->initMembers(Some(shared_from_this()));
 }
 
+Shared<AssetSource> EditorAsset::source() const
+{
+    return _source;
+}
+
+const std::unordered_map<AssetSourceID, Shared<AssetMetadata>>& EditorAsset::metadata() const
+{
+    return _metadata;
+}
+
+Option<Shared<AssetMetadata>> EditorAsset::getMetadata(AssetID id) const
+{
+    auto idEntry = _exportedToSource.find(id);
+    if(idEntry != _exportedToSource.end())
+        return getMetadata(idEntry->second);
+    return None();
+}
+
+Option<Shared<AssetMetadata>> EditorAsset::getMetadata(AssetSourceID id) const
+{
+    auto entry = _metadata.find(id);
+    if(entry != _metadata.end())
+        return Some(entry->second);
+    return None();
+}
+
 bool EditorAsset::unsavedChanges() const
 {
     bool somethingChanged = _source->unsavedChanges();
@@ -34,6 +60,7 @@ void EditorAsset::save()
     if(!unsavedChanges())
         return;
     _source->save();
+    _source->setSaved();
 
     Json::Value md;
     Json::Value& exports = md["exports"];
@@ -44,10 +71,15 @@ void EditorAsset::save()
         {
             Runtime::error(std::format("Failed to serialize metadata: {}", mdRes.err()));
         }
-        exports.append(mdRes.ok());
+
+        auto json = mdRes.ok();
+        Runtime::log(std::format("Serialized metadata: {}", json.toStyledString()));
+        exports.append(json);
+        m.second->setSaved();
     }
 
     FileManager::writeFile(metadataPath(), md);
+    Runtime::log(std::format("Wrote {}", metadataPath().string()));
 }
 
 std::string EditorAsset::hash() const
@@ -75,18 +107,19 @@ Result<std::shared_ptr<EditorAsset>> EditorAsset::loadAsset(const std::filesyste
         {
             if(metadata.isMember("exports") && metadata["exports"].isArray())
             {
-                for(auto e : metadata["exports"])
+                for(auto& e : metadata["exports"])
                 {
+                    Runtime::log(std::format("Deserializing: {}", e.toStyledString()));
                     auto parseRes = AssetMetadata::deserialize(e);
                     if(!parseRes)
                     {
-                        Runtime::warn(std::format("Unable to parse metadata for {} reason: ",
+                        Runtime::warn(std::format("Unable to parse metadata for {} reason: {}",
                                                   asset->metadataPath().string(),
                                                   parseRes.err()));
                         continue;
                     }
                     auto md = parseRes.ok();
-                    asset->_metadata.insert({md->sourceId, SPtr(md)});
+                    asset->_metadata.insert({md->sourceId, Shared(md)});
                     asset->_exportedToSource.insert({*md->exportId->value(), md->sourceId});
                 }
             }
@@ -105,7 +138,7 @@ Result<std::shared_ptr<EditorAsset>> EditorAsset::loadAsset(const std::filesyste
             continue;
         }
         auto nmd = nmdRes.ok();
-        asset->_metadata.insert({nmd->sourceId, SPtr<AssetMetadata>(nmd)});
+        asset->_metadata.insert({nmd->sourceId, Shared<AssetMetadata>(nmd)});
         asset->_exportedToSource.insert({*nmd->exportId->value(), nmd->sourceId});
     }
 

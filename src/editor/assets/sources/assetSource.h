@@ -4,7 +4,7 @@
 #include "assets/assetID.h"
 #include "editor/state/trackedObject.h"
 #include "utility/option.h"
-#include "utility/sptr.h"
+#include "utility/shared.h"
 #include <assets/assetType.h>
 
 class Asset;
@@ -68,7 +68,7 @@ struct AssetSource : public SaveableObject
 struct AssetMetadata : public SaveableObject
 {
     AssetSourceID sourceId;
-    SPtr<TrackedValue<AssetID>> exportId;
+    Shared<TrackedValue<AssetID>> exportId;
 
     AssetMetadata(AssetSourceID sourceId, AssetID exportId);
     virtual ~AssetMetadata() = default;

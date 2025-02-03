@@ -43,62 +43,65 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
     _renderer = vkr.createRenderer<graphics::SceneRenderer>(&vkr, &em);
     _renderer->setClearColor({.2, .2, .2, 1});
     _swapChain = vkr.swapChain();
-    _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event) {
-        /*
-    if(event->asset()->type() != AssetType::assembly)
-        return;
-    if(!_assemblies.empty())
-    {
-        auto* arm = Runtime::getModule<AssemblyReloadManager>();
-        for(auto& e : _assemblies)
-            arm->destroy(e.assembly, e.root);
-        _assemblies.resize(0);
-    }
-    auto* am = Runtime::getModule<AssetManager>();
-    _focusedAsset = event->asset();
-    _focusedAssetEntity = -1;
-    if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
-    {
-        am->fetchAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
-            .then([this](Assembly* assembly) {
-            _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
-        }).onError([this](const std::string& error) {
-            if(_focusedAsset)
-                Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
-            else
-                Runtime::warn("Could not load asset to render: " + error);
-        });
-    }
-    */
+    /*
+_ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event) {
+if(event->asset()->type() != AssetType::assembly)
+    return;
+if(!_assemblies.empty())
+{
+    auto* arm = Runtime::getModule<AssemblyReloadManager>();
+    for(auto& e : _assemblies)
+        arm->destroy(e.assembly, e.root);
+    _assemblies.resize(0);
+}
+auto* am = Runtime::getModule<AssetManager>();
+_focusedAsset = event->asset();
+_focusedAssetEntity = -1;
+if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
+{
+    am->fetchAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
+        .then([this](Assembly* assembly) {
+        _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
+    }).onError([this](const std::string& error) {
+        if(_focusedAsset)
+            Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
+        else
+            Runtime::warn("Could not load asset to render: " + error);
     });
+}
+});
+*/
     _ui.addEventListener<RenderWindowAssetReady>(
         "render window asset ready", this, [this, &em](const RenderWindowAssetReady* event) {
         auto* am = Runtime::getModule<AssetManager>();
         auto* arm = Runtime::getModule<AssemblyReloadManager>();
-        auto* assembly = am->getAsset<Assembly>(event->id());
+        auto assembly = am->getAsset<Assembly>(event->id());
         assert(assembly);
-        EntityID root = arm->instantiate(assembly);
-        _assemblies.push_back(AssemblyContex{assembly, root});
+        EntityID root = arm->instantiate(assembly.value().get());
+        _assemblies.push_back(AssemblyContex{assembly.value().get(), root});
     });
-    _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event) {
-        /*
-    if(!_focusedAsset)
-        return;
-    auto* am = Runtime::getModule<AssetManager>();
-    auto* arm = Runtime::getModule<AssemblyReloadManager>();
-    auto* assembly = am->getAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok());
-    if(assembly)
-    {
-        _focusedAssetEntity = event->entity();
-        if(event->entity() >= 0)
-            _focusedEntity = arm->getEntity(assembly, 0, event->entity());
-        else
-            _focusedEntity = EntityID();
-    }
+
+    /*
+_ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event) {
+if(!_focusedAsset)
+    return;
+auto* am = Runtime::getModule<AssetManager>();
+auto* arm = Runtime::getModule<AssemblyReloadManager>();
+auto* assembly = am->getAsset<Assembly>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok());
+if(assembly)
+{
+    _focusedAssetEntity = event->entity();
+    if(event->entity() >= 0)
+        _focusedEntity = arm->getEntity(assembly, 0, event->entity());
+    else
+        _focusedEntity = EntityID();
+}
+});
+*/
+    /*
+        _ui.addEventListener<FocusEntityEvent>(
+            "focus entity", this, [this](const FocusEntityEvent* event) { _focusedEntity = event->id(); });
     */
-    });
-    _ui.addEventListener<FocusEntityEvent>(
-        "focus entity", this, [this](const FocusEntityEvent* event) { _focusedEntity = event->id(); });
     _cameraEntity = em.createEntity(ComponentSet({Transform::def()->id, graphics::Camera::def()->id}));
     graphics::Camera camera;
     camera.fov = 45;

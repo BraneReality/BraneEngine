@@ -13,6 +13,8 @@ add_library(editorWindows STATIC
         memoryManagerWindow.cpp
         #createAssetWindow.cpp
         syncWindow.cpp
-        selectProjectWindow.cpp editorWindow.cpp editorWindow.h)
-    target_link_libraries(editorWindows PUBLIC ui editorWidgets imgui::imgui imguizmo::imguizmo tinyfiledialogs::tinyfiledialogs)
+        selectProjectWindow.cpp 
+        editorWindow.cpp 
+        dataViews/imageMetadataView.cpp)
+target_link_libraries(editorWindows PUBLIC ui editorWidgets imgui::imgui imguizmo::imguizmo tinyfiledialogs::tinyfiledialogs)
 target_compile_definitions(editorWindows PUBLIC CLIENT)

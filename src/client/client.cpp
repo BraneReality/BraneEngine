@@ -20,9 +20,9 @@
 
 class ClientAssetLoader : public AssetLoader
 {
-    AsyncData<Asset*> loadAsset(const AssetID& inId, bool incremental) override
+    AsyncData<Shared<Asset>> loadAsset(const AssetID& inId, bool incremental) override
     {
-        AsyncData<Asset*> asset;
+        AsyncData<Shared<Asset>> asset;
         auto castId = inId.as<BraneAssetID>();
         if(!castId)
         {
@@ -54,7 +54,6 @@ class ClientAssetLoader : public AssetLoader
 };
 
 const char* Client::name()
-
 {
     return "client";
 }
@@ -107,8 +106,8 @@ void Client::start()
         AssetID chunkID;
         rc.req >> chunkID;
         Runtime::log("Was requested to load chunk " + chunkID.toString());
-        am->fetchAsset<WorldChunk>(chunkID).then([](WorldChunk* chunk) {
-            Runtime::getModule<ChunkLoader>()->loadChunk(chunk);
+        am->fetchAsset<WorldChunk>(chunkID).then([](Shared<WorldChunk> chunk) {
+            Runtime::getModule<ChunkLoader>()->loadChunk(chunk.get());
             Runtime::log("Loaded chunk " + chunk->id.toString());
         });
     });

@@ -205,15 +205,16 @@ void AssetBrowserWidget::displayFiles()
             {
                 if(ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 {
-                    if(type == FileType::asset && _allowEdits)
+                    if(_allowEdits)
                     {
                         // Make sure to construct the focus asset event on the main thread
                         auto editor = Runtime::getModule<Editor>();
                         auto asset = editor->project().value()->getEditorAsset(currentDirectory() / file);
                         if(asset)
-                            _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset.value()));
-                        else
-                            Runtime::warn("Could not find clicked asset!");
+                        {
+                            auto setOp = editor->state()->focusedAsset->set(Some<Shared<EditorAsset>>(asset.value()));
+                            editor->actionManager().executeAction(setOp);
+                        }
                     }
                     if(type == FileType::directory)
                     {

@@ -186,7 +186,10 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
     _serverLock.lock_shared();
     std::string address(id.domain);
     if(!_servers.count(address))
-        throw std::runtime_error("No connection with " + address);
+    {
+        asset.setError("No connection with " + address);
+        return asset;
+    }
     net::Connection* server = _servers[address].get();
     _serverLock.unlock_shared();
 

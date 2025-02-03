@@ -41,20 +41,21 @@ void AssetManager::addNativeComponent(EntityManager& em)
 {
     static_assert(std::is_base_of<NativeComponent<T>, T>());
     ComponentDescription* description = T::constructDescription();
-    ComponentAsset* asset =
+    std::shared_ptr<ComponentAsset> asset = std::shared_ptr<ComponentAsset>(
         new ComponentAsset(T::getMemberTypes(),
                            T::getMemberNames(),
-                           FileAssetID(std::format("native/{}", static_cast<uint32_t>(_nativeComponentID++))));
+                           FileAssetID(std::format("native/{}", static_cast<uint32_t>(_nativeComponentID++)))));
     asset->name = T::getComponentName();
     asset->componentID = em.components().registerComponent(description);
 
-    AssetData data{};
-    data.asset = std::unique_ptr<Asset>(asset);
+    AssetData data{
+        .asset = std::static_pointer_cast<Asset>(asset),
+    };
     data.loadState = LoadState::loaded;
     _assetLock.lock();
     _assets.insert({asset->id, std::make_unique<AssetData>(std::move(data))});
     _assetLock.unlock();
-    description->asset = asset;
+    description->asset = asset.get();
 }
 
 void AssetManager::start() {}
@@ -68,9 +69,9 @@ bool AssetManager::hasAsset(const AssetID& id)
     return (uint8_t)state >= (uint8_t)LoadState::awaitingDependencies;
 }
 
-void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callback)
+void AssetManager::fetchDependencies(Shared<Asset> a, std::function<void(bool)> callback)
 {
-    assert(a);
+    assert(a.get());
     assert(!a->id.empty());
     std::vector<std::pair<AssetID, bool>> unloadedDeps;
     _assetLock.lock();
@@ -99,7 +100,7 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
     for(auto& d : unloadedDeps)
     {
         fetchAsset(d.first, d.second)
-            .then([this, id, callbackPtr](Asset* asset) {
+            .then([this, id, callbackPtr](Shared<Asset> asset) {
             Runtime::log("Loaded: " + asset->name);
             _assetLock.lock();
             if(!_assets.count(id))
@@ -119,7 +120,7 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
     }
 }
 
-bool AssetManager::dependenciesLoaded(const Asset* asset) const
+bool AssetManager::dependenciesLoaded(const Shared<Asset> asset) const
 {
     auto deps = asset->dependencies();
     for(auto& d : deps)
@@ -128,9 +129,8 @@ bool AssetManager::dependenciesLoaded(const Asset* asset) const
     return true;
 }
 
-AsyncData<Result<void>> AssetManager::loadDepsInternal(Asset* asset)
+AsyncData<Result<void>> AssetManager::loadDepsInternal(Shared<Asset> asset)
 {
-    assert(asset);
     AsyncData<Result<void>> promise;
     _assetLock.lock();
     _assets.at(asset->id)->loadState = LoadState::awaitingDependencies;
@@ -149,14 +149,16 @@ AsyncData<Result<void>> AssetManager::loadDepsInternal(Asset* asset)
     return promise;
 }
 
-void AssetManager::finalizeAssetInternal(std::variant<Asset*, std::string> result,
+void AssetManager::finalizeAssetInternal(Result<Shared<Asset>> result,
                                          AssetData* entry,
                                          const AssetID& id,
-                                         AsyncData<Asset*> promise)
+                                         AsyncData<Shared<Asset>> promise)
 {
-    MATCHV(result, [&](std::string error) {
+    if(!result)
+    {
+        auto error = result.err();
         _assetLock.lock();
-        std::vector<std::function<void(Asset*)>> onLoaded;
+        std::vector<std::function<void(Result<Shared<Asset>>)>> onLoaded;
         if(_awaitingLoad.count(id))
         {
             onLoaded = std::move(_awaitingLoad.at(id));
@@ -167,73 +169,83 @@ void AssetManager::finalizeAssetInternal(std::variant<Asset*, std::string> resul
 
         promise.setError(error);
         for(auto& f : onLoaded)
-            f(nullptr);
-    }, [&](Asset* a) {
-        assert(a);
-        loadDepsInternal(a)
-            .then([this, a, entry, promise](Result<void> depsResult) {
-            _assetLock.lock();
-            entry->loadState = LoadState::loaded;
-            entry->asset = std::unique_ptr<Asset>(a);
-            std::vector<std::function<void(Asset*)>> onLoaded;
-            if(_awaitingLoad.count(a->id))
-            {
-                onLoaded = std::move(_awaitingLoad.at(a->id));
-                _awaitingLoad.erase(a->id);
-            }
-            _assetLock.unlock();
-            a->onDependenciesLoaded();
-            for(auto& f : onLoaded)
-                f(a);
+            f(Err(error));
+        return;
+    }
+    Shared<Asset> a = result.ok();
+    loadDepsInternal(a)
+        .then([this, a, entry, promise](Result<void> depsResult) {
+        _assetLock.lock();
+        entry->loadState = LoadState::loaded;
+        entry->asset = a;
+        std::vector<std::function<void(Result<Shared<Asset>>)>> onLoaded;
+        if(_awaitingLoad.count(a->id))
+        {
+            onLoaded = std::move(_awaitingLoad.at(a->id));
+            _awaitingLoad.erase(a->id);
+        }
+        _assetLock.unlock();
+        entry->asset->onDependenciesLoaded();
+        for(auto& f : onLoaded)
+            f(Ok(a));
 
-            promise.setData(a);
-        }).onError([this, a, entry, id, promise](std::string error) {
-            finalizeAssetInternal(error, entry, id, promise);
-        });
+        promise.setData(a);
+    }).onError([this, a, entry, id, promise](std::string error) {
+        finalizeAssetInternal(Err(error), entry, id, promise);
     });
 }
 
 void AssetManager::fetchAssetInternal(const AssetID& id,
                                       bool incremental,
                                       AssetData* entry,
-                                      AsyncData<Asset*> asset,
+                                      AsyncData<Shared<Asset>> asset,
                                       std::vector<std::unique_ptr<AssetLoader>>::iterator loader)
 {
     if(loader == _loaders.end())
     {
-        finalizeAssetInternal(std::format("Asset {} could not be fetched", id.toString()), entry, id, asset);
+        finalizeAssetInternal(Err(std::format("Asset {} could not be fetched", id.toString())), entry, id, asset);
         return;
     }
     (*loader)
         ->loadAsset(id, incremental)
-        .then([this, entry, asset, id](Asset* a) {
-        finalizeAssetInternal(a, entry, id, asset);
-    }).onError([this, entry, asset, id](const std::string& error) { finalizeAssetInternal(error, entry, id, asset); });
+        .then([this, entry, asset, id](Shared<Asset> a) {
+        finalizeAssetInternal(Ok(a), entry, id, asset);
+    }).onError([this, entry, asset, id](const std::string& error) {
+        finalizeAssetInternal(Err(error), entry, id, asset);
+    });
 }
 
-AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
+AsyncData<Shared<Asset>> AssetManager::fetchAsset(const AssetID& id, bool incremental)
 {
-    AsyncData<Asset*> asset;
+    AsyncData<Shared<Asset>> asset;
+    Runtime::log("Fetching asset " + id.toString());
     _assetLock.lock();
+    for(auto& assetData : _assets)
+    {
+        Runtime::log(std::format(
+            "We have data for {} is match = {}", assetData.first.toString(), assetData.first == id ? "true" : "false"));
+    }
     if(_assets.count(id))
     {
         AssetData* assetData = _assets.at(id).get();
         if(assetData->loadState >= LoadState::usable)
-            asset.setData(assetData->asset.get());
+            asset.setData(assetData->asset);
         else
-            _awaitingLoad[id].push_back([asset](Asset* a) {
+            _awaitingLoad[id].push_back([asset](Result<Shared<Asset>> a) {
                 if(a)
-                    asset.setData(a);
+                    asset.setData(a.ok());
                 else
-                    asset.setError("Asset failed to load");
+                    asset.setError(a.err());
             });
         _assetLock.unlock();
         return asset;
     }
 
-    AssetData* assetData = new AssetData{};
+    auto assetData = std::make_unique<AssetData>();
     assetData->loadState = LoadState::requested;
-    _assets.insert({id, std::unique_ptr<AssetData>(assetData)});
+    auto assetDataRef = assetData.get();
+
+    _assets.insert({id, std::move(assetData)});
 
     _assetLock.unlock();
 
@@ -242,14 +254,13 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
         asset.setError("No asset loaders set!");
         return asset;
     }
-    fetchAssetInternal(id, incremental, assetData, asset, _loaders.begin());
+    fetchAssetInternal(id, incremental, assetDataRef, asset, _loaders.begin());
 
     return asset;
 }
 
-void AssetManager::reloadAsset(Asset* asset)
+void AssetManager::reloadAsset(Shared<Asset> asset)
 {
-    assert(asset);
     if(!hasAsset(asset->id))
         return;
     std::scoped_lock lock(_assetLock);
@@ -258,16 +269,16 @@ void AssetManager::reloadAsset(Asset* asset)
     switch(asset->type.type())
     {
         case AssetType::mesh:
-            *(MeshAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MeshAsset*)(asset));
+            *(MeshAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MeshAsset*)(asset.get()));
             break;
         case AssetType::shader:
-            *(ShaderAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(ShaderAsset*)(asset));
+            *(ShaderAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(ShaderAsset*)(asset.get()));
             break;
         case AssetType::material:
-            *(MaterialAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MaterialAsset*)(asset));
+            *(MaterialAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MaterialAsset*)(asset.get()));
             break;
         case AssetType::assembly:
-            *(Assembly*)(_assets.at(asset->id)->asset.get()) = std::move(*(Assembly*)(asset));
+            *(Assembly*)(_assets.at(asset->id)->asset.get()) = std::move(*(Assembly*)(asset.get()));
             break;
         default:
             Runtime::warn("Assembly manager attempted to reload asset of type " + asset->type.toString() +
@@ -275,23 +286,23 @@ void AssetManager::reloadAsset(Asset* asset)
     }
 }
 
-std::vector<const Asset*> AssetManager::nativeAssets(AssetType type)
+std::vector<Shared<Asset>> AssetManager::nativeAssets(AssetType type)
 {
     std::scoped_lock lock(_assetLock);
-    std::vector<const Asset*> assets;
+    std::vector<Shared<Asset>> assets;
     switch(type.type())
     {
         case AssetType::none:
             break;
         case AssetType::component:
-            assets = {EntityIDComponent::def()->asset,
-                      EntityName::def()->asset,
-                      Transform::def()->asset,
-                      LocalTransform::def()->asset,
-                      Children::def()->asset,
-                      TRS::def()->asset,
-                      MeshRendererComponent::def()->asset,
-                      PointLightComponent::def()->asset};
+            assets = {std::shared_ptr<Asset>((Asset*)EntityIDComponent::def()->asset),
+                      std::shared_ptr<Asset>((Asset*)EntityName::def()->asset),
+                      std::shared_ptr<Asset>((Asset*)Transform::def()->asset),
+                      std::shared_ptr<Asset>((Asset*)LocalTransform::def()->asset),
+                      std::shared_ptr<Asset>((Asset*)Children::def()->asset),
+                      std::shared_ptr<Asset>((Asset*)TRS::def()->asset),
+                      std::shared_ptr<Asset>((Asset*)MeshRendererComponent::def()->asset),
+                      std::shared_ptr<Asset>((Asset*)PointLightComponent::def()->asset)};
             break;
         case AssetType::script:
             break;

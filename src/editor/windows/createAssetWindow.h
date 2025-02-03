@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_CREATEASSETWINDOW_H
 #define BRANEENGINE_CREATEASSETWINDOW_H
 
-#include "../gltf/assemblyBuilder.h"
+#include "../assets/assemblyBuilder.h"
 #include "../widgets/assetBrowserWidget.h"
 #include "editorWindow.h"
 #include "utility/asyncData.h"
@@ -15,7 +15,7 @@ class CreateAssetWindow : public GUIWindow
     struct AssetUploadContext
     {
         bool done = false;
-        ServerDirectory* directory;
+        FileManager::Directory* directory;
         std::string status;
 
         virtual void update();

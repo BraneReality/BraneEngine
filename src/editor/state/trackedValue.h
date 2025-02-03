@@ -80,8 +80,7 @@ class TrackedValue : public TrackedType
         });
     }
 
-    Event<T, EditorActionType>::Handle addListener(Event<T, EditorActionType>::EventCallback f) const
-
+    Event<T, EditorActionType>::Handle addListener(Event<T, EditorActionType>::EventCallback f)
     {
         return _onChange.addListener(std::move(f));
     }
@@ -92,20 +91,22 @@ class TrackedValue : public TrackedType
     void onNewChange() override {};
 };
 
+class AssetID;
+
 template<class T>
 struct JsonSerializer<TrackedValue<T>>
 {
     static Result<void, JsonSerializerError> read(const Json::Value& s, TrackedValue<T>& value)
     {
         T data;
-        JsonSerializer<T>::read(s, data);
+        CHECK_RESULT(JsonSerializer<T>::read(s, data));
         value.set(data).forward();
         return Ok<void>();
     }
 
     static Result<void, JsonSerializerError> write(Json::Value& s, const TrackedValue<T>& value)
     {
-        JsonSerializer<T>::write(s, *value.value());
+        CHECK_RESULT(JsonSerializer<T>::write(s, *value.value()));
         return Ok<void>();
     }
 };

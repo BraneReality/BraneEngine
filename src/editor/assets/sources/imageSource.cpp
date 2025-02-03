@@ -35,8 +35,10 @@ Result<std::shared_ptr<Asset>> ImageAssetSource::buildAsset(std::shared_ptr<Asse
     image->size = {w, h};
     image->data.resize(w * h * 4);
     std::memcpy(image->data.data(), pixels, image->data.size());
-
     stbi_image_free(pixels);
+    if(image->data.size() == 0)
+        return Err(std::string("Image size was 0!"));
+    Runtime::log(std::format("Image built with size: {}", image->data.size()));
 
     return Ok<std::shared_ptr<Asset>>(image);
 }
@@ -52,8 +54,8 @@ AssetSourceType ImageAssetSource::type()
 }
 
 ImageAssetMetadata::ImageAssetMetadata()
-    : AssetMetadata({Json::Value("main")}, BraneAssetID{"", UUID::generate().ok()}),
-      colorSpace(ImageAsset::ImageType::color)
+    : AssetMetadata({Json::Value("main")}, BraneAssetID{"${default}", UUID::generate().ok()}),
+      colorSpace(std::make_shared<TrackedValue<ImageAsset::ImageType>>(ImageAsset::ImageType::color))
 {}
 
 void ImageAssetMetadata::initMembers(Option<std::shared_ptr<TrackedType>> parent)

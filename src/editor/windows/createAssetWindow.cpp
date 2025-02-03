@@ -3,17 +3,18 @@
 //
 
 #include "createAssetWindow.h"
-#include "../serverFilesystem.h"
 #include "../widgets/assetSelectWidget.h"
 #include "assets/assetManager.h"
 #include "assets/types/materialAsset.h"
 #include "assets/types/shaderAsset.h"
 #include "fileManager/fileManager.h"
 #include "graphics/shader.h"
+#include "imgui_stdlib.h"
 
 bool CreateAssetWindow::_spirvHelperCreated = false;
 
-CreateAssetWindow::CreateAssetWindow(GUI& ui, ServerDirectory* startingDir) : GUIWindow(ui), _browser(ui, false)
+CreateAssetWindow::CreateAssetWindow(GUI& ui, Editor& editor, FileManager::Directory* startingDir)
+    : GUIWindow(ui), _browser(ui, false)
 {
     _name = "Create Asset";
     if(startingDir)
@@ -42,12 +43,12 @@ void CreateAssetWindow::displayContent()
         if(ImGui::Button("change"))
             _selectingDirectory = true;
         ImGui::SameLine();
-        ImGui::Text("Directory: %s", _browser.currentDirectory()->path().c_str());
+        ImGui::Text("Directory: %ls", _browser.currentDirectory().c_str());
     }
     else
     {
         ImGui::BeginChild("Directory View",
-                          {ImGui::GetWindowContentRegionWidth(), 500},
+                          {ImGui::GetWindowContentRegionMax().x, 500},
                           ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
         if(ImGui::Button("select"))
             _selectingDirectory = false;
@@ -68,8 +69,8 @@ void CreateAssetWindow::displayContent()
                 _importFile = FileManager::requestLocalFilePath("gltf", {"*.glb", "*.gltf"});
             ImGui::SameLine();
             ImGui::Text("Import from file: %s", _importFile.c_str());
-            AssetSelectWidget::draw(&_defaultMaterial, AssetType::material);
-            if(_importFile.empty() || _defaultMaterial.serverAddress.empty())
+            AssetSelectWidget::draw(_defaultMaterial, AssetType::material);
+            if(_importFile.empty())
                 noCreate = true;
             break;
         case AssetType::shader:

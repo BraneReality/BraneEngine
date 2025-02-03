@@ -50,7 +50,7 @@ struct std::hash<UUID>
 {
     std::size_t operator()(const UUID& id) const
     {
-        return std::hash<std::string_view>()(std::string_view((char*)id.data.buffer, 38));
+        return std::hash<std::string_view>()(std::string_view((char*)id.data.buffer, 16));
     }
 };
 

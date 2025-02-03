@@ -96,6 +96,7 @@ namespace graphics
 
     Texture::Texture(ImageAsset* asset)
     {
+        assert(asset);
         _asset = asset;
         VkDeviceSize imageSize = _asset->size.x * _asset->size.y * 4;
 
@@ -123,7 +124,8 @@ namespace graphics
                 _format = VK_FORMAT_R8G8B8A8_UNORM;
                 break;
             case ImageAsset::linear:
-                _format = VK_FORMAT_R8G8B8A8_SSCALED;
+                //_format = VK_FORMAT_R8G8B8A8_SSCALED;
+                _format = VK_FORMAT_R8G8B8A8_UNORM;
                 break;
             default:
                 assert(false && "Unhandled switch case!");
@@ -174,9 +176,15 @@ namespace graphics
         vkFreeMemory(device->get(), _textureImageMemory, nullptr);
     }
 
-    VkImage Texture::get() { return _textureImage; }
+    VkImage Texture::get()
+    {
+        return _textureImage;
+    }
 
-    VkImageView Texture::view() { return _textureImageView; }
+    VkImageView Texture::view()
+    {
+        return _textureImageView;
+    }
 
     VkSampler Texture::sampler()
     {

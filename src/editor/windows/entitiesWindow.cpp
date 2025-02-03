@@ -18,12 +18,15 @@ EntitiesWindow::EntitiesWindow(GUI& ui, Editor& editor) : EditorWindow(ui, edito
 {
     _name = "Entities";
     _em = Runtime::getModule<EntityManager>();
+    /*
     ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event) {
         _selected = -1;
         _asset = event->asset();
     });
+
     ui.addEventListener<FocusEntityAssetEvent>(
         "focus entity asset", this, [this](const FocusEntityAssetEvent* event) { _selected = event->entity(); });
+    */
 }
 
 void EntitiesWindow::displayContent()

@@ -1,22 +1,23 @@
 #pragma once
 
+#include <cassert>
 #include <memory>
 #include "jsonSerializer.h"
 
 /// shared_ptr wrapper that must be initialized
 template<class T>
-class SPtr
+class Shared
 {
     std::shared_ptr<T> _value;
 
   public:
-    template<class... Args>
-    SPtr<T>(Args... args)
+    Shared<T>(T* notNull)
     {
-        _value = std::make_shared<T>(args...);
+        assert(notNull);
+        _value = std::shared_ptr<T>(notNull);
     }
 
-    SPtr<T>(std::shared_ptr<T> notNull)
+    Shared<T>(std::shared_ptr<T> notNull)
     {
         assert(notNull);
         _value = notNull;
@@ -56,17 +57,23 @@ class SPtr
     {
         return _value;
     }
+
+    Shared<T>& operator=(std::shared_ptr<T> newValue)
+    {
+        _value = newValue;
+        return *this;
+    }
 };
 
 template<class T>
-struct JsonSerializer<SPtr<T>>
+struct JsonSerializer<Shared<T>>
 {
-    static Result<void, JsonSerializerError> read(const Json::Value& s, SPtr<T>& value)
+    static Result<void, JsonSerializerError> read(const Json::Value& s, Shared<T>& value)
     {
         return JsonSerializer<T>::read(s, *value.get());
     }
 
-    static Result<void, JsonSerializerError> write(Json::Value& s, const SPtr<T>& value)
+    static Result<void, JsonSerializerError> write(Json::Value& s, const Shared<T>& value)
     {
         return JsonSerializer<T>::write(s, *value.get());
     };

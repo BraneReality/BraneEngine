@@ -1,5 +1,6 @@
 #pragma once
 
+#include "utility/shared.h"
 #include <runtime/module.h>
 
 #include <mutex>
@@ -15,7 +16,7 @@ class EntityManager;
 class AssetLoader
 {
   public:
-    virtual AsyncData<Asset*> loadAsset(const AssetID& id, bool incremental) = 0;
+    virtual AsyncData<Shared<Asset>> loadAsset(const AssetID& id, bool incremental) = 0;
     virtual ~AssetLoader() = default;
 };
 
@@ -34,7 +35,7 @@ class AssetManager : public Module
 
     struct AssetData
     {
-        std::unique_ptr<Asset> asset;
+        std::shared_ptr<Asset> asset;
         uint32_t useCount = 0;
         uint32_t unloadedDependencies = 0;
         LoadState loadState = LoadState::unloaded;
@@ -44,7 +45,7 @@ class AssetManager : public Module
   private:
     std::mutex _assetLock;
     std::unordered_map<AssetID, std::unique_ptr<AssetData>> _assets;
-    std::unordered_map<AssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
+    std::unordered_map<AssetID, std::vector<std::function<void(Result<Shared<Asset>>)>>> _awaitingLoad;
 
     std::vector<std::unique_ptr<AssetLoader>> _loaders;
 
@@ -56,13 +57,13 @@ class AssetManager : public Module
     void fetchAssetInternal(const AssetID& id,
                             bool incremental,
                             AssetData* entry,
-                            AsyncData<Asset*> asset,
+                            AsyncData<Shared<Asset>> asset,
                             std::vector<std::unique_ptr<AssetLoader>>::iterator loader);
-    AsyncData<Result<void>> loadDepsInternal(Asset* asset);
-    void finalizeAssetInternal(std::variant<Asset*, std::string> result,
+    AsyncData<Result<void>> loadDepsInternal(Shared<Asset> asset);
+    void finalizeAssetInternal(Result<Shared<Asset>> result,
                                AssetData* entry,
                                const AssetID& id,
-                               AsyncData<Asset*> promise);
+                               AsyncData<Shared<Asset>> promise);
 
   public:
     AssetManager();
@@ -70,37 +71,38 @@ class AssetManager : public Module
     void addLoader(std::unique_ptr<AssetLoader> loader);
 
     template<typename T>
-    T* getAsset(const AssetID& id)
+    Option<Shared<T>> getAsset(const AssetID& id)
     {
         static_assert(std::is_base_of<Asset, T>());
         std::scoped_lock lock(_assetLock);
         if(_assets.count(id))
-            return (T*)(_assets[id]->asset.get());
-        return nullptr;
+            return Some<Shared<T>>(std::dynamic_pointer_cast<T>(std::shared_ptr<Asset>(_assets[id]->asset)));
+        return None();
     }
 
-    AsyncData<Asset*> fetchAsset(const AssetID& id, bool incremental = false);
+    AsyncData<Shared<Asset>> fetchAsset(const AssetID& id, bool incremental = false);
 
     template<typename T>
-    AsyncData<T*> fetchAsset(const AssetID& id)
+    AsyncData<Shared<T>> fetchAsset(const AssetID& id)
     {
         static_assert(std::is_base_of<Asset, T>(), "fetchAsset requires T to inherit from Asset");
-        AsyncData<T*> asset;
-        fetchAsset(id, std::is_base_of<IncrementalAsset, T>()).then([asset](Asset* a) {
-            asset.setData(std::move((T*)a));
-        });
+        AsyncData<Shared<T>> asset;
+        fetchAsset(id, std::is_base_of<IncrementalAsset, T>())
+            .then([asset](Shared<Asset> a) {
+            asset.setData(std::move(std::dynamic_pointer_cast<T>(std::shared_ptr<Asset>(a))));
+        }).onError([asset](std::string error) { asset.setError(error); });
         return asset;
     }
 
-    void reloadAsset(Asset* asset);
+    void reloadAsset(Shared<Asset> asset);
 
     bool hasAsset(const AssetID& id);
 
-    void fetchDependencies(Asset* asset, std::function<void(bool success)> callback);
+    void fetchDependencies(Shared<Asset> asset, std::function<void(bool success)> callback);
 
-    bool dependenciesLoaded(const Asset* asset) const;
+    bool dependenciesLoaded(const Shared<Asset> asset) const;
 
-    std::vector<const Asset*> nativeAssets(AssetType type);
+    std::vector<Shared<Asset>> nativeAssets(AssetType type);
 
     static const char* name();
 

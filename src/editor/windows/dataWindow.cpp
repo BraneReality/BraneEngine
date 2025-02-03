@@ -10,11 +10,10 @@
 #include "assets/types/meshAsset.h"
 #include "common/ecs/entity.h"
 #include "editor/assets/editorAsset.h"
-// #include "editor/assets/types/editorAssemblyAsset.h"
-// #include "editor/assets/types/editorMaterialAsset.h"
-// #include "editor/assets/types/editorShaderAsset.h"
+#include "editor/assets/sources/imageSource.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
+#include "editor/windows/dataViews/imageMetadataView.h"
 #include "systems/transforms.h"
 #include <assets/assembly.h>
 #include <assets/assetID.h>
@@ -35,27 +34,33 @@
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Data Inspector";
-    ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event) {
-        _focusedAsset = event->asset();
+    _onFocusHandle = Some(
+        editor.state()->focusedAsset->addListener([this](Option<Shared<EditorAsset>> asset, EditorActionType type) {
+        if(_focusedAsset && asset && _focusedAsset.value()->sourcePath() == asset.value()->sourcePath())
+            return;
+        _focusedAsset = asset;
+        _views.clear();
+        if(!asset)
+            return;
+
         _focusMode = FocusMode::asset;
         _focusedAssetEntity = -1;
 
+
+        // Spawn source data views
+        /*MATCHV(_focusedAsset.value()->source()->type(), [&](std::shared_ptr<ImageAssetSource> imageSource) {
+        });*/
+        // Spawn metadata views
+        for(auto metadata : _focusedAsset.value()->metadata())
+        {
+            MATCHV(metadata.second->type(),
+                   [&](Shared<ImageAssetMetadata> m) { _views.emplace_back(std::make_shared<ImageMetadataView>(m)); });
+        }
         /*
-        switch(_focusedAsset->type().type())
+        switch(_focusedAsset.value()->type().type())
         {
             case AssetType::image:
             {
-                _imagePreview = VK_NULL_HANDLE;
-                _previewImageAsset = nullptr;
-                Runtime::getModule<AssetManager>()
-                    ->fetchAsset<ImageAsset>(AssetID::parse(_focusedAsset->data()["id"].asString()).ok())
-                    .then([this](ImageAsset* image) {
-                    _previewImageAsset = image;
-                    auto* texture = Runtime::getModule<graphics::VulkanRuntime>()->getTexture(image->runtimeID);
-                    if(texture)
-                        _imagePreview = ImGui_ImplVulkan_AddTexture(
-                            texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-                });
             }
             break;
             case AssetType::material:
@@ -79,7 +84,8 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
                 break;
         }
         */
-    });
+    }));
+    /*
     ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event) {
         _focusedAssetEntity = event->entity();
     });
@@ -87,6 +93,7 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusedEntity = event->id();
         _focusMode = FocusMode::entity;
     });
+    */
 }
 
 DataWindow::~DataWindow() {}
@@ -111,16 +118,25 @@ void DataWindow::displayAssetData()
     if(!_focusedAsset)
         return;
 
-    /*
     ImGui::PushFont(_ui.fonts()[1]);
-    ImGui::Text("%s%s", _focusedAsset->name().c_str(), (_focusedAsset->unsavedChanges()) ? " *" : "");
+    ImGui::Text("%s%s", _focusedAsset.value()->name().c_str(), (_focusedAsset.value()->unsavedChanges()) ? " *" : "");
     ImGui::PopFont();
-    ImGui::TextDisabled("%s", _focusedAsset->type().toString().c_str());
+    // ImGui::TextDisabled("%s", _focusedAsset.value()->type().toString().c_str());
 #ifdef NDEBUG
     try
     {
 #endif
-        switch(_focusedAsset->type().type())
+        for(auto view : _views)
+            view->draw();
+        if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+        {
+            if(ImGui::IsKeyPressed(ImGuiKey_S))
+            {
+                if(_focusedAsset)
+                    _focusedAsset.value()->save();
+            }
+        }
+        /*switch(_focusedAsset->type().type())
         {
             case AssetType::shader:
                 ImGui::Text("Source: %s", _focusedAsset->data()["source"].asCString());
@@ -149,7 +165,7 @@ void DataWindow::displayAssetData()
                             _focusedAsset->type().toString().c_str(),
                             _focusedAsset->name().c_str());
                 ImGui::PopTextWrapPos();
-        }
+        }*/
 #ifdef NDEBUG
     }
     catch(const std::exception& e)
@@ -157,7 +173,6 @@ void DataWindow::displayAssetData()
         ImGui::TextColored({1, 0, 0, 1}, "Error displaying asset: %s", e.what());
     }
 #endif
-*/
 }
 
 void DataWindow::displayChunkData()
@@ -686,31 +701,6 @@ void DataWindow::displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset
 void DataWindow::displayImageData()
 {
     /*
-    const char* imageTypes[3] = {"color", "normal map", "linear"};
-    auto imageType = _focusedAsset->data()["imageType"].asUInt();
-    if(ImGui::BeginCombo("ImageType", imageTypes[imageType]))
-    {
-        if(ImGui::Selectable("color"))
-            _focusedAsset->data().changeValue("imageType", 0);
-        if(ImGui::Selectable("normal map"))
-            _focusedAsset->data().changeValue("imageType", 1);
-        if(ImGui::Selectable("linear"))
-            _focusedAsset->data().changeValue("imageType", 2);
-        ImGui::EndCombo();
-    }
-    if(_imagePreview)
-    {
-        float width = ImGui::GetContentRegionMax().x;
-        float height = width / (float)_previewImageAsset->size.x * _previewImageAsset->size.y;
-        ImGui::Image((ImTextureID)_imagePreview, {width, height});
-    }
-    else if(_previewImageAsset)
-    {
-        ImGui::TextDisabled("Loading image preview...");
-        auto* texture = Runtime::getModule<graphics::VulkanRuntime>()->getTexture(_previewImageAsset->runtimeID);
-        if(texture)
-            _imagePreview = ImGui_ImplVulkan_AddTexture(
-                texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
+
     */
 }
