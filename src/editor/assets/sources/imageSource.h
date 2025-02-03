@@ -32,6 +32,7 @@ struct JsonSerializer<ImageAssetMetadata>
     {
         CHECK_RESULT(JsonParseUtil::read<AssetMetadata>(s, value));
         CHECK_RESULT(JsonParseUtil::read(s["colorSpace"], value.colorSpace));
+        value.setSaved();
         return Ok<void>();
     }
 

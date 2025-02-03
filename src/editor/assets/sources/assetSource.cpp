@@ -29,7 +29,7 @@ bool AssetSourceID::operator!=(const AssetSourceID& o) const
 
 bool SaveableObject::unsavedChanges() const
 {
-    return changeDelta == 0 && !newChangePath;
+    return changeDelta != 0 || newChangePath;
 }
 
 void SaveableObject::setSaved()
