@@ -5,11 +5,11 @@
 #include "mutex.h"
 #include "utility/threadPool.h"
 
-template<class... Args>
+template<class... Values>
 class Event
 {
   public:
-    using EventCallback = std::function<void(Args...)>;
+    using EventCallback = std::function<void(Values...)>;
 
   private:
     using EventHandleId = size_t;
@@ -69,13 +69,14 @@ class Event
         return Handle(id, _inner);
     }
 
+    template<class... Args>
     void invoke(Args... args)
     {
         auto inner = _inner->lock();
         for(auto& c : inner->callbacks)
         {
             auto f = c.second;
-            ThreadPool::enqueue([f, args...]() { f(args...); });
+            ThreadPool::enqueue([f, args...]() { f(static_cast<Values>(args)...); });
         }
     }
 };

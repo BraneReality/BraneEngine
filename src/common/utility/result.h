@@ -52,6 +52,9 @@ class Result
     Result(Result&&) = default;
     Result(const Result&) = default;
 
+    Result& operator=(Result&&) = default;
+    Result& operator=(const Result&) = default;
+
     ~Result()
     {
         // TODO consider if we should force result handling

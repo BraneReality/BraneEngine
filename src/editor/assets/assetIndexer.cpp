@@ -3,7 +3,7 @@
 #include "runtime/runtime.h"
 #include <efsw/efsw.hpp>
 
-FileListener::FileListener(AssetIndexer& indexer) : indexer(indexer) {};
+FileListener::FileListener(std::shared_ptr<AssetIndexer> indexer) : indexer(indexer) {};
 
 void FileListener::handleFileAction(efsw::WatchID watchid,
                                     const std::string& dir,
@@ -11,7 +11,7 @@ void FileListener::handleFileAction(efsw::WatchID watchid,
                                     efsw::Action action,
                                     std::string oldFilename)
 {
-    indexer.indexAssets(); // Implement efficient things later, and debouncing. Debouncing is good.
+    Runtime::log("Filesystem change detected");
     switch(action)
     {
         case efsw::Actions::Add:
@@ -30,16 +30,19 @@ void FileListener::handleFileAction(efsw::WatchID watchid,
         default:
             Runtime::error(std::format("DIR ({}) FILE ({}) had event that was not handled!", dir, filename));
     }
-}
 
-AssetIndexer::AssetIndexer() {}
+    if(auto i = indexer.lock())
+        i->indexAssets(); // Implement efficient things later, and debouncing. Debouncing is good.
+}
 
 void AssetIndexer::start(std::filesystem::path watchDir)
 {
     _watchDir = watchDir;
+    auto indexer = shared_from_this();
     _fileWatcher = std::make_unique<efsw::FileWatcher>();
-    _listener = std::make_unique<FileListener>(*this);
+    _listener = std::make_unique<FileListener>(indexer);
     _fileWatcher->addWatch(watchDir.string(), _listener.get(), true);
+    _fileWatcher->watch();
     indexAssets();
 }
 
@@ -78,10 +81,7 @@ void AssetIndexer::indexAssets()
             asset->save();
 
             for(auto& ca : asset->exportedAssets())
-            {
-                Runtime::log(std::format("Found asset in project at {} ", entry.path().string()));
                 (*paths).insert({ca.first, {ca.first, entry, ca.second}});
-            }
         }
     }
 }

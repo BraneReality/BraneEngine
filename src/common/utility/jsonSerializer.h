@@ -2,6 +2,7 @@
 #include <format>
 #include <string>
 #include <typeinfo>
+#include "glm/glm.hpp"
 #include "result.h"
 #include "runtime/runtime.h"
 #include <json/json.h>
@@ -277,7 +278,144 @@ struct JsonSerializer<std::unordered_map<std::string, T>>
     };
 };
 
+template<class T, size_t L>
+struct JsonSerializer<glm::vec<L, T>>
+{
+    static Result<void, JsonSerializerError> read(const Json::Value& json, glm::vec<L, T>& value)
+    {
+        if(!json.isArray())
+            return Err(JsonSerializerError(JsonSerializerError::WrongType,
+                                           std::format("expecting object, value was {}", json.toStyledString())));
+
+        size_t i = 0;
+        for(auto& entry : json)
+        {
+            T data;
+            CHECK_RESULT(JsonSerializer<T>::read(entry, data));
+            if(i >= L)
+                return Err(JsonSerializerError(
+                    JsonSerializerError::WrongType,
+                    std::format("expected array of size {}, value was {}", L, json.toStyledString())));
+            value[i++] = data;
+        }
+
+        return Ok<void>();
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& json, const glm::vec<L, T>& value)
+    {
+        json = Json::Value();
+        for(size_t i = 0; i < L; ++i)
+        {
+            Json::Value entry;
+            CHECK_RESULT(JsonSerializer<T>::write(entry, value[i]));
+            json.append(entry);
+        }
+
+        return Ok<void>();
+    };
+};
+
+template<class T, size_t C, size_t R>
+struct JsonSerializer<glm::mat<C, R, T>>
+{
+    static Result<void, JsonSerializerError> read(const Json::Value& json, glm::mat<C, R, T>& value)
+    {
+        if(!json.isArray())
+            return Err(JsonSerializerError(JsonSerializerError::WrongType,
+                                           std::format("expecting object, value was {}", json.toStyledString())));
+
+        size_t i = 0;
+        for(auto& entry : json)
+        {
+            T data;
+            CHECK_RESULT(JsonSerializer<T>::read(entry, data));
+            if(i >= C * R)
+                return Err(JsonSerializerError(
+                    JsonSerializerError::WrongType,
+                    std::format("expected array of size {}, value was {}", C * R, json.toStyledString())));
+            value[i++] = data;
+        }
+
+        return Ok<void>();
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& json, const glm::mat<C, R, T>& value)
+    {
+        json = Json::Value();
+        for(size_t i = 0; i < C * R; ++i)
+        {
+            Json::Value entry;
+            CHECK_RESULT(JsonSerializer<T>::write(entry, value[i]));
+            json.append(entry);
+        }
+
+        return Ok<void>();
+    };
+};
+
+template<class... Args>
+struct JsonSerializer<std::variant<Args...>>
+{
+
+    template<size_t ArgIndex, class T, class... Remaining>
+    static Result<std::variant<Args...>, JsonSerializerError> readT(const Json::Value& json, size_t typeIndex)
+    {
+        if(typeIndex == ArgIndex)
+        {
+            T value;
+            auto res = JsonSerializer<T>::read(json, value);
+            if(!res)
+                return Err(res.err());
+            return Ok(std::variant<Args...>(std::move(value)));
+        }
+
+        if constexpr(sizeof...(Remaining))
+            return readT<ArgIndex + 1, Remaining...>(json, typeIndex);
+        return Err(JsonSerializerError(JsonSerializerError::WrongStringFormat,
+                                       std::format("No variant type matches {}", typeIndex)));
+    }
+
+    template<size_t ArgIndex, class T, class... Remaining>
+    static Result<void, JsonSerializerError>
+    writeT(Json::Value& json, size_t typeIndex, const std::variant<Args...>& value)
+    {
+        if(typeIndex == ArgIndex)
+            return JsonSerializer<T>::write(json, std::get<ArgIndex>(value));
+
+        if constexpr(sizeof...(Remaining))
+            return writeT<ArgIndex + 1, Remaining...>(json, typeIndex, value);
+        return Err(JsonSerializerError(JsonSerializerError::ParserError, "Unreachable variant serializer error"));
+    }
+
+    static Result<void, JsonSerializerError> read(const Json::Value& json, std::variant<Args...>& value)
+    {
+        if(!json.isObject())
+            return Err(JsonSerializerError(JsonSerializerError::WrongType,
+                                           std::format("expecting object, value was {}", json.toStyledString())));
+
+        if(!json.isMember("Type") || !json.isMember("Value"))
+            return Err(
+                JsonSerializerError(JsonSerializerError::WrongType,
+                                    std::format("expecting variant object, with Type and Value keys, instead found: {}",
+                                                json.toStyledString())));
+        auto res = readT<0, Args...>(json["Value"], json["Type"].asInt());
+        CHECK_RESULT(res);
+        value = std::move(res.ok());
+        return Ok<void>();
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& json, const std::variant<Args...>& value)
+    {
+        json = Json::Value();
+        size_t index = value.index();
+        json["Type"] = index;
+        return writeT<0, Args...>(json["Value"], index, value);
+    };
+};
+
 struct JsonParseUtil
+
 {
     template<class T>
     static Result<void, JsonSerializerError> read(const Json::Value& json, T& value)

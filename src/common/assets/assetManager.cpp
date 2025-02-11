@@ -220,11 +220,6 @@ AsyncData<Shared<Asset>> AssetManager::fetchAsset(const AssetID& id, bool increm
     AsyncData<Shared<Asset>> asset;
     Runtime::log("Fetching asset " + id.toString());
     _assetLock.lock();
-    for(auto& assetData : _assets)
-    {
-        Runtime::log(std::format(
-            "We have data for {} is match = {}", assetData.first.toString(), assetData.first == id ? "true" : "false"));
-    }
     if(_assets.count(id))
     {
         AssetData* assetData = _assets.at(id).get();

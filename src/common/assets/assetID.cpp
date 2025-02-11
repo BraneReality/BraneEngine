@@ -11,7 +11,6 @@ std::string BraneAssetID::toString() const
 Result<BraneAssetID, std::string> BraneAssetID::parse(std::string_view text)
 {
     // Find the '/' delimiter to separate domain and UUID
-    Runtime::log(std::format("BraneAssetID parsing: {}", text));
     auto uuid_start = text.find('/', 0);
     if(uuid_start == std::string_view::npos)
     {

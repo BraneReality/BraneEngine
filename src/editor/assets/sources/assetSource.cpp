@@ -1,6 +1,8 @@
 #include "assetSource.h"
 #include <memory>
 #include "../editorAsset.h"
+#include "materialSource.h"
+#include "shaderSource.h"
 #include <unordered_set>
 
 static std::unordered_set<std::string> assetSourceExtensions = {
@@ -10,11 +12,6 @@ static bool isAssetSource(const std::filesystem::path& path)
 {
     auto ext = path.extension().string();
     return assetSourceExtensions.contains(ext);
-}
-
-static Result<std::shared_ptr<AssetSource>> load(const std::filesystem::path& path)
-{
-    return Err((std::string) "Not implemented");
 }
 
 bool AssetSourceID::operator==(const AssetSourceID& o) const
@@ -30,6 +27,11 @@ bool AssetSourceID::operator!=(const AssetSourceID& o) const
 bool SaveableObject::unsavedChanges() const
 {
     return changeDelta != 0 || newChangePath;
+}
+
+void SaveableObject::setUnsaved()
+{
+    newChangePath = true;
 }
 
 void SaveableObject::setSaved()
@@ -81,6 +83,22 @@ Result<std::shared_ptr<AssetMetadata>> AssetMetadata::deserialize(const Json::Va
     {
         auto md = std::make_shared<ImageAssetMetadata>();
         auto res = JsonParseUtil::read(root, *md);
+        if(!res)
+            return Err(res.err().toString());
+        return Ok<std::shared_ptr<AssetMetadata>>(md);
+    }
+    else if(metadataType == "Shader")
+    {
+        auto md = std::make_shared<ShaderAssetMetadata>();
+        auto res = JsonParseUtil::read<AssetMetadata>(root, *md);
+        if(!res)
+            return Err(res.err().toString());
+        return Ok<std::shared_ptr<AssetMetadata>>(md);
+    }
+    else if(metadataType == "Material")
+    {
+        auto md = std::make_shared<MaterialAssetMetadata>();
+        auto res = JsonParseUtil::read<AssetMetadata>(root, *md);
         if(!res)
             return Err(res.err().toString());
         return Ok<std::shared_ptr<AssetMetadata>>(md);

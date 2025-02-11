@@ -31,17 +31,26 @@ class EditorAsset;
 struct AssetMetadata;
 struct ImageAssetSource;
 struct ImageAssetMetadata;
-using AssetSourceType = std::variant<std::shared_ptr<ImageAssetSource>>;
-using AssetMetadataType = std::variant<std::shared_ptr<ImageAssetMetadata>>;
+struct ShaderAssetSource;
+struct ShaderAssetMetadata;
+struct MaterialAssetSource;
+struct MaterialAssetMetadata;
+using AssetSourceType = std::variant<std::shared_ptr<ImageAssetSource>,
+                                     std::shared_ptr<ShaderAssetSource>,
+                                     std::shared_ptr<MaterialAssetSource>>;
+using AssetMetadataType = std::variant<std::shared_ptr<ImageAssetMetadata>,
+                                       std::shared_ptr<ShaderAssetMetadata>,
+                                       std::shared_ptr<MaterialAssetMetadata>>;
 
 class SaveableObject : public TrackedObject
 {
   protected:
     int changeDelta = 0;
-    bool newChangePath = false;
+    bool newChangePath = true;
 
   public:
     bool unsavedChanges() const;
+    void setUnsaved();
     void setSaved();
 
     void onChildForward(EditorActionType at) override;
@@ -62,7 +71,6 @@ struct AssetSource : public SaveableObject
     virtual AssetSourceType type() = 0;
 
     static bool isAssetSource(const std::filesystem::path& path);
-    static Result<std::shared_ptr<AssetSource>> load(const std::filesystem::path& path);
 };
 
 struct AssetMetadata : public SaveableObject
@@ -90,6 +98,7 @@ struct JsonSerializer<AssetMetadata>
     {
         value.sourceId.data = s["sourceId"];
         CHECK_RESULT(JsonParseUtil::read(s["exportId"], value.exportId));
+        value.setSaved();
         return Ok<void>();
     }
 

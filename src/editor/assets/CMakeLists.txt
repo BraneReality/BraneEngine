@@ -10,5 +10,7 @@ add_library(editorAssets STATIC
     assetIndexer.cpp 
     jsonVirtualType.cpp 
     sources/assetSource.cpp
-    sources/imageSource.cpp)
+    sources/imageSource.cpp
+    sources/shaderSource.cpp
+    sources/materialSource.cpp)
 target_link_libraries(editorAssets PUBLIC assets_client ecs utility editorState efsw::efsw)

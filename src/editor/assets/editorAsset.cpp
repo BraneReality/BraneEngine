@@ -7,6 +7,8 @@
 #include "editor/braneProject.h"
 #include "editor/editor.h"
 #include "fileManager/fileManager.h"
+#include "sources/materialSource.h"
+#include "sources/shaderSource.h"
 
 EditorAsset::EditorAsset(const std::filesystem::path& file, std::shared_ptr<AssetSource> source)
     : _source(std::move(source))
@@ -73,6 +75,7 @@ void EditorAsset::save()
         }
 
         auto json = mdRes.ok();
+        json["metadataType"] = m.second->typeName();
         Runtime::log(std::format("Serialized metadata: {}", json.toStyledString()));
         exports.append(json);
         m.second->setSaved();
@@ -96,6 +99,21 @@ Result<std::shared_ptr<EditorAsset>> EditorAsset::loadAsset(const std::filesyste
     if(ext == ".png" || ext == ".jpg" || ext == ".jpeg")
         asset =
             std::make_shared<EditorAsset>(path, (std::shared_ptr<AssetSource>)std::make_shared<ImageAssetSource>(path));
+    else if(ext == ".vert" || ext == ".frag" || ext == ".comp")
+        asset = std::make_shared<EditorAsset>(path,
+                                              (std::shared_ptr<AssetSource>)std::make_shared<ShaderAssetSource>(path));
+    else if(ext == ".material")
+    {
+        auto matSource = std::make_shared<MaterialAssetSource>(path);
+        Json::Value matData;
+        if(!FileManager::readFile(path, matData))
+            return Err<std::string>("Unable to read material source file");
+        auto parseRes = JsonParseUtil::read(matData, *matSource);
+        if(!parseRes)
+            return Err(parseRes.err().toString());
+        asset = std::make_shared<EditorAsset>(path, matSource);
+    }
+
 
     if(!asset)
         return Err(std::format("Extension {} not recognised", ext.string()));
@@ -109,7 +127,6 @@ Result<std::shared_ptr<EditorAsset>> EditorAsset::loadAsset(const std::filesyste
             {
                 for(auto& e : metadata["exports"])
                 {
-                    Runtime::log(std::format("Deserializing: {}", e.toStyledString()));
                     auto parseRes = AssetMetadata::deserialize(e);
                     if(!parseRes)
                     {

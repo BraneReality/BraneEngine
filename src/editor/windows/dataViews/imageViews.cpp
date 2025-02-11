@@ -1,9 +1,14 @@
-#include "imageMetadataView.h"
+#include "imageViews.h"
 #include "assets/assetManager.h"
 #include "graphics/graphics.h"
 #include "graphics/texture.h"
 #include "runtime/runtime.h"
 #include <imgui_impl_vulkan.h>
+
+/*
+ImageSourceView::ImageSourceView(Shared<ImageAssetSource> source) : _source(source) {
+
+}*/
 
 ImageMetadataView::ImageMetadataView(Shared<ImageAssetMetadata> metadata) : _metadata(metadata)
 {

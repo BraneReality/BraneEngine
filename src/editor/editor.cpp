@@ -41,8 +41,13 @@ class EditorAssetLoader : public AssetLoader
 
     AsyncData<Shared<Asset>> loadAsset(const AssetID& inId, bool incremental) override
     {
-        assert(!inId.empty());
+
         AsyncData<Shared<Asset>> asset;
+        if(inId.empty())
+        {
+            asset.setError("AssetID was empty!");
+            return asset;
+        }
         auto castId = inId.as<BraneAssetID>();
         if(!castId)
         {
@@ -55,9 +60,13 @@ class EditorAssetLoader : public AssetLoader
 
         if(editor->cache().hasAsset(*id))
         {
+            Runtime::log("loading asset from cache");
             ThreadPool::enqueue([this, editor, asset, id]() {
                 Asset* cachedAsset = editor->cache().getAsset(*id);
-                asset.setData(cachedAsset);
+                if(cachedAsset)
+                    asset.setData(cachedAsset);
+                else
+                    asset.setError("Failed to load asset from cache");
             });
             return asset;
         }
@@ -65,6 +74,7 @@ class EditorAssetLoader : public AssetLoader
         auto project = editor->project();
         if(project)
         {
+            Runtime::log("loading asset from project");
             auto editorAsset = project.value()->getEditorAsset(*id);
             if(editorAsset)
             {
@@ -91,6 +101,8 @@ class EditorAssetLoader : public AssetLoader
                            " was not found and can not be remotely fetched since it lacks a server address");
             return asset;
         }
+
+        Runtime::log("loading asset over network");
         auto* nm = Runtime::getModule<NetworkManager>();
         if(incremental)
         {

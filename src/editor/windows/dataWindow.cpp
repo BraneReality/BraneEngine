@@ -13,7 +13,8 @@
 #include "editor/assets/sources/imageSource.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
-#include "editor/windows/dataViews/imageMetadataView.h"
+#include "editor/windows/dataViews/imageViews.h"
+#include "editor/windows/dataViews/shaderViews.h"
 #include "systems/transforms.h"
 #include <assets/assembly.h>
 #include <assets/assetID.h>
@@ -48,13 +49,18 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 
 
         // Spawn source data views
-        /*MATCHV(_focusedAsset.value()->source()->type(), [&](std::shared_ptr<ImageAssetSource> imageSource) {
-        });*/
+        MATCHV(_focusedAsset.value()->source()->type(), [&](std::shared_ptr<ImageAssetSource> imageSource) {
+        }, [&](std::shared_ptr<ShaderAssetSource> shaderSource) {
+            _views.emplace_back(std::make_shared<ShaderSourceView>(shaderSource));
+        }, [](std::shared_ptr<MaterialAssetSource> materialSource) { Runtime::warn("No material UI view!"); });
         // Spawn metadata views
         for(auto metadata : _focusedAsset.value()->metadata())
         {
-            MATCHV(metadata.second->type(),
-                   [&](Shared<ImageAssetMetadata> m) { _views.emplace_back(std::make_shared<ImageMetadataView>(m)); });
+            MATCHV(metadata.second->type(), [&](Shared<ImageAssetMetadata> m) {
+                _views.emplace_back(std::make_shared<ImageMetadataView>(m));
+            }, [&](Shared<ShaderAssetMetadata> m) {}, [](std::shared_ptr<MaterialAssetMetadata> materialSource) {
+                Runtime::warn("No material metadata UI view!");
+            });
         }
         /*
         switch(_focusedAsset.value()->type().type())

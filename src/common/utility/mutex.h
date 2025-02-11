@@ -62,6 +62,11 @@ class Mutex
         {
             return *value;
         }
+
+        operator T&()
+        {
+            return *value;
+        }
     };
 
     class ConstLock
@@ -79,6 +84,11 @@ class Mutex
         }
 
         const T& operator*() const
+        {
+            return *value;
+        }
+
+        operator T&()
         {
             return *value;
         }

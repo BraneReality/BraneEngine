@@ -31,12 +31,29 @@ struct BraneAssetServerInfo : public TrackedObject
     void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
 };
 
+struct BraneGraphicsSettings : public TrackedObject
+{
+    Shared<TrackedValue<AssetID>> defaultVertexShader;
+    Shared<TrackedValue<AssetID>> defaultFragmentShader;
+    Shared<TrackedValue<AssetID>> defaultMaterial;
+    BraneGraphicsSettings();
+    void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
+};
+
 struct BraneProjectData : public SaveableObject
 {
     Shared<TrackedValue<std::string>> name;
     Shared<BraneAssetServerInfo> assetServer;
+    Shared<BraneGraphicsSettings> graphics;
     BraneProjectData();
     void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
+};
+
+enum class CreateAssetType
+{
+    VertexShader,
+    FragmentShader,
+    Material
 };
 
 // This file stores everything to do with our connection to the server
@@ -44,7 +61,7 @@ class BraneProject
 {
     std::filesystem::path _root;
     Shared<BraneProjectData> _data;
-    AssetIndexer _indexer;
+    Shared<AssetIndexer> _indexer;
     RwMutex<std::unordered_map<AssetSourceID, std::shared_ptr<EditorAsset>>> _openAssets;
 
     void initLoaded();
@@ -68,6 +85,10 @@ class BraneProject
 
     Option<std::shared_ptr<EditorAsset>> getEditorAsset(const AssetID& id);
     Option<std::shared_ptr<EditorAsset>> getEditorAsset(const std::filesystem::path& path);
+
+    AssetID getDefaultAsset(CreateAssetType type);
+    Result<std::shared_ptr<EditorAsset>>
+    createAsset(std::string_view name, std::filesystem::path path, CreateAssetType type);
 
     BraneProjectData& data();
 

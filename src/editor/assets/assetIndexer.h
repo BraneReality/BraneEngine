@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <memory>
 #include "assets/assetID.h"
 #include "assets/assetType.h"
 #include "utility/mutex.h"
@@ -10,8 +11,8 @@ class AssetIndexer;
 
 struct FileListener : efsw::FileWatchListener
 {
-    AssetIndexer& indexer;
-    FileListener(AssetIndexer& indexer);
+    std::weak_ptr<AssetIndexer> indexer;
+    FileListener(std::shared_ptr<AssetIndexer> indexer);
 
     void handleFileAction(efsw::WatchID watchid,
                           const std::string& dir,
@@ -27,7 +28,7 @@ struct AssetLocation
     AssetType type;
 };
 
-class AssetIndexer
+class AssetIndexer : public std::enable_shared_from_this<AssetIndexer>
 {
 
     std::unique_ptr<efsw::FileWatcher> _fileWatcher;
@@ -41,7 +42,6 @@ class AssetIndexer
     void indexPath(const std::filesystem::path& path);
 
   public:
-    AssetIndexer();
     void start(std::filesystem::path watchDir);
 
     void indexAssets();

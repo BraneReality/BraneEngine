@@ -15,6 +15,7 @@ add_library(editorWindows STATIC
         syncWindow.cpp
         selectProjectWindow.cpp 
         editorWindow.cpp 
-        dataViews/imageMetadataView.cpp)
+        dataViews/imageViews.cpp
+        dataViews/shaderViews.cpp)
 target_link_libraries(editorWindows PUBLIC ui editorWidgets imgui::imgui imguizmo::imguizmo tinyfiledialogs::tinyfiledialogs)
 target_compile_definitions(editorWindows PUBLIC CLIENT)

@@ -40,6 +40,7 @@ class TrackedValue : public TrackedType
     };
 
   public:
+    TrackedValue() : _value(Mutex<T>()) {};
     TrackedValue(T init) : _value(Mutex<T>(std::move(init))) {};
 
     const typename Mutex<T>::ConstLock value() const
@@ -98,9 +99,7 @@ struct JsonSerializer<TrackedValue<T>>
 {
     static Result<void, JsonSerializerError> read(const Json::Value& s, TrackedValue<T>& value)
     {
-        T data;
-        CHECK_RESULT(JsonSerializer<T>::read(s, data));
-        value.set(data).forward();
+        CHECK_RESULT(JsonSerializer<T>::read(s, *(T*)&*value.value()));
         return Ok<void>();
     }
 

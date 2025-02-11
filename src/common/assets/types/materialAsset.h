@@ -11,6 +11,7 @@ class MaterialAsset : public Asset
     MaterialAsset();
 
     std::vector<std::pair<uint16_t, AssetID>> textures;
+    // pre-serialize properties into a vector that can be uploaded into a uniform buffer
     std::vector<uint8_t> serializedProperties;
     AssetID vertexShader;
     AssetID fragmentShader;

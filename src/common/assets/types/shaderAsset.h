@@ -18,7 +18,7 @@ struct ShaderVariableData
 {
     enum Type
     {
-        None,
+        None = 0,
         Boolean,
         Byte,
         UByte,
@@ -39,7 +39,7 @@ struct ShaderVariableData
 
     enum Layout
     {
-        scalar,
+        scalar = 0,
         vec2,
         vec3,
         vec4,

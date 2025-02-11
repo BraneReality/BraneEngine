@@ -2,7 +2,10 @@
 #include "imageSource.h"
 #include <stb_image.h>
 
-ImageAssetSource::ImageAssetSource(std::filesystem::path path) : AssetSource(path) {}
+ImageAssetSource::ImageAssetSource(std::filesystem::path path) : AssetSource(path)
+{
+    setSaved();
+}
 
 std::vector<std::pair<AssetSourceID, AssetType>> ImageAssetSource::exportedAssets() const
 {
@@ -71,7 +74,6 @@ Result<Json::Value> ImageAssetMetadata::serialize() const
     auto res = JsonParseUtil::write(value, *this);
     if(!res)
         return Err(res.err().toString());
-    value["metadataType"] = typeName();
     return Ok<Json::Value>(value);
 }
 

@@ -66,42 +66,57 @@ class CreateAssetPopup : public GUIPopup
         {
             ImGui::CloseCurrentPopup();
 
-            /*
-            EditorAsset* asset = nullptr;
             Editor* editor = Runtime::getModule<Editor>();
+            if(!editor->project())
+            {
+                Runtime::error("Cannot create assets when there is no loaded project!");
+                return;
+            }
+
+            EditorAsset* asset = nullptr;
             switch(_type.type())
             {
                 case AssetType::chunk:
-                    asset =
-                        new EditorChunkAsset(_widget.currentDirectory() / (_assetName + ".chunk"), editor->project());
+                    // asset = new EditorChunkAsset(_widget.currentDirectory() / (_assetName + ".chunk"),
+                    // editor->project());
+                    Runtime::warn("Chunk asset creation broken");
                     break;
                 case AssetType::script:
                 {
-                    auto scriptAsset =
-                        new EditorScriptAsset(_widget.currentDirectory() / (_assetName + ".script"), editor->project());
-                    scriptAsset->createDefaultSource();
-                    asset = scriptAsset;
+                    /*auto scriptAsset =*/
+                    /*    new EditorScriptAsset(_widget.currentDirectory() / (_assetName + ".script"),
+                     * editor->project());*/
+                    /*scriptAsset->createDefaultSource();*/
+                    /*asset = scriptAsset;*/
+
+                    Runtime::warn("Script asset creation broken");
                 }
                 break;
                 case AssetType::material:
-                    asset = new EditorMaterialAsset(_widget.currentDirectory() / (_assetName + ".material"),
-                                                    editor->project());
-                    break;
-                case AssetType::shader:
-                    auto* shader =
-                        new EditorShaderAsset(_widget.currentDirectory() / (_assetName + ".shader"), editor->project());
-                    shader->createDefaultSource(_shaderType);
-                    asset = shader;
-                    break;
-            }
-            if(!asset)
-                return;
-            asset->save();
-            editor->project().registerAssetLocation(asset);
-            delete asset;
+                {
 
-            */
-            Runtime::warn("This button is unimplemented due to refactors, yes, report this");
+                    auto res = editor->project().value()->createAsset(
+                        _assetName, _widget.currentDirectory(), CreateAssetType::Material);
+                    if(!res)
+                        Runtime::error(std::format("Couldn't creat asset: {}", res.err()));
+                }
+                break;
+                case AssetType::shader:
+                {
+
+                    auto res = editor->project().value()->createAsset(_assetName,
+                                                                      _widget.currentDirectory(),
+                                                                      _shaderType == ShaderType::vertex
+                                                                          ? CreateAssetType::VertexShader
+                                                                          : CreateAssetType::FragmentShader);
+                    if(!res)
+                        Runtime::error(std::format("Couldn't creat asset: {}", res.err()));
+                }
+                break;
+                default:
+                    assert(false && "Creation for that type not impelmented");
+            }
+
             _widget.reloadCurrentDirectory();
         }
     }
