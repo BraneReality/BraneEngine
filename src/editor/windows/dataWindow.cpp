@@ -14,6 +14,7 @@
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
 #include "editor/windows/dataViews/imageViews.h"
+#include "editor/windows/dataViews/materialViews.h"
 #include "editor/windows/dataViews/shaderViews.h"
 #include "systems/transforms.h"
 #include <assets/assembly.h>
@@ -52,14 +53,16 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         MATCHV(_focusedAsset.value()->source()->type(), [&](std::shared_ptr<ImageAssetSource> imageSource) {
         }, [&](std::shared_ptr<ShaderAssetSource> shaderSource) {
             _views.emplace_back(std::make_shared<ShaderSourceView>(shaderSource));
-        }, [](std::shared_ptr<MaterialAssetSource> materialSource) { Runtime::warn("No material UI view!"); });
+        }, [&](std::shared_ptr<MaterialAssetSource> materialSource) {
+            _views.emplace_back(std::make_shared<MaterialSourceView>(materialSource));
+        });
         // Spawn metadata views
         for(auto metadata : _focusedAsset.value()->metadata())
         {
             MATCHV(metadata.second->type(), [&](Shared<ImageAssetMetadata> m) {
                 _views.emplace_back(std::make_shared<ImageMetadataView>(m));
             }, [&](Shared<ShaderAssetMetadata> m) {}, [](std::shared_ptr<MaterialAssetMetadata> materialSource) {
-                Runtime::warn("No material metadata UI view!");
+                // Runtime::warn("No material metadata UI view!");
             });
         }
         /*
@@ -133,7 +136,12 @@ void DataWindow::displayAssetData()
     {
 #endif
         for(auto view : _views)
-            view->draw();
+        {
+            auto drawRes = view->draw();
+            if(!drawRes)
+                Runtime::warn(std::format("Failed to draw UI view: {}", drawRes.err()));
+        }
+
         if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
         {
             if(ImGui::IsKeyPressed(ImGuiKey_S))

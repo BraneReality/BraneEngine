@@ -1,4 +1,5 @@
 #include "materialSource.h"
+#include "assets/assetManager.h"
 #include "assets/types/materialAsset.h"
 #include "assets/types/shaderAsset.h"
 #include "fileManager/fileManager.h"
@@ -6,10 +7,11 @@
 MaterialAssetSource::MaterialAssetSource(std::filesystem::path path)
     : AssetSource(path), vertexShader(std::make_shared<TrackedValue<AssetID>>()),
       fragmentShader(std::make_shared<TrackedValue<AssetID>>()),
-      vertexShaderProperties(std::make_shared<TrackedVector<TrackedValue<PropVar>>>()),
+      properties(std::make_shared<TrackedVector<TrackedValue<PropVar>>>()),
       textureBindings(std::make_shared<TrackedVector<TrackedValue<TextureBinding>>>())
 {
     setSaved();
+    validateProperties();
 }
 
 void MaterialAssetSource::initMembers(Option<std::shared_ptr<TrackedType>> parent)
@@ -18,7 +20,7 @@ void MaterialAssetSource::initMembers(Option<std::shared_ptr<TrackedType>> paren
     auto p = Some(shared_from_this());
     vertexShader->initMembers(p);
     fragmentShader->initMembers(p);
-    vertexShaderProperties->initMembers(p);
+    properties->initMembers(p);
     textureBindings->initMembers(p);
 }
 
@@ -94,79 +96,117 @@ void alignedPush(std::vector<uint8_t>& data, T value)
     *(T*)(data.data() + index) = value;
 }
 
-void MaterialAssetSource::validateProperties(std::shared_ptr<ShaderAsset> vertexShader)
+AsyncData<bool> MaterialAssetSource::validateProperties()
 {
-    auto uniform = vertexShader->uniforms.find("MaterialProperties");
-    if(uniform != vertexShader->uniforms.end())
+    AsyncData<bool> result;
+    if(fragmentShader->value()->empty())
     {
-        vertexShaderProperties->clear().forward();
-        return;
+        properties->clear().forward();
+        textureBindings->clear().forward();
+        result.setData(true);
+        return result;
     }
 
-    std::unordered_map<std::string, Shared<TrackedValue<PropVar>>> oldValues;
-    for(auto& var : *vertexShaderProperties->values())
-        oldValues.insert({&var->value()->name, var});
-    vertexShaderProperties->clear().forward();
-
-    auto& members = uniform->second.members;
-    for(auto& member : members)
-    {
-        const std::string& name = member.name;
-        PropVar::ValueType defaultValue;
-
-        switch(member.layout())
+    Runtime::getModule<AssetManager>()
+        ->fetchAsset<ShaderAsset>(*fragmentShader->value())
+        .then([this, result](Shared<ShaderAsset> fragmentShader) {
+        auto uniform = fragmentShader->uniforms.find("MaterialProperties");
+        if(uniform == fragmentShader->uniforms.end())
         {
-            case ShaderVariableData::scalar:
+            properties->clear().forward();
+            return;
+        }
+
+        std::unordered_map<std::string, Shared<TrackedValue<PropVar>>> oldValues;
+        for(auto& var : *properties->values())
+            oldValues.insert({*var->value()->name, var});
+        properties->clear().forward();
+
+        auto& members = uniform->second.members;
+        for(auto& member : members)
+        {
+            const std::string& name = member.name;
+            PropVar::ValueType defaultValue;
+
+            switch(member.layout())
             {
-                switch(member.type)
+                case ShaderVariableData::scalar:
                 {
-                    case ShaderVariableData::Boolean:
-                        defaultValue = false;
-                        break;
-                    case ShaderVariableData::Int:
-                        defaultValue = (int)0;
-                        break;
-                    case ShaderVariableData::Float:
-                        defaultValue = (float)0;
-                        break;
-                    default:
-                        Runtime::error("MaterialProperties does not support " + member.typeNames.toString(member.type) +
-                                       " types");
-                        return;
+                    switch(member.type)
+                    {
+                        case ShaderVariableData::Boolean:
+                            defaultValue = false;
+                            break;
+                        case ShaderVariableData::Int:
+                            defaultValue = (int)0;
+                            break;
+                        case ShaderVariableData::Float:
+                            defaultValue = (float)0;
+                            break;
+                        default:
+                            Runtime::error("MaterialProperties does not support " +
+                                           member.typeNames.toString(member.type) + " types");
+                            return;
+                    }
                 }
+                break;
+                case ShaderVariableData::vec2:
+                    defaultValue = glm::vec2();
+                    break;
+                case ShaderVariableData::vec3:
+                    defaultValue = glm::vec3();
+                    break;
+                case ShaderVariableData::vec4:
+                    defaultValue = glm::vec4();
+                    break;
+                default:
+                    Runtime::error("MaterialProperties does not support " +
+                                   member.layoutNames.toString(member.layout()) + " yet");
+                    return;
             }
-            break;
-            case ShaderVariableData::vec2:
-                defaultValue = glm::vec2();
-                break;
-            case ShaderVariableData::vec3:
-                defaultValue = glm::vec3();
-                break;
-            case ShaderVariableData::vec4:
-                defaultValue = glm::vec4();
-                break;
-            default:
-                Runtime::error("MaterialProperties does not support " + member.layoutNames.toString(member.layout()) +
-                               " yet");
-                return;
+            if(oldValues.contains(name) && oldValues[name]->value()->type == member.type)
+                properties->push_back(oldValues[name]).forward();
+            else
+            {
+                properties
+                    ->push_back(std::make_shared<TrackedValue<PropVar>>(PropVar{
+                        .name = std::make_shared<std::string>(name),
+                        .value = defaultValue,
+                        .type = member.type,
+                    }))
+                    .forward();
+            }
         }
-        if(oldValues.count(name) && oldValues[name]->value()->type == member.type)
-            vertexShaderProperties->push_back(oldValues[name]);
-        else
+
+        std::unordered_map<std::string, Shared<TrackedValue<TextureBinding>>> oldTextureBindings;
+        for(auto tb : *textureBindings->values())
+            oldTextureBindings.insert({*tb->value()->name, tb});
+        textureBindings->clear().forward();
+        for(auto& binding : fragmentShader->samplers)
         {
-            vertexShaderProperties->push_back(std::make_shared<TrackedValue<PropVar>>(PropVar{
-                .name = std::make_shared<std::string>(name),
-                .value = defaultValue,
-                .type = member.type,
-            }));
+            if(oldTextureBindings.contains(binding.first))
+                textureBindings->push_back(oldTextureBindings[binding.first]).forward();
+            else
+                textureBindings
+                    ->push_back(std::make_shared<TrackedValue<TextureBinding>>(
+                        TextureBinding{.name = std::make_shared<std::string>(binding.second.name),
+                                       .id = AssetID(),
+                                       .binding = binding.second.binding}))
+                    .forward();
         }
-    }
+
+        result.setData(true);
+    }).onError([this, result](std::string error) {
+        result.setError(error);
+        Runtime::error(std::format("Failed to load fragmentShader for material {}: ", path.string(), error));
+    });
+    return result;
 }
 
 std::vector<uint8_t> MaterialAssetSource::serializeProperties() const
 {
     std::vector<uint8_t> props;
-    for(auto& prop : *vertexShaderProperties->values())
+    for(auto& prop : *properties->values())
     {
         MATCHV(prop->value()->value, [&](auto value) { alignedPush(props, value); });
     }

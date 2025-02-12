@@ -64,19 +64,55 @@ InputSerializer operator>>(InputSerializer s, std::unordered_map<std::string, Un
     return s;
 }
 
+OutputSerializer operator<<(OutputSerializer s, const SamplerData& var)
+{
+    s << var.name << var.binding;
+    return s;
+}
+
+InputSerializer operator>>(InputSerializer s, SamplerData& var)
+{
+    s >> var.name >> var.binding;
+    return s;
+}
+
+OutputSerializer operator<<(OutputSerializer s, const std::unordered_map<std::string, SamplerData>& samplers)
+{
+    s << static_cast<uint16_t>(samplers.size());
+    for(auto& sampler : samplers)
+        s << sampler.second;
+    return s;
+}
+
+InputSerializer operator>>(InputSerializer s, std::unordered_map<std::string, SamplerData>& samplers)
+{
+    uint16_t size;
+    s >> size;
+    for(uint16_t b = 0; b < size; ++b)
+    {
+        SamplerData sampler;
+        s >> sampler;
+        samplers.insert({sampler.name, sampler});
+    }
+    return s;
+}
+
 void ShaderAsset::serialize(OutputSerializer& s) const
 {
     Asset::serialize(s);
-    s << shaderType << spirv << uniforms << inputs << outputs;
+    s << shaderType << spirv << uniforms << samplers << inputs << outputs;
 }
 
 void ShaderAsset::deserialize(InputSerializer& s)
 {
     Asset::deserialize(s);
-    s >> shaderType >> spirv >> uniforms >> inputs >> outputs;
+    s >> shaderType >> spirv >> uniforms >> samplers >> inputs >> outputs;
 }
 
-ShaderAsset::ShaderAsset() { type.set(AssetType::Type::shader); }
+ShaderAsset::ShaderAsset()
+{
+    type.set(AssetType::Type::shader);
+}
 
 #ifdef CLIENT
 void ShaderAsset::onDependenciesLoaded()

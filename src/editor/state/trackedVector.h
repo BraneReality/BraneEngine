@@ -42,6 +42,11 @@ class TrackedVector : public TrackedObject
             entry->initMembers(parent);
     }
 
+    typename Mutex<std::vector<Shared<T>>>::Lock values()
+    {
+        return _values.lock();
+    }
+
     const typename Mutex<std::vector<Shared<T>>>::ConstLock values() const
     {
         return _values.lock();
@@ -70,7 +75,7 @@ class TrackedVector : public TrackedObject
 
     EditorAction push_back(Shared<T> value)
     {
-        size_t last = size() - 1;
+        size_t last = size();
         return insert(last, value);
     }
 
@@ -194,7 +199,7 @@ struct JsonSerializer<TrackedVector<T>>
         for(auto& entry : json)
         {
             Shared<T> data = std::make_shared<T>();
-            CHECK_RESULT(JsonParseUtil::read(json, data));
+            CHECK_RESULT(JsonParseUtil::read(entry, data));
             value.push_back(data).forward();
         }
         return Ok<void>();

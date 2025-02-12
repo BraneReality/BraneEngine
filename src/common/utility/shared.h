@@ -16,12 +16,6 @@ class Shared
         _value = std::make_shared<T>();
     }
 
-    Shared<T>(T* notNull)
-    {
-        assert(notNull);
-        _value = std::shared_ptr<T>(notNull);
-    }
-
     Shared<T>(std::shared_ptr<T> notNull)
     {
         assert(notNull);

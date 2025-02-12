@@ -68,6 +68,12 @@ struct UniformBufferData
     std::vector<ShaderVariableData> members;
 };
 
+struct SamplerData
+{
+    uint16_t binding;
+    std::string name;
+};
+
 class ShaderAsset : public Asset
 {
   public:
@@ -75,6 +81,7 @@ class ShaderAsset : public Asset
     std::vector<uint32_t> spirv;
     std::unordered_map<std::string, UniformBufferData> uniforms;
     std::unordered_map<std::string, UniformBufferData> buffers;
+    std::unordered_map<std::string, SamplerData> samplers;
     std::vector<ShaderVariableData> inputs;
     std::vector<ShaderVariableData> outputs;
 

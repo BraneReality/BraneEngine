@@ -69,6 +69,9 @@ Result<std::shared_ptr<Asset>> ShaderAssetSource::buildAsset(std::shared_ptr<Ass
     for(auto& u : attributes.uniforms)
         shader->uniforms.insert({u.name, u});
 
+    for(auto& s : attributes.samplers)
+        shader->samplers.insert({s.name, {(uint16_t)s.location, s.name}});
+
     shader->inputs = std::move(attributes.inputVariables);
     shader->outputs = std::move(attributes.outputVariables);
 

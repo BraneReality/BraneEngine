@@ -116,7 +116,7 @@ Result<std::shared_ptr<EditorAsset>> EditorAsset::loadAsset(const std::filesyste
 
 
     if(!asset)
-        return Err(std::format("Extension {} not recognised", ext.string()));
+        return Err(std::format("Extension {} not recognised, trying to load {}", ext.string(), path.string()));
 
     if(std::filesystem::exists(asset->metadataPath()))
     {

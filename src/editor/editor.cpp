@@ -64,7 +64,7 @@ class EditorAssetLoader : public AssetLoader
             ThreadPool::enqueue([this, editor, asset, id]() {
                 Asset* cachedAsset = editor->cache().getAsset(*id);
                 if(cachedAsset)
-                    asset.setData(cachedAsset);
+                    asset.setData(std::shared_ptr<Asset>(cachedAsset));
                 else
                     asset.setError("Failed to load asset from cache");
             });
@@ -106,14 +106,15 @@ class EditorAssetLoader : public AssetLoader
         auto* nm = Runtime::getModule<NetworkManager>();
         if(incremental)
         {
-            nm->async_requestAssetIncremental(*id).then([this, asset](Asset* ptr) {
-                asset.setData(ptr);
+            nm->async_requestAssetIncremental(*id)
+                .then([this, asset](Asset* ptr) {
+                asset.setData(std::shared_ptr<Asset>(ptr));
             }).onError([asset](std::string error) { asset.setError(error); });
         }
         else
         {
             nm->async_requestAsset(*id).then([this, asset](Asset* ptr) {
-                asset.setData(ptr);
+                asset.setData(std::shared_ptr<Asset>(ptr));
             }).onError([asset](std::string error) { asset.setError(error); });
         }
         return asset;

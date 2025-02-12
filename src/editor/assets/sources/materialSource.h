@@ -3,6 +3,7 @@
 #include "assets/types/shaderAsset.h"
 #include "editor/assets/editorAsset.h"
 #include "editor/state/trackedVector.h"
+#include "utility/asyncData.h"
 #include <glm/glm.hpp>
 
 class ShaderAsset;
@@ -14,17 +15,18 @@ struct MaterialAssetSource : public AssetSource
 
     struct PropVar
     {
-        Shared<std::string> name =
+        std::shared_ptr<std::string> name =
             nullptr; // put this in a shared since it won't change due to use changes, and it gets copied a lot
         using ValueType = std::variant<bool, int, float, glm::vec2, glm::vec3, glm::vec4>;
         ValueType value = false;
         ShaderVariableData::Type type = ShaderVariableData::Boolean;
     };
 
-    Shared<TrackedVector<TrackedValue<PropVar>>> vertexShaderProperties;
+    Shared<TrackedVector<TrackedValue<PropVar>>> properties;
 
     struct TextureBinding
     {
+        std::shared_ptr<std::string> name = nullptr;
         AssetID id;
         uint16_t binding;
     };
@@ -39,7 +41,7 @@ struct MaterialAssetSource : public AssetSource
     Result<void> save() override;
     AssetSourceType type() override;
 
-    void validateProperties(std::shared_ptr<ShaderAsset> vertexShader);
+    AsyncData<bool> validateProperties();
     std::vector<uint8_t> serializeProperties() const;
 };
 
@@ -57,7 +59,12 @@ struct JsonSerializer<MaterialAssetSource::PropVar>
 {
     static Result<void, JsonSerializerError> read(const Json::Value& json, MaterialAssetSource::PropVar& value)
     {
-        CHECK_RESULT(JsonParseUtil::read(json["name"], value.name));
+        if(!json.isObject())
+            return Err(JsonSerializerError(JsonSerializerError::WrongType,
+                                           std::format("Expecting object but found {}", json.toStyledString())));
+        if(!value.name)
+            value.name = std::make_shared<std::string>();
+        CHECK_RESULT(JsonParseUtil::read(json["name"], *value.name));
         CHECK_RESULT(JsonParseUtil::read(json["value"], value.value));
 
         std::string typeName;
@@ -68,7 +75,8 @@ struct JsonSerializer<MaterialAssetSource::PropVar>
 
     static Result<void, JsonSerializerError> write(Json::Value& json, const MaterialAssetSource::PropVar& value)
     {
-        CHECK_RESULT(JsonParseUtil::write(json["name"], value.name));
+        if(value.name)
+            CHECK_RESULT(JsonParseUtil::write(json["name"], *value.name));
         CHECK_RESULT(JsonParseUtil::write(json["value"], value.value));
 
         CHECK_RESULT(JsonParseUtil::write(json["type"], ShaderVariableData::typeNames.toString(value.type)));
@@ -91,7 +99,7 @@ struct JsonSerializer<MaterialAssetSource>
 
         CHECK_RESULT(JsonParseUtil::read(json["vertexShader"], value.vertexShader));
         CHECK_RESULT(JsonParseUtil::read(json["fragmentShader"], value.fragmentShader));
-        CHECK_RESULT(JsonParseUtil::read(json["vertexShaderProperties"], value.vertexShaderProperties));
+        CHECK_RESULT(JsonParseUtil::read(json["vertexShaderProperties"], value.properties));
         CHECK_RESULT(JsonParseUtil::read(json["textureBindings"], value.textureBindings));
         return Ok<void>();
     }
@@ -100,7 +108,7 @@ struct JsonSerializer<MaterialAssetSource>
     {
         CHECK_RESULT(JsonParseUtil::write(json["vertexShader"], value.vertexShader));
         CHECK_RESULT(JsonParseUtil::write(json["fragmentShader"], value.fragmentShader));
-        CHECK_RESULT(JsonParseUtil::write(json["vertexShaderProperties"], value.vertexShaderProperties));
+        CHECK_RESULT(JsonParseUtil::write(json["vertexShaderProperties"], value.properties));
         CHECK_RESULT(JsonParseUtil::write(json["textureBindings"], value.textureBindings));
         return Ok<void>();
     }

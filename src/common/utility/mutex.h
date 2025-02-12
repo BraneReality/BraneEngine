@@ -14,7 +14,7 @@ class Mutex
         T value;
         mutable std::mutex m;
 
-        Inner() = default;
+        Inner() : value() {}
 
         Inner(T value) : value(std::move(value)) {}
     };

@@ -52,5 +52,16 @@ Result<void> ShaderSourceView::draw()
         }
         ImGui::Unindent();
     }
+    if(!_source->attributes.samplers.empty())
+    {
+        ImGui::Text("samplers:");
+        ImGui::Indent();
+        for(auto& sampler : _source->attributes.samplers)
+        {
+            ImGui::Text("name: %s", sampler.name.c_str());
+            ImGui::Text("binding: %d", sampler.location);
+        }
+        ImGui::Unindent();
+    }
     return Ok<void>();
 }
