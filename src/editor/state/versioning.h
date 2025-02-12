@@ -19,6 +19,8 @@ using EditorActionExecutor = std::function<void(std::shared_ptr<EditorActionCont
 struct EditorAction
 {
     std::shared_ptr<EditorActionContext> context;
+
+    EditorActionExecutor captureContextAction;
     EditorActionExecutor forwardAction;
     EditorActionExecutor backAction;
 
@@ -29,6 +31,7 @@ struct EditorAction
 
     void forward(EditorActionType type = EditorActionType::Standard);
     void back(EditorActionType type = EditorActionType::Standard);
+    void now();
 };
 
 class EditorActionManager

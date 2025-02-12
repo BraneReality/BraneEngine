@@ -159,7 +159,7 @@ Result<BraneProject> BraneProject::create(const std::string& projectName, const 
         return Err("Could not load default project! " + defaultProjRes.err());
 
     auto proj = defaultProjRes.ok();
-    proj._data->name->set(projectName).forward();
+    proj._data->name->set(projectName).now();
     proj._root = (directory / projectName).make_preferred();
 
     std::filesystem::create_directories(proj.root());
@@ -286,13 +286,13 @@ AssetID BraneProject::getDefaultAsset(CreateAssetType type)
     switch(type)
     {
         case CreateAssetType::VertexShader:
-            _data->graphics->defaultVertexShader->set(id).forward();
+            _data->graphics->defaultVertexShader->set(id).now();
             break;
         case CreateAssetType::FragmentShader:
-            _data->graphics->defaultFragmentShader->set(id).forward();
+            _data->graphics->defaultFragmentShader->set(id).now();
             break;
         case CreateAssetType::Material:
-            _data->graphics->defaultMaterial->set(id).forward();
+            _data->graphics->defaultMaterial->set(id).now();
             break;
     }
     save();
@@ -343,8 +343,8 @@ BraneProject::createAsset(std::string_view name, std::filesystem::path path, Cre
             auto material = std::make_shared<MaterialAssetSource>(path);
             auto vertShader = getDefaultAsset(CreateAssetType::VertexShader);
             Runtime::log("Found default vert shader: " + vertShader.toString());
-            material->vertexShader->set(vertShader).forward();
-            material->fragmentShader->set(getDefaultAsset(CreateAssetType::FragmentShader)).forward();
+            material->vertexShader->set(vertShader).now();
+            material->fragmentShader->set(getDefaultAsset(CreateAssetType::FragmentShader)).now();
             auto am = Runtime::getModule<AssetManager>();
             /*// I'm going to be really lazy here and just block this thread until we get the shader asset, refactor
              * with*/

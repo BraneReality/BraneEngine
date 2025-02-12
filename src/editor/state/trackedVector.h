@@ -67,7 +67,6 @@ class TrackedVector : public TrackedObject
     {
         auto ctx = std::make_shared<ModActionCtx>();
         ctx->vec = std::static_pointer_cast<TrackedVector<T>>(shared_from_this());
-        ctx->value = (*_values.lock())[index];
         ctx->index = index;
 
         return EditorAction(ctx, _eraseExecutor, _insertExecutor);
@@ -119,6 +118,8 @@ EditorActionExecutor TrackedVector<T>::_eraseExecutor =
     [](std::shared_ptr<EditorActionContext> ctx, EditorActionType type) {
     auto actx = std::static_pointer_cast<ModActionCtx>(ctx);
     auto v = actx->vec->_values.lock();
+    if(actx->isNewChange)
+        actx->value = (*v)[actx->index];
     actx->vec->_onErase.invoke(actx->index, actx->value, type);
     v->erase(v->begin() + actx->index);
     actx->vec->_onChange.invoke(type);

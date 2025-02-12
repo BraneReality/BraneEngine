@@ -87,8 +87,8 @@ void SyncWindow::drawSetupConnection()
                     _loggingIn = false;
 
                     auto& project = _editor.project().value()->data();
-                    project.assetServer->address->set(_serverAddress).forward();
-                    project.assetServer->port->set(port).forward();
+                    project.assetServer->address->set(_serverAddress).now();
+                    project.assetServer->port->set(port).now();
 
                     _syncServer = server;
                     _syncServer->onDisconnect([]() {

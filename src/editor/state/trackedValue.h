@@ -52,12 +52,13 @@ class TrackedValue : public TrackedType
     {
         auto ctx = std::make_shared<ActionCtx>();
         ctx->trackedValue = std::static_pointer_cast<TrackedValue<T>>(shared_from_this());
-        ctx->before = *_value.lock();
         ctx->after = value;
 
         return EditorAction(ctx, [](std::shared_ptr<EditorActionContext> ctx, EditorActionType type) {
             auto actx = std::static_pointer_cast<ActionCtx>(ctx);
             auto v = actx->trackedValue->_value.lock();
+            if(actx->isNewChange)
+                actx->before = *v;
             *v = actx->after;
             actx->trackedValue->_onChange.invoke(*v, type);
             if(auto p = actx->trackedValue->parent())
@@ -75,6 +76,7 @@ class TrackedValue : public TrackedType
             auto actx = std::static_pointer_cast<ActionCtx>(ctx);
             auto v = actx->trackedValue->_value.lock();
             *v = actx->before;
+
             actx->trackedValue->_onChange.invoke(*v, type);
             if(auto p = actx->trackedValue->parent())
                 p.value()->onChildBack(type);

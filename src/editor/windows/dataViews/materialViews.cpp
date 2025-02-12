@@ -45,28 +45,28 @@ Result<void> MaterialSourceView::draw()
             if(ImGui::IsItemEdited() || ImGui::IsItemDeactivatedAfterEdit())
             {
                 prop.value = cv;
-                am.executeAction(trackedProp->set(prop));
+                am.executeAction(trackedProp->set(prop), !ImGui::IsItemDeactivatedAfterEdit());
             }
         }, [&](int cv) {
             ImGui::DragInt(prop.name->c_str(), &cv);
             if(ImGui::IsItemEdited() || ImGui::IsItemDeactivatedAfterEdit())
             {
                 prop.value = cv;
-                am.executeAction(trackedProp->set(prop));
+                am.executeAction(trackedProp->set(prop), !ImGui::IsItemDeactivatedAfterEdit());
             }
         }, [&](float cv) {
             ImGui::DragFloat(prop.name->c_str(), &cv, 0.05f);
             if(ImGui::IsItemEdited() || ImGui::IsItemDeactivatedAfterEdit())
             {
                 prop.value = cv;
-                am.executeAction(trackedProp->set(prop));
+                am.executeAction(trackedProp->set(prop), !ImGui::IsItemDeactivatedAfterEdit());
             }
         }, [&](glm::vec2 cv) {
             ImGui::DragFloat2(prop.name->c_str(), (float*)&cv, 0.05f);
             if(ImGui::IsItemEdited() || ImGui::IsItemDeactivatedAfterEdit())
             {
                 prop.value = cv;
-                am.executeAction(trackedProp->set(prop));
+                am.executeAction(trackedProp->set(prop), !ImGui::IsItemDeactivatedAfterEdit());
             }
         }, [&](glm::vec3 cv) {
             ImGui::DragFloat3(prop.name->c_str(), (float*)&cv, 0.05f);
@@ -87,7 +87,7 @@ Result<void> MaterialSourceView::draw()
             if(edited || finished)
             {
                 prop.value = cv;
-                am.executeAction(trackedProp->set(prop));
+                am.executeAction(trackedProp->set(prop), !finished);
             }
         }, [&](glm::vec4 cv) {
             ImGui::DragFloat4(prop.name->c_str(), (float*)&cv, 0.05f);
@@ -108,7 +108,7 @@ Result<void> MaterialSourceView::draw()
             if(edited || finished)
             {
                 prop.value = cv;
-                am.executeAction(trackedProp->set(prop));
+                am.executeAction(trackedProp->set(prop), !finished);
             }
         });
     }

@@ -1,6 +1,5 @@
 
 #include "versioning.h"
-#include "runtime/runtime.h"
 
 void EditorAction::forward(EditorActionType type)
 {
@@ -15,11 +14,6 @@ void EditorAction::back(EditorActionType type)
 EditorActionManager::EditorActionManager()
 {
     _currentAction = _actions.end();
-}
-
-void EditorAction::now()
-{
-    forward();
 }
 
 void EditorActionManager::stepBack()
@@ -48,27 +42,25 @@ void EditorActionManager::stepForward()
     ++_currentAction;
 }
 
-void EditorActionManager::executeAction(EditorAction action, bool preview)
+void EditorActionManager::executeAction(EditorAction action, bool preivew)
 {
-    Runtime::log(std::format("Exectuing {}action", preview ? "preview " : ""));
     if(_previewChange)
     {
         _previewChange.value().back(EditorActionType::Preview);
         _previewChange = None();
     }
-    auto actionType = preview ? EditorActionType::Preview : EditorActionType::Standard;
-    action.forward(actionType);
-    if(preview)
+
+    action.forward(EditorActionType::Standard);
+    if(preivew)
     {
         _previewChange = std::move(action);
         return;
     }
-    _actions.erase(_currentAction, _actions.end());
+    if(_currentAction != _actions.end())
+        _actions.erase(_currentAction, _actions.end());
+    _actions.push_back(std::move(action));
+    _currentAction = _actions.end();
 
     while(_actions.size() > _maxActions)
-        _actions.erase(_actions.begin(), _actions.begin() + (_actions.size() - _maxActions));
-
-    _actions.push_back(std::move(action));
-
-    _currentAction = _actions.end();
+        _actions.pop_front();
 }

@@ -101,8 +101,8 @@ AsyncData<bool> MaterialAssetSource::validateProperties()
     AsyncData<bool> result;
     if(fragmentShader->value()->empty())
     {
-        properties->clear().forward();
-        textureBindings->clear().forward();
+        properties->clear().now();
+        textureBindings->clear().now();
         result.setData(true);
         return result;
     }
@@ -113,14 +113,14 @@ AsyncData<bool> MaterialAssetSource::validateProperties()
         auto uniform = fragmentShader->uniforms.find("MaterialProperties");
         if(uniform == fragmentShader->uniforms.end())
         {
-            properties->clear().forward();
+            properties->clear().now();
             return;
         }
 
         std::unordered_map<std::string, Shared<TrackedValue<PropVar>>> oldValues;
         for(auto& var : *properties->values())
             oldValues.insert({*var->value()->name, var});
-        properties->clear().forward();
+        properties->clear().now();
 
         auto& members = uniform->second.members;
         for(auto& member : members)
@@ -165,7 +165,7 @@ AsyncData<bool> MaterialAssetSource::validateProperties()
                     return;
             }
             if(oldValues.contains(name) && oldValues[name]->value()->type == member.type)
-                properties->push_back(oldValues[name]).forward();
+                properties->push_back(oldValues[name]).now();
             else
             {
                 properties
@@ -174,25 +174,25 @@ AsyncData<bool> MaterialAssetSource::validateProperties()
                         .value = defaultValue,
                         .type = member.type,
                     }))
-                    .forward();
+                    .now();
             }
         }
 
         std::unordered_map<std::string, Shared<TrackedValue<TextureBinding>>> oldTextureBindings;
         for(auto tb : *textureBindings->values())
             oldTextureBindings.insert({*tb->value()->name, tb});
-        textureBindings->clear().forward();
+        textureBindings->clear().now();
         for(auto& binding : fragmentShader->samplers)
         {
             if(oldTextureBindings.contains(binding.first))
-                textureBindings->push_back(oldTextureBindings[binding.first]).forward();
+                textureBindings->push_back(oldTextureBindings[binding.first]).now();
             else
                 textureBindings
                     ->push_back(std::make_shared<TrackedValue<TextureBinding>>(
                         TextureBinding{.name = std::make_shared<std::string>(binding.second.name),
                                        .id = AssetID(),
                                        .binding = binding.second.binding}))
-                    .forward();
+                    .now();
         }
 
         result.setData(true);
