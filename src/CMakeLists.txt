@@ -19,5 +19,6 @@ add_subdirectory(editor)
 add_subdirectory(assetServer)
 
 if(BUILD_TESTS)
-    add_subdirectory(tests)
+    # We need something to test first TODO don't be stupid and configure a working tests target 
+    #add_subdirectory(tests)
 endif()

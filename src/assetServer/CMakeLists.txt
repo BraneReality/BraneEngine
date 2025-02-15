@@ -9,6 +9,14 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(AssetServer PRIVATE runtime config networking ecs utility fileManager database assets_server)
 target_compile_definitions(AssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEFS} ASIO_STANDALONE)
 
+if(MINGW)
+    message("LINKING WINSOC32")
+    find_library(WS2_32 NAMES ws2_32)
+    find_library(WSOCK32 NAMES wsock32)
+    message("WINSOC IS AT ${WINSOC}")
+    target_link_libraries(AssetServer PRIVATE "${WS2_32}" "${WSOCK32}")
+endif(MINGW)
+
 install(TARGETS AssetServer
         RUNTIME_DEPENDENCIES
         PRE_EXCLUDE_REGEXES 

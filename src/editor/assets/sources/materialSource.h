@@ -55,6 +55,35 @@ struct MaterialAssetMetadata : public AssetMetadata
 };
 
 template<>
+struct JsonSerializer<MaterialAssetSource::TextureBinding>
+{
+    static Result<void, JsonSerializerError> read(const Json::Value& json, MaterialAssetSource::TextureBinding& value)
+    {
+        if(!json.isObject())
+            return Err(JsonSerializerError(JsonSerializerError::WrongType,
+                                           std::format("Expecting object but found {}", json.toStyledString())));
+        if(!value.name)
+            value.name = std::make_shared<std::string>();
+        CHECK_RESULT(JsonParseUtil::read(json["name"], *value.name));
+        CHECK_RESULT(JsonParseUtil::read(json["id"], value.id));
+
+        std::string typeName;
+        CHECK_RESULT(JsonParseUtil::read(json["binding"], value.binding));
+        return Ok<void>();
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& json, const MaterialAssetSource::TextureBinding& value)
+    {
+        if(value.name)
+            CHECK_RESULT(JsonParseUtil::write(json["name"], *value.name));
+        CHECK_RESULT(JsonParseUtil::write(json["id"], value.id));
+
+        CHECK_RESULT(JsonParseUtil::write(json["binding"], value.binding));
+        return Ok<void>();
+    }
+};
+
+template<>
 struct JsonSerializer<MaterialAssetSource::PropVar>
 {
     static Result<void, JsonSerializerError> read(const Json::Value& json, MaterialAssetSource::PropVar& value)

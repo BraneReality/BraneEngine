@@ -21,15 +21,30 @@ namespace Runtime
         _modules.insert({name, std::unique_ptr<Module>(m)});
     }
 
-    Timeline& timeline() { return _timeline; }
+    Timeline& timeline()
+    {
+        return _timeline;
+    }
 
-    void log(const std::string& message) { Logging::pushLog(message, Logging::LogLevel::log); }
+    void log(const std::string& message)
+    {
+        Logging::pushLog(message, Logging::LogLevel::log);
+    }
 
-    void warn(const std::string& message) { Logging::pushLog(message, Logging::LogLevel::warning); }
+    void warn(const std::string& message)
+    {
+        Logging::pushLog(message, Logging::LogLevel::warning);
+    }
 
-    void error(const std::string& message) { Logging::pushLog(message, Logging::LogLevel::error); }
+    void error(const std::string& message)
+    {
+        Logging::pushLog(message, Logging::LogLevel::error);
+    }
 
-    void setTickRate(uint32_t tickRate) { _tickRate = tickRate; }
+    void setTickRate(uint32_t tickRate)
+    {
+        _tickRate = tickRate;
+    }
 
     void run()
     {
@@ -69,9 +84,15 @@ namespace Runtime
         _running = false;
     }
 
-    float deltaTime() { return _deltaTime; }
+    float deltaTime()
+    {
+        return _deltaTime;
+    }
 
-    bool hasModule(const std::string& name) { return _modules.count(name); }
+    bool hasModule(const std::string& name)
+    {
+        return _modules.count(name);
+    }
 
     Module* getModule(const std::string& name)
     {

@@ -9,5 +9,6 @@ add_library(networking STATIC
 target_link_libraries(networking PUBLIC OpenSSL::SSL asio::asio)
 
  if(win32)
-    target_compile_definitions(networking PUBLIC _WIN32_WINNT_WIN10=0x0A00 _WIN32_WINNT=0x0A00)
+    target_link_libraries(networking PUBLIC -mucrt)
+    #target_compile_definitions(networking PUBLIC _WIN32_WINNT_WIN10=0x0A00 _WIN32_WINNT=0x0A00)
 endif(win32)

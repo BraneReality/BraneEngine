@@ -16,5 +16,9 @@ include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(tests PUBLIC runtime ecs_test assets_server networking utility config GTest::gtest_main )
 target_compile_definitions(tests PUBLIC TEST_BUILD)
 
+ if(win32)
+    target_link_libraries(networking PUBLIC -mucrt)
+endif(win32)
+
 include(GoogleTest)
 gtest_discover_tests(tests)

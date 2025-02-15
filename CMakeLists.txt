@@ -41,12 +41,22 @@ endif()
 
 if(MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /wd9002 /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /DEBUG")
     # For clangd support
     option(CLANGD_COMPATABILITY OFF "Add -std=c++20 to compile options so clangd can pick up on the c++ version. Causes warning spam from MSVC.")
     if(${CLANGD_COMPATABILITY})
         add_compile_options("-std=c++20")
     endif()
 endif(MSVC)
+
+if(MINGW)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -static -static-libgcc -static-libstdc++")
+    if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g2")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g2")
+    endif()
+endif(MINGW)
 
 # Sets an icon for the generated executables that will show up in file browsers
 set(ICON_FILE ${CMAKE_CURRENT_SOURCE_DIR}/media/brane.res)

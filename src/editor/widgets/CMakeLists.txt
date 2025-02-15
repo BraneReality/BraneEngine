@@ -4,5 +4,5 @@ add_library(editorWidgets STATIC
         virtualVariableWidgets.cpp
         assetSelectWidget.cpp
         assetSearchWidget.cpp)
-target_link_libraries(editorWidgets PUBLIC ui editorWindows)
+    target_link_libraries(editorWidgets PUBLIC ui editorWindows editorAssets)
 target_compile_definitions(editorWidgets  PUBLIC CLIENT)

@@ -24,11 +24,12 @@ struct JsonSerializerError
     std::string toString() const;
 };
 
-template<class T>
+template<typename T>
 struct JsonSerializer
 {
     static Result<void, JsonSerializerError> read(const Json::Value& s, T& value)
     {
+        static_assert(false, "No default implementation of JsonSerializer<T>::read");
         throw std::runtime_error(std::format("No implementation of JsonSerializer<{}>", typeid(T).name()));
         // static_assert(false, "No Implementation of JsonSerializer<T>::read for this type!");
         // commented out static_assert cause it wasn't giving me type names, "it's broken!" cool, how? TELL ME. At least
@@ -37,6 +38,7 @@ struct JsonSerializer
 
     static Result<void, JsonSerializerError> write(Json::Value& s, const T& value)
     {
+        static_assert(false, "No default implementation of JsonSerializer<T>::write");
         throw std::runtime_error(std::format("No implementation of JsonSerializer<{}>", typeid(T).name()));
         // static_assert(false, "No Implementation of JsonSerializer<T>::write for this type!");
     }
@@ -57,6 +59,69 @@ struct JsonSerializer<bool>
     }
 
     static Result<void, JsonSerializerError> write(Json::Value& s, const bool& value)
+    {
+        s = value;
+        return Ok<void>();
+    };
+};
+
+template<>
+struct JsonSerializer<uint8_t>
+{
+    static Result<void, JsonSerializerError> read(const Json::Value& s, uint8_t& value)
+    {
+        if(s.isUInt())
+        {
+            value = static_cast<uint8_t>(s.asInt());
+            return Ok<void>();
+        }
+        return Err(JsonSerializerError(JsonSerializerError::WrongType,
+                                       std::format("expecting uint8, value was {}", s.toStyledString())));
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& s, const uint8_t& value)
+    {
+        s = value;
+        return Ok<void>();
+    };
+};
+
+template<>
+struct JsonSerializer<uint16_t>
+{
+    static Result<void, JsonSerializerError> read(const Json::Value& s, uint16_t& value)
+    {
+        if(s.isUInt())
+        {
+            value = static_cast<uint16_t>(s.asInt());
+            return Ok<void>();
+        }
+        return Err(JsonSerializerError(JsonSerializerError::WrongType,
+                                       std::format("expecting uint16, value was {}", s.toStyledString())));
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& s, const uint16_t& value)
+    {
+        s = value;
+        return Ok<void>();
+    };
+};
+
+template<>
+struct JsonSerializer<int16_t>
+{
+    static Result<void, JsonSerializerError> read(const Json::Value& s, int16_t& value)
+    {
+        if(s.isInt())
+        {
+            value = static_cast<int16_t>(s.asInt());
+            return Ok<void>();
+        }
+        return Err(JsonSerializerError(JsonSerializerError::WrongType,
+                                       std::format("expecting int16, value was {}", s.toStyledString())));
+    }
+
+    static Result<void, JsonSerializerError> write(Json::Value& s, const uint16_t& value)
     {
         s = value;
         return Ok<void>();
@@ -278,10 +343,10 @@ struct JsonSerializer<std::unordered_map<std::string, T>>
     };
 };
 
-template<class T, size_t L>
-struct JsonSerializer<glm::vec<L, T>>
+template<glm::length_t L, typename T, glm::qualifier Q>
+struct JsonSerializer<glm::vec<L, T, Q>>
 {
-    static Result<void, JsonSerializerError> read(const Json::Value& json, glm::vec<L, T>& value)
+    static Result<void, JsonSerializerError> read(const Json::Value& json, glm::vec<L, T, Q>& value)
     {
         if(!json.isArray())
             return Err(JsonSerializerError(JsonSerializerError::WrongType,
@@ -302,7 +367,7 @@ struct JsonSerializer<glm::vec<L, T>>
         return Ok<void>();
     }
 
-    static Result<void, JsonSerializerError> write(Json::Value& json, const glm::vec<L, T>& value)
+    static Result<void, JsonSerializerError> write(Json::Value& json, const glm::vec<L, T, Q>& value)
     {
         json = Json::Value();
         for(size_t i = 0; i < L; ++i)
@@ -316,10 +381,10 @@ struct JsonSerializer<glm::vec<L, T>>
     };
 };
 
-template<class T, size_t C, size_t R>
-struct JsonSerializer<glm::mat<C, R, T>>
+template<class T, size_t C, size_t R, glm::qualifier Q>
+struct JsonSerializer<glm::mat<C, R, T, Q>>
 {
-    static Result<void, JsonSerializerError> read(const Json::Value& json, glm::mat<C, R, T>& value)
+    static Result<void, JsonSerializerError> read(const Json::Value& json, glm::mat<C, R, T, Q>& value)
     {
         if(!json.isArray())
             return Err(JsonSerializerError(JsonSerializerError::WrongType,
@@ -340,7 +405,7 @@ struct JsonSerializer<glm::mat<C, R, T>>
         return Ok<void>();
     }
 
-    static Result<void, JsonSerializerError> write(Json::Value& json, const glm::mat<C, R, T>& value)
+    static Result<void, JsonSerializerError> write(Json::Value& json, const glm::mat<C, R, T, Q>& value)
     {
         json = Json::Value();
         for(size_t i = 0; i < C * R; ++i)
