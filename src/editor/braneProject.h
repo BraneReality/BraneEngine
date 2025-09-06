@@ -23,10 +23,17 @@ class Editor;
 
 struct BraneProjectData;
 
+#define DEF_MEMBERS(type, name) type name;
+
 struct BraneAssetServerInfo : public TrackedObject
 {
-    Shared<TrackedValue<std::string>> address;
-    Shared<TrackedValue<uint32_t>> port;
+#define BraneAssetServerInfo_MEMBERS                                                                                   \
+    X(Shared<TrackedValue<std::string>>, address)                                                                      \
+    X(Shared<TrackedValue<uint32_t>>, port)
+#define X DEF_MEMBERS
+    BraneAssetServerInfo_MEMBERS
+#undef X
+
     BraneAssetServerInfo();
     void initMembers(Option<std::shared_ptr<TrackedType>> parent) override;
 };

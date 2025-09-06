@@ -491,7 +491,25 @@ struct JsonParseUtil
     template<class T>
     static Result<void, JsonSerializerError> write(Json::Value& json, const T& value)
     {
-        auto res = JsonSerializer<T>::write(json, value);
-        return res;
+        return JsonSerializer<T>::write(json, value);
     }
 };
+
+#define X_SERIALIZE_JSON_MEMBER_READ(type, name) CHECK_RESULT(JsonParseUtil::read(json[#name], value.name))
+#define X_SERIALIZE_JSON_MEMBER_WRITE(type, name) CHECK_RESULT(JsonParseUtil::write(json[#name], value.name))
+
+#define DEF_JSON_SERIALIZER(type, serialize, deserialize)                                                              \
+    struct JsonSerializer<type>                                                                                        \
+    {                                                                                                                  \
+        static Result<void, JsonSerializerError> read(const Json::Value& json, type& value)                            \
+        {                                                                                                              \
+            serialize;                                                                                                 \
+            return Ok<void>();                                                                                         \
+        }                                                                                                              \
+                                                                                                                       \
+        static Result<void, JsonSerializerError> write(Json::Value& json, const type& value)                           \
+        {                                                                                                              \
+            deserialize;                                                                                               \
+            return Ok<void>();                                                                                         \
+        }                                                                                                              \
+    };

@@ -11,7 +11,7 @@
             "console": "integratedTerminal"
         },
         {
-            "type": "lldb",
+            "type": "gdb",
             "request": "launch",
             "name": "Editor-Release",
             "preLaunchTask": "cmake-install-editor-release",
@@ -21,7 +21,7 @@
             "console": "inegratedTerminal"
         },
         {
-            "type": "lldb",
+            "type": "gdb",
             "request": "launch",
             "name": "Client-Debug",
             "preLaunchTask": "cmake-install-client-debug",
@@ -31,7 +31,7 @@
             "console": "inegratedTerminal"
         },
         {
-            "type": "lldb",
+            "type": "gdb",
             "request": "launch",
             "name": "Client-Release",
             "preLaunchTask": "cmake-install-client-release",
@@ -41,7 +41,7 @@
             "console": "inegratedTerminal"
         },
         {
-            "type": "lldb",
+            "type": "gdb",
             "request": "launch",
             "name": "AssetServer-Debug",
             "preLaunchTask": "cmake-install-asset-server-debug",
@@ -51,7 +51,7 @@
             "console": "integratedTerminal"
         },
         {
-            "type": "lldb",
+            "type": "gdb",
             "request": "launch",
             "name": "AssetServer-Release",
             "preLaunchTask": "cmake-install-asset-server-release",

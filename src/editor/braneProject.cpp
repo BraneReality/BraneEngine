@@ -61,23 +61,33 @@ BraneProject::BraneProject(std::filesystem::path root)
 
 BraneProject::~BraneProject() {}
 
+/*template<>*/
+/*struct JsonSerializer<BraneAssetServerInfo>*/
+/*{*/
+/*    static Result<void, JsonSerializerError> read(const Json::Value& json, BraneAssetServerInfo& data)*/
+/*    {*/
+/*        CHECK_RESULT(JsonParseUtil::read(json["address"], data.address));*/
+/*        CHECK_RESULT(JsonParseUtil::read(json["port"], data.port));*/
+/*        return Ok<void>();*/
+/*    }*/
+/**/
+/*    static Result<void, JsonSerializerError> write(Json::Value& json, const BraneAssetServerInfo& data)*/
+/*    {*/
+/*        CHECK_RESULT(JsonParseUtil::write(json["address"], data.address));*/
+/*        CHECK_RESULT(JsonParseUtil::write(json["port"], data.port));*/
+/*        return Ok<void>();*/
+/*    }*/
+/*};*/
 template<>
-struct JsonSerializer<BraneAssetServerInfo>
-{
-    static Result<void, JsonSerializerError> read(const Json::Value& json, BraneAssetServerInfo& data)
-    {
-        CHECK_RESULT(JsonParseUtil::read(json["address"], data.address));
-        CHECK_RESULT(JsonParseUtil::read(json["port"], data.port));
-        return Ok<void>();
-    }
-
-    static Result<void, JsonSerializerError> write(Json::Value& json, const BraneAssetServerInfo& data)
-    {
-        CHECK_RESULT(JsonParseUtil::write(json["address"], data.address));
-        CHECK_RESULT(JsonParseUtil::write(json["port"], data.port));
-        return Ok<void>();
-    }
-};
+DEF_JSON_SERIALIZER(BraneAssetServerInfo,
+#define X X_SERIALIZE_JSON_MEMBER_READ
+                    BraneAssetServerInfo_MEMBERS
+#undef X
+                    ,
+#define X X_SERIALIZE_JSON_MEMBER_WRITE
+                    BraneAssetServerInfo_MEMBERS
+#undef X
+                    )
 
 template<>
 struct JsonSerializer<BraneGraphicsSettings>
