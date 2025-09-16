@@ -1,26 +1,27 @@
 {
-    "dependencies": [
-        "openssl",
-        "asio",
-        "cpp-httplib",
-        "gtest",
-        "jsoncpp",
-        "sqlite3",
-        "shaderc",
-        "spirv-cross",
-        "glm",
-        "vulkan",
-        "glfw3",
-        {
-            "name": "imgui",
-            "features": [
-                "docking-experimental",
-                "glfw-binding",
-                "vulkan-binding"
-            ]
-        },
-        "imguizmo",
-        "tinyfiledialogs",
-        "stb"
-    ]
+  "dependencies": [
+    "openssl",
+    "asio",
+    "cpp-httplib",
+    "gtest",
+    "jsoncpp",
+    "sqlite3",
+    "shaderc",
+    "spirv-cross",
+    "glm",
+    "vulkan",
+    "glfw3",
+    {
+      "name": "imgui",
+      "features": [
+        "docking-experimental",
+        "glfw-binding",
+        "vulkan-binding"
+      ]
+    },
+    "imguizmo",
+    "tinyfiledialogs",
+    "stb"
+  ],
+  "builtin-baseline": "5a5662402382b1aa72f64440717b75258992eba0"
 }
