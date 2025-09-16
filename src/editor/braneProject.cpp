@@ -110,12 +110,16 @@ void BraneProject::initLoaded()
 {
     refreshAssets();
 
-    Json::Value& assets = _file.data()["assets"];
+    // Create required project data directories.
+    const auto projectRootDirectory = projectDirectory();
+    std::filesystem::create_directories(projectDirectory() / "assets");
+    std::filesystem::create_directories(projectDirectory() / "cache");
+
     if(!_file.data().isMember("assetIdCounter"))
         _file.data()["assetIdCounter"] = 0;
 
     _fileWatcher = std::make_unique<FileWatcher>();
-    _fileWatcher->loadCache(projectDirectory() / "cache" / "changeCache");
+    _fileWatcher->loadCache(projectDirectory() / "cache" / "changeCache.bin");
     _fileWatcher->watchDirectory(projectDirectory() / "assets");
     _fileWatcher->addFileWatcher(".gltf", [this](const std::filesystem::path& path) {
         Runtime::log("loading gltf: " + path.string());
@@ -303,26 +307,31 @@ void BraneProject::refreshAssets()
             assets.removeMember(id);
     }
 
-    std::unordered_set<std::string> assetTypes = {".shader", ".material", ".assembly", ".image"};
-    for(auto& file : std::filesystem::recursive_directory_iterator{projectDirectory() / "assets"})
+    if (assets.empty())
+        return;
+
+    const std::unordered_set<std::string> assetFileTypes = {".shader", ".material", ".assembly", ".image"};
+
+    for (const auto& assetFile : std::filesystem::recursive_directory_iterator{projectDirectory() / "assets"})
     {
-        if(!file.is_regular_file())
+        if(!assetFile.is_regular_file())
             continue;
-        if(!assetTypes.count(file.path().extension().string()))
+        if(!assetFileTypes.contains(assetFile.path().extension().string()))
             continue;
+
         EditorAsset* asset = nullptr;
         try
         {
-            asset = EditorAsset::openUnknownAsset(file, *this);
+            asset = EditorAsset::openUnknownAsset(assetFile, *this);
         }
         catch(const std::exception& e)
         {
-            Runtime::error("Could not open asset " + file.path().string() + " error: " + e.what());
+            Runtime::error("Could not open asset " + assetFile.path().string() + " error: " + e.what());
             continue;
         }
         if(!asset)
         {
-            Runtime::error("Could not automatically open asset with extension " + file.path().extension().string());
+            Runtime::error("Could not automatically open asset with extension " + assetFile.path().extension().string());
             continue;
         }
         registerAssetLocation(asset);
