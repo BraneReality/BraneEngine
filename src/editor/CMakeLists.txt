@@ -38,6 +38,9 @@ install(TARGETS BraneEditor
 if(MSVC)
     install(FILES $<TARGET_PDB_FILE:BraneEditor> DESTINATION . OPTIONAL COMPONENT Editor)
 endif()
+
+install(TARGETS BraneEditor
+        DESTINATION .)
 install(FILES config.json ${PROJECT_SOURCE_DIR}/media/branelogo.png
         DESTINATION .
         COMPONENT Editor)

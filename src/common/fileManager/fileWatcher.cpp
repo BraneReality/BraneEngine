@@ -41,10 +41,12 @@ void FileWatcher::scanForChanges(bool callbacks)
 
 void FileWatcher::loadCache(std::filesystem::path changeCache)
 {
-    SerializedData cacheData;
     _changeCache = std::move(changeCache);
-    if(!FileManager::readFile(_changeCache, cacheData.vector()))
+
+    SerializedData cacheData;
+    if (!FileManager::readFile(_changeCache, cacheData.vector()))
         return;
+
     InputSerializer s(cacheData);
     uint32_t count = 0;
     s >> count;
@@ -53,8 +55,10 @@ void FileWatcher::loadCache(std::filesystem::path changeCache)
         std::string path;
         std::filesystem::file_time_type lastUpdate;
         s >> path >> lastUpdate;
+
         if(!std::filesystem::exists(path))
             continue;
+
         _lastUpdate.insert({path, lastUpdate});
     }
 }
@@ -63,10 +67,13 @@ void FileWatcher::saveCache()
 {
     if(_changeCache.empty())
         return;
+
     SerializedData cacheData;
     OutputSerializer s(cacheData);
+
     uint32_t count = _lastUpdate.size();
     s << count;
+
     for(auto& u : _lastUpdate)
         s << u.first << u.second;
     FileManager::writeFile(_changeCache, cacheData.vector());
